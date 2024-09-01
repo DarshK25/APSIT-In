@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+    <script>
+        $(function(){
+           $('#header').load('Header.html');
+           $('#footer').load('Footer.html');
+        });
+    </script>
+    <link rel="stylesheet" href="css/Home.css">
+</head>
+<body>
+    <div id="header"></div>
+    <main>
+        <section class="welcome">
+            <div class="container">
+                <div class="welcome-content">
+                    <h2>Welcome to ApsitIn!</h2>
+                    <p>Your exclusive platform for APSIT students and faculty to connect, network, and grow. Join us to enhance your academic and professional journey.</p>
+                    <button class="primary-btn"><a class="get-a" href="Login.html">Get Started</a></button>
+                    <div id="tagline">Learn, Shear, Grow</div>
+                </div>
+            </div>
+        </section>
+        <section class="features">
+            <div class="container">
+                <h2>What We Offer</h2>
+                <div class="feature-cards">
+                    <div class="feature-card" id="card-1">
+                        <h3>Connect & Network</h3>
+                        <p>Build meaningful relationships with peers, seniors, alumni, and faculty.</p>
+                    </div>
+                    <div class="feature-card" id="card-2">
+                        <h3>Community Building</h3>
+                        <p>Engage with fellow APSITians and create a vibrant community.</p>
+                    </div>
+                    <div class="feature-card" id="card-3">
+                        <h3>Personalized Growth</h3>
+                        <p>Get tailored recommendations and track your progress with insights from experts.</p>
+                    </div>
+                    <div class="feature-card" id="card-4">
+                        <h3>Academic Integration</h3>
+                        <p>Stay updated on academic events and activities related to APSIT.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <div id="footer"></div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApsitIn Homepage</title>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous"></script>
+    <script>
+        $(function(){
+           $('#header').load('Header.html');
+           $('#footer').load('Footer.html');
+        });
+    </script>
+    
+    <link rel="stylesheet" href="css/FeedStyles.css">
+</head>
+<body>
+<div id="header"></div>
+
+<div class="container">
+    <aside class="sidebar">
+    <div class="profile">
+        <img src="user.png" alt="Profile Picture">
+        <h3>Your Name</h3>
+        <p>Info</p>
+    </div>
+    <nav>
+        <a href="#">Connections</a>
+        <a href="#">Groups</a>
+        <a href="#">Events</a>
+    </nav>
+</aside>
+
+<!-- Main Feed -->
+<main class="feed">
+    <div class="post-create">
+        <textarea placeholder="Start a post..."></textarea>
+        <button>Post</button>
+    </div>
+    <div class="post">
+        <h4>User Name</h4>
+        <p>Post content goes here...</p>
+    </div>
+    <!-- Add more posts here -->
+</main>
+
+<!-- Right-side Panel -->
+<aside class="right-panel">
+    <h4>Suggestions for You</h4>
+    <div class="suggestion">
+        <img src="user.png" alt="Dummy User">
+        <p>User 1 - Job Title</p>
+        <button>Connect</button>
+    </div>
+    <!-- Add more suggestions here -->
+</aside>
+</div>
+<div id="footer"></div>
+</body>
+</html>
