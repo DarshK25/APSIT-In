@@ -30,7 +30,6 @@
    ```bash
    ```
  
-Enjoy a seamless listening experience with the Neumorphic Music Player!
 
 ## ✨ Features
 
