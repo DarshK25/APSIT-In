@@ -43,7 +43,7 @@ a{
 .dot-cursor-shadow {
     position: fixed;
     pointer-events: none;
-    z-index: 1000; /* Ensure cursor is on top */
+    z-index: 10; /* Ensure cursor is on top */
     transition: transform 0.15s ease-in-out; /* Smooth transition for cursor shadow */
 }
 .dot-cursor {
@@ -76,8 +76,8 @@ a{
 .nav-items{
     color:white;
     font-size: medium;
-    Position: relative;
-    align-items: center;
+    /* Position: relative; */
+    /* align-items: center; */
     text-align: center;
     margin-left: 22px;
     width: 100px;
@@ -96,10 +96,12 @@ a{
     color: white;
     font-size: 17px;
     position: absolute;
+    /* margin-left: 25px; */
+    /* left: 80%; */
     right:30px;
     overflow: hidden;
     white-space: nowrap;
-    animation: expand 4s ease-in backwards infinite; 
+    animation: expand 3.5s ease-in-out backwards infinite; 
 }
 
 @keyframes expand {
