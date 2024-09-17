@@ -43,16 +43,18 @@ a {
 
 .Nav-Logo {
     position: relative;
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 65px;
 }
 
 .Logo {
     background-image: url("https://raw.githubusercontent.com/DarshK25/Project-ApsitIn/main/frontend/css/assets/ApsitINlogo.avif");
     background-size: cover;
+    
     width: 100%;
     height: 100%;
 }
+
 
 .nav-divs {
     display: flex;
@@ -81,7 +83,7 @@ a {
 }
 
 .search-container {
-    flex-grow: 1;
+    /* flex-grow: 1; */
     display: flex;
     justify-content: center;
     background-color:
@@ -93,7 +95,6 @@ a {
     padding: 10px;
     border-radius: 5px;
     border: 2px solid transparent;
-    /* background-color:#F3F3F3; */
     outline: none;
 }
 
