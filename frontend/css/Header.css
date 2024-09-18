@@ -18,9 +18,8 @@ a {
 
 .border:hover {
     border: 1.5px solid white;
-    border-radius: 8%;
-    background-color: #F7C5C0;
-    color: black;
+    border-radius: 3px; 
+    color: white;
 }
 
 .NavAnchors {
@@ -45,12 +44,13 @@ a {
     position: relative;
     width: 80px;
     height: 65px;
+    background-image: radial-gradient( white, rgb(50,0,13));
 }
 
 .Logo {
     background-image: url("https://raw.githubusercontent.com/DarshK25/Project-ApsitIn/main/frontend/css/assets/ApsitINlogo.avif");
     background-size: cover;
-    
+    border-radius: 20px;
     width: 100%;
     height: 100%;
 }
@@ -80,6 +80,14 @@ a {
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     color: rgb(255, 255, 255);
+}
+
+.nav-buttons{
+    margin: 25px;
+    padding: 8px;
+    background-color: transparent;
+    color: white;
+    width: 100px;
 }
 
 .search-container {
@@ -112,4 +120,38 @@ a {
     padding: 3px;
     display: flex;
     border-radius: 5px;
+}
+/* Mobile view */
+@media (max-width: 500px) {
+    .nav-buttons {
+        font-size: 10px;
+        padding: 10px;
+        margin: 2px;
+    }
+
+    .navbar {
+        padding: 5px;
+        height:50px;
+    }
+
+    #Search-bar {
+        text-wrap: wrap;
+        width: 80%;
+        height: 20px;
+        font-size: smaller;
+        margin-left: 40px;
+    }
+    #Search-bar::placeholder{
+        font-size: 8px;
+    }
+    #search-icon {
+        margin-left: -25px;
+    }
+
+    .Logo {
+        position:fixed;
+        top: 5px;
+        width: 55px;
+        height: 40px;
+    }
 }
