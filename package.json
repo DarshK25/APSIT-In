@@ -4,12 +4,12 @@
   "description": "<!-- Neumorphic Music Player README -->",
   "main": "server.js",
   "scripts": {
-    "dev":"nodemon backend/server.js",
-    "start":"nodemon backend/server.js"
+    "dev": "nodemon backend/server.js",
+    "start": "nodemon backend/server.js"
   },
   "keywords": [],
   "author": "",
-  "type":"module",
+  "type": "module",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
