@@ -8,6 +8,9 @@ export const signup = async(req, res) => {
         const {name, username, email, password} = req.body; //req.body is an object that contains all the data from the form
         const existingEmail = await User.findOne({email}); // checking if email already exists
         //await means it will wait for the promise to be resolved and findOne() is for searching in database
+        if( !name || !username || !email || !password){
+            return res.status(400).json({message: "All fields are required"});
+        }
         if(existingEmail){
             return res.status(400).json({message: "Email already exists"});
         }
@@ -29,7 +32,6 @@ export const signup = async(req, res) => {
         //constructor to initialize user with these data
         
         await user.save(); //Saved to user database!!!!
-        res.status(201).json({message: "User created successfully"});
         const token = jwt.sign( {userID: user._id}, process.env.JWT_SECRET ); 
         //generating token which is used for authentication which means the user is logged in
         //jwt.sign is a method to sign token and has parameters payload(an object), secret key and options
@@ -46,7 +48,16 @@ export const signup = async(req, res) => {
         });
 
         res.status(201).json({message: "User registered succesfully"}); 
-        //todo: send welcome email
+        //todo: send welcome email in a nested try catch
+
+        const profileUrl = "http://localhost/5173/profile/" + user.username; //React port 5173 => profile page
+        //user.username in profileUrl is required because 
+        try{
+            await sendWelcomeEmail(user.email, user.name, profileUrl) 
+        }
+        catch(emailError){
+            console.error("Error in sending email", emailError)
+        }
     }
     catch(error){
          console.log("Error in signup", error.message);
