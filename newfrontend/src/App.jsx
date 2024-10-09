@@ -1,3 +1,6 @@
+import { useQuery} from "@tanstack/react-query";
+import { toast, Toaster } from "react-hot-toast";
+import { axiosInstance } from "./lib/axios"; 
 import { Navigate, Route, Routes } from "react-router-dom"
 import Layout from "./components/layout/Layout"
 
@@ -11,7 +14,7 @@ function App() {
 		queryKey: ["authUser"],
 		queryFn: async () => {
 			try {
-				const res = await axiosInstance.get("/auth/me");
+				const res = await axiosInstance.get("/auth/me"); //endpoint to get auth user
 				return res.data;
 			} catch (err) {
 				if (err.response && err.response.status === 401) {

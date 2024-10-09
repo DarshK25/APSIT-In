@@ -17,3 +17,5 @@ createRoot(document.getElementById("root")).render(
     </BrowserRouter>
   </StrictMode>
 );
+//useQuery => a hook to fetch the data
+//useMutation => a hook to mutate/manipulate the data or send the data
