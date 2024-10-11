@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import authRoutes from "./routes/auth.route.js";
 import { connectDB } from "./lib/db.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -15,6 +16,8 @@ const corsOptions = {
   credentials: true, // Allow credentials (cookies, authorization headers)
 };
 app.use(cors(corsOptions));  // Move this before routes
+
+app.use(cookieParser());
 
 app.use(express.json()); //middleware to parse req.body which is JSON data
 
