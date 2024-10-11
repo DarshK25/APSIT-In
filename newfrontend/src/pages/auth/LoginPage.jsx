@@ -30,7 +30,7 @@ const LoginForm = () => {
 				toast.error(data.message || "Something went wrong");
 			}
 		} catch (error) {
-			toast.error("Failed to login. Please try again.");
+			toast.error(`Failed to login. Please try again. ${error.message}`);
 		} finally {
 			setIsLoading(false);
 		}

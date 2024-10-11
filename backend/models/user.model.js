@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
     name:{ type: String, required: true },
     username:{ type: String, required: true, unique:true },
-    email:{ type: String, required: true, unique:true },
+    email:{ type: String, required: true, unique:true, contains : "@apsit.edu.in"}, // for making a compulsion to login through college email, the syntax is 
     password:{ type: String, required:true },
     profilePicture: { type: String, default:" " },
     bannerImg: { type: String, default:" " },
@@ -11,6 +11,8 @@ const userSchema = new mongoose.Schema({
     location: { type: String, default: "Maharashtra, India"},
     about: { type: String, default: "I am a Student at APSIT"},
     skills: [String] ,
+    moodleId:{type: Number, },
+    projects: {title: String, description: String, link: String},
     experience: { title: String, company: String, startDate: Date, endDate: Date, description: String },
     education: { title: String, school: String, startYear: Number, endYear: Number},
     department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, //Comps, DS, etc 

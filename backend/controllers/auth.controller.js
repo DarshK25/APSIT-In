@@ -1,6 +1,7 @@
-import User from "../models/User.model.js"; 
+import User from "../models/user.model.js"; 
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs"; // for password hashing
+import { sendWelcomeEmail } from "../emails/emailHandlers.js";
 //for example 123456 => SKefhjw_2jbjJB  
 
 export const signup = async(req, res) => {
@@ -91,6 +92,8 @@ export const login = async (req, res) => {
 		});
 
 		res.json({ message: "Logged in successfully" });
+
+        
 	} catch (error) {
 		console.error("Error in login controller:", error);
 		res.status(500).json({ message: "Server error" });
@@ -110,3 +113,23 @@ export const getCurrentUser = async (req, res) => {
 		res.status(500).json({ message: "Server error" });
 	}
 };
+
+// Assuming you are using JWT for authentication
+export const getMe = (req, res) => {
+    try {
+      // Check if the user is authenticated (assuming the user object is attached to req)
+      if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized. Please log in." });
+      }
+  
+      // Send back user info
+      res.status(200).json({
+        success: true,
+        data: req.user,  // Send the user object, which contains user details
+      });
+    } catch (error) {
+      console.error("Error in getMe controller:", error); // Log error to console
+      res.status(500).json({ message: "Server error" });
+    }
+  };
+  
