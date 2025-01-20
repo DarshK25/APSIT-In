@@ -1,26 +1,68 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    name:{ type: String, required: true },
-    username:{ type: String, required: true, unique:true },
-    email:{ type: String, required: true, unique:true, contains : "@apsit.edu.in"}, // for making a compulsion to login through college email, the syntax is 
-    password:{ type: String, required:true },
-    profilePicture: { type: String, default:" " },
-    bannerImg: { type: String, default:" " },
-    headline: { type: String, default: "APSIT Student"}, //A position or a enthusiast
-    location: { type: String, default: "Maharashtra, India"},
-    about: { type: String, default: "I am a Student at APSIT"},
-    skills: [String] ,
-    moodleId:{type: Number, },
-    projects: {title: String, description: String, link: String},
-    experience: { title: String, company: String, startDate: Date, endDate: Date, description: String },
-    education: { title: String, school: String, startYear: Number, endYear: Number},
-    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' }, //Comps, DS, etc 
-    yearOfStudy: { type: mongoose.Schema.Types.ObjectId, ref: 'YearOfStudy' }, //1st/2nd/3rd/4th year or Alumni
-    connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User"} ] // reference to other users
-},{
-    timestamps: true // gives us createdAt and updatedAt
+    name: { type: String, required: true },
+    username: { type: String, required: true, unique: true },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        validate: {
+            validator: function (value) {
+                // Ensures email is from the APSIT domain
+                return /@apsit.edu.in$/.test(value);
+            },
+            message: "Email must belong to the domain '@apsit.edu.in'"
+        }
+    },
+    password: { type: String, required: true },
+    profilePicture: { type: String, default: " " },
+    bannerImg: { type: String, default: " " },
+    isAlumni: { type: Boolean, default: false },
+    role: { type: String, enum: ['student', 'teacher', 'hod', 'staff'], default: 'student' },
+    headline: { type: String, default: "APSIT Student" },
+    location: { type: String, default: "Maharashtra, India" },
+    about: { type: String, default: "I am a Student at APSIT" },
+    skills: { type: [String], default: [] },
+    studentId: {
+        type: Number,
+        match: /^[0-9]{8}$/, // Validate that student ID is 8 digits
+        validate: {
+            validator: function (value) {
+                // Extract the first 8 digits of the email prefix (before @apsit.edu.in)
+                const emailPrefix = this.email.split('@')[0];
+                // Check if studentId matches the first 8 digits of the email prefix
+                return value === emailPrefix.substring(0, 8);
+            },
+            message: 'Student ID must match the first 8 digits of the email prefix',
+        },
+    },
+    projects: [
+        {
+            title: { type: String, required: true },
+            description: { type: String, required: true },
+            link: { type: String, match: /^https?:\/\/.+/ }
+        }
+    ],
+    experience: [{
+        title: { type: String },
+        company: { type: String },
+        startDate: { type: Date },
+        endDate: { type: Date },
+        description: { type: String }
+    }],
+    education: [{
+        title: { type: String },
+        school: { type: String },
+        startYear: { type: Number },
+        endYear: { type: Number }
+    }],
+    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+    yearOfStudy: { type: mongoose.Schema.Types.ObjectId, ref: 'YearOfStudy' },
+    connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+}, {
+    timestamps: true // automatically adds createdAt and updatedAt fields
 });
 
-const User = mongoose.model("User",userSchema) //This means User is the name of collection
+const User = mongoose.model("User", userSchema); // Creates or uses the "User" collection
 export default User;
