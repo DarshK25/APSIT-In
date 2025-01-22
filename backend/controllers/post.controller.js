@@ -1,5 +1,6 @@
 import Post from "../models/post.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import Notification from "../models/notification.nodel.js" 
 
 const getFeedPosts = async (req, res) => {
     try{
@@ -105,16 +106,21 @@ const createComment = async (req, res) => {
         ).populate("author", "name username profilePicture headline");
         //todo: send notification to the author of the post and make sure that comment is not created by the author of the post
         //lets do it now
-        // if(post.author.toString() !== req.user._id.toString()){
-        //     //send notification to the author of the post
-        //     const notification = new Notification({
-        //         user: post.author,
-        //         notificationType: "comment",
-        //         content: `${req.user.name} commented on your post.`,
-        //         post: post._id,
-        //     });
-        //     await notification.save();
-        // }
+        if(post.author.toString() !== req.user._id.toString()){
+            //send notification to the author of the post
+            const notification = new Notification({
+                recipient: post.author,
+                type: "comment",
+                relatedUser: req.user._id,
+                relatedPost: req.params._id,
+            });
+            await notification.save();
+            try {
+                //todo: send an email to the author of the post
+            } catch (error) {
+                console.error("Error in sending email: ", error);
+            }
+        }
         res.status(200).json({success: true, message: "Comment created successfully", post}); 
     } catch(error){
         console.error("Error in createComment: ", error);
