@@ -10,7 +10,7 @@ export function createWelcomeEmailTemplate(name, profileUrl) {
   <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: linear-gradient(to right, #0077B5, #00A0DC); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
       <img src="/ApsitInLogo.avif" alt="APSIT-In Logo" style="width: 150px; margin-bottom: 20px;border-radius: 10px;">
-      <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to UnLinked!</h1>
+      <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to APSIT-In!</h1>
     </div>
     <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
       <p style="font-size: 18px; color: #0077B5;"><strong>Hello ${name},</strong></p>
@@ -44,12 +44,12 @@ export const createConnectionAcceptedEmailTemplate = (senderName, recipientName,
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(to right, #0077B5, #00A0DC); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <img src="/ApsitINlogo.avif" alt="UnLinked Logo" style="width: 150px; margin-bottom: 20px;border-radius: 10px;"/>
+    <img src="/ApsitINlogo.avif" alt="APSIT-In Logo" style="width: 150px; margin-bottom: 20px;border-radius: 10px;"/>
     <h1 style="color: white; margin: 0; font-size: 28px;">Connection Accepted!</h1>
   </div>
   <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
     <p style="font-size: 18px; color: #0077B5;"><strong>Hello ${senderName},</strong></p>
-    <p>Great news! <strong>${recipientName}</strong> has accepted your connection request on UnLinked.</p>
+    <p>Great news! <strong>${recipientName}</strong> has accepted your connection request on APSIT-In.</p>
     <div style="background-color: #f3f6f8; padding: 20px; border-radius: 8px; margin: 20px 0;">
       <p style="font-size: 16px; margin: 0;"><strong>What's next?</strong></p>
       <ul style="padding-left: 20px;">

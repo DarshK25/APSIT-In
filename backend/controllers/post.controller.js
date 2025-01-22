@@ -1,6 +1,6 @@
 import Post from "../models/post.model.js";
 import cloudinary from "../lib/cloudinary.js";
-import Notification from "../models/notification.nodel.js" 
+import Notification from "../models/notification.model.js" 
 
 const getFeedPosts = async (req, res) => {
     try{
@@ -104,8 +104,6 @@ const createComment = async (req, res) => {
                 }
             }}, {new: true}
         ).populate("author", "name username profilePicture headline");
-        //todo: send notification to the author of the post and make sure that comment is not created by the author of the post
-        //lets do it now
         if(post.author.toString() !== req.user._id.toString()){
             //send notification to the author of the post
             const notification = new Notification({
