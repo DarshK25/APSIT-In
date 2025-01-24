@@ -1,13 +1,18 @@
 import Post from "../models/post.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import Notification from "../models/notification.model.js" 
-
-const getFeedPosts = async (req, res) => {
+export const getFeedPosts = async (req, res) => {
     try{
-        const newPost = await Post.find({author:{$in: req.user.connections}})
+        const newPost = await Post.find({
+            $or: [
+                { author: { $in: req.user.connections } }, // Posts from connections
+                { author: req.user._id },                 // Posts by the current user
+            ],
+        })
         .populate("author", "name username profilePicture headline")
-        .populate("comments.user", "name profilePicture") //This method is used to populate the author field with the name, username, profilePicture, and headline of the user who created the post.
-        .sort({createdAt: -1}); // ensures to get the latest posts first
+        .populate("comments.user", "name profilePicture")
+        .sort({ createdAt: -1 });
+        // ensures to get the latest posts first
 
         res.status(200).json({success: "true", newPost});
     } catch (error){
@@ -16,7 +21,7 @@ const getFeedPosts = async (req, res) => {
     }
 }
 
-const createPost = async (req, res) => {
+export const createPost = async (req, res) => {
     try{
         const { content, image } = req.body;
         const post = new Post({
@@ -35,7 +40,7 @@ const createPost = async (req, res) => {
     }
 }
 
-const getPostById = async (req, res) => {
+export const getPostById = async (req, res) => {
     try{
         const post = await Post.findById(req.params.id)
         .populate("author", "name username profilePicture headline")
@@ -43,13 +48,14 @@ const getPostById = async (req, res) => {
         if(!post){
             return res.status(404).json({success: false, message: "Post not found"});
         }
+        res.status(200).json({success: true, post});
     } catch(error) {
         console.error("Error in getPost: ", error);
         res.status(500).json({success: false, message: "Server error"});
     }
 }
 
-const updatePost = async (req, res) => {
+export const updatePost = async (req, res) => {
     try{
         const post = await Post.findById(req.params.id);
         if(!post){
@@ -71,7 +77,7 @@ const updatePost = async (req, res) => {
     }
 }
 
-const deletePost = async (req, res) => {
+export const deletePost = async (req, res) => {
     try{
         const post = await Post.findById(req.params.id);
         if(!post){
@@ -85,7 +91,7 @@ const deletePost = async (req, res) => {
             await cloudinary.uploader.destroy(post.image.split("/").pop().//split the image URL by "/" and get the last element which is the public_id of the image
             split(".")[0]); //split the public_id by "." and extension => ["public_id", "extension"]
         }
-        await post.findByIdAndDelete();
+        await Post.findByIdAndDelete(req.params.id); //Post here is not the post, but the model
         res.status(200).json({success: true, message: "Post deleted successfully"});
     } catch(error) {
         console.error("Error in deletePost: ", error);
@@ -93,37 +99,26 @@ const deletePost = async (req, res) => {
     }
 }
 
-const createComment = async (req, res) => {
-    try{
-        const { content } = req.body; 
-        const post = await Post.findByIdAndUpdate(req.params.id, {
-            $push: {
-                comments: {
-                    content,
-                    user: req.user._id,
-                }
-            }}, {new: true}
-        ).populate("author", "name username profilePicture headline");
-        if(post.author.toString() !== req.user._id.toString()){
-            //send notification to the author of the post
-            const notification = new Notification({
-                recipient: post.author,
-                type: "comment",
-                relatedUser: req.user._id,
-                relatedPost: req.params._id,
-            });
-            await notification.save();
-            try {
-                //todo: send an email to the author of the post
-            } catch (error) {
-                console.error("Error in sending email: ", error);
-            }
-        }
-        res.status(200).json({success: true, message: "Comment created successfully", post}); 
-    } catch(error){
-        console.error("Error in createComment: ", error);
-        res.status(500).json({success: false, message: "Server error"});
-    }
-}
+export const likePost = async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.id);
 
-export {getFeedPosts, createPost, getPostById, updatePost, deletePost, createComment};
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found" });
+        }
+
+        const isLiked = post.likes.includes(req.user._id);
+        if (isLiked) {
+            post.likes.pull(req.user._id);
+        } else {
+            post.likes.push(req.user._id);
+        }
+
+        await post.save();
+        res.status(200).json({ success: true, likes: post.likes });
+    } catch (error) {
+        console.error("Error in likePost: ", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+

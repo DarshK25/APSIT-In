@@ -57,8 +57,22 @@ const userSchema = new mongoose.Schema({
         startYear: { type: Number },
         endYear: { type: Number }
     }],
-    department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
-    yearOfStudy: { type: mongoose.Schema.Types.ObjectId, ref: 'YearOfStudy' },
+    department: {
+         type: String,
+         enum : [
+            'Computer Engineering',
+            'Information Technology',
+            'Computer Science & Engineering: Data Science', 
+            'Computer Science & Engineering: Artificial Intelligence & Machine Learning', 
+            'Civil Engineering',
+            'Mechanical Engineering',
+        ],
+            required: true },
+    yearOfStudy: { 
+        type: String,
+        enum: ["First Year", "Second Year", "Third Year", "Fourth Year"],
+        required: true
+    },
     connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
 }, {
     timestamps: true // automatically adds createdAt and updatedAt fields

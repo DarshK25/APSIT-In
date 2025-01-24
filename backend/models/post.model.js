@@ -6,14 +6,11 @@ const postSchema = new mongoose.Schema(
         content: {type: String},
         image: {type: String},
         likes:[{type: mongoose.Schema.Types.ObjectId, ref: "User"}],
-        comments: [{
-            content:{},
-            user:{},
-            createdAt: {}
-        }]
+        comments: [{type: mongoose.Schema.Types.ObjectId, ref: "Comment"}],
     },
     {timestamps: true}
 );
+
 
 const Post = mongoose.model("Post", postSchema);
 export default Post;
