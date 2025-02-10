@@ -22,11 +22,6 @@ div align="center">
 
 3. **Configure GitHub Pages**: Navigate to your repository's settings on GitHub, select the `main` branch as the source for GitHub Pages, and enable the feature.
 
-4. **Access Apsit-In**: Once deployed, this will be accessible using the following URL format:
-
-    ```bash
-    https://YourUsername.github.io/Project-ApsitIn/
-    ```
 
 ## ✨ Features
 
