@@ -1,7 +1,7 @@
-const Event = require("../models/Event");
+import Event from "../models/event.model.js";
+import authorizedEmails from "../middleware/event.middleware.js";
 
-// Create an event
-exports.createEvent = async (req, res) => {
+export const createEvent = async (req, res) => {
     try {
         const { name, description, date, time, location, club } = req.body;
         const createdBy = req.user.email;
@@ -17,7 +17,7 @@ exports.createEvent = async (req, res) => {
 };
 
 // Get all events
-exports.getAllEvents = async (req, res) => {
+export const getAllEvents = async (req, res) => {
     try {
         const events = await Event.find();
         res.status(200).json({ success: true, events });
@@ -28,7 +28,7 @@ exports.getAllEvents = async (req, res) => {
 };
 
 // Update an event
-exports.updateEvent = async (req, res) => {
+export const updateEvent = async (req, res) => {
     try {
         const { id } = req.params;
         const updates = req.body;
@@ -54,7 +54,7 @@ exports.updateEvent = async (req, res) => {
 };
 
 // Delete an event
-exports.deleteEvent = async (req, res) => {
+export const deleteEvent = async (req, res) => {
     try {
         const { id } = req.params;
 

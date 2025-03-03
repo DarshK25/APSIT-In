@@ -84,7 +84,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-	res.clearCookie("jwt-linkedin");
+	res.clearCookie("jwt-apsitin");
 	res.json({ message: "Logged out successfully" });
 };
 

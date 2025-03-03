@@ -41,7 +41,15 @@ const userSchema = new mongoose.Schema({
         {
             title: { type: String, required: true },
             description: { type: String, required: true },
-            link: { type: String, match: /^https?:\/\/.+/ }
+            projectUrl: { type: String, match: /^https?:\/\/.+/ },
+            repoUrl: { type: String, match: /^https?:\/\/.+/ },
+            technologies: [{ type: String }],
+            images: [{ type: String }],
+            videos: [{ type: String }],
+            startDate: { type: Date },
+            endDate: { type: Date },
+            isOngoing: { type: Boolean, default: false },
+            collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
         }
     ],
     experience: [{
