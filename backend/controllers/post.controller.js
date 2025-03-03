@@ -1,42 +1,77 @@
 import Post from "../models/post.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import Notification from "../models/notification.model.js" 
+
 export const getFeedPosts = async (req, res) => {
-    try{
-        const newPost = await Post.find({
+    try {
+        const posts = await Post.find({
             $or: [
                 { author: { $in: req.user.connections } }, // Posts from connections
                 { author: req.user._id },                 // Posts by the current user
             ],
         })
         .populate("author", "name username profilePicture headline")
-        .populate("comments.user", "name profilePicture")
+        .populate({
+            path: "comments",
+            populate: {
+                path: "author",
+                select: "name username profilePicture"
+            }
+        })
         .sort({ createdAt: -1 });
-        // ensures to get the latest posts first
 
-        res.status(200).json({success: "true", newPost});
-    } catch (error){
+        // Transform posts to include liked status
+        const transformedPosts = posts.map(post => ({
+            ...post.toObject(),
+            likes: post.likes.length,
+            liked: post.likes.includes(req.user._id)
+        }));
+
+        res.status(200).json({ success: true, newPost: transformedPosts });
+    } catch (error) {
         console.error("Error in getFeedPosts: ", error);
-        res.status(500).json({success:"false", message:"Server Error"});
+        res.status(500).json({ success: false, message: "Server Error" });
     }
 }
 
 export const createPost = async (req, res) => {
-    try{
-        const { content, image } = req.body;
+    try {
+        const { content } = req.body;
         const post = new Post({
             author: req.user._id,
             content,
+            likes: [],
+            comments: []
         });
-        if(image){
-            const result = await cloudinary.uploader.upload(image);
+
+        if (req.file) {
+            const result = await cloudinary.uploader.upload(req.file.path);
             post.image = result.secure_url;
         }
+
         await post.save();
-        res.status(201).json({success: true,message: "Created a Post successfully", post});
+
+        // Populate the post with author details
+        const populatedPost = await Post.findById(post._id)
+            .populate("author", "name username profilePicture headline")
+            .populate({
+                path: "comments",
+                populate: {
+                    path: "author",
+                    select: "name username profilePicture"
+                }
+            });
+
+        const transformedPost = {
+            ...populatedPost.toObject(),
+            likes: 0,
+            liked: false
+        };
+
+        res.status(201).json({ success: true, post: transformedPost });
     } catch (error) {
         console.error("Error in createPost: ", error);
-        res.status(500).json({success: false, message: "Sever error"});
+        res.status(500).json({ success: false, message: "Server error" });
     }
 }
 
@@ -102,23 +137,40 @@ export const deletePost = async (req, res) => {
 export const likePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
-
         if (!post) {
             return res.status(404).json({ success: false, message: "Post not found" });
         }
 
         const isLiked = post.likes.includes(req.user._id);
         if (isLiked) {
-            post.likes.pull(req.user._id);
+            post.likes = post.likes.filter(id => id.toString() !== req.user._id.toString());
         } else {
             post.likes.push(req.user._id);
+
+            // Create notification for post like if the author is not the current user
+            if (post.author.toString() !== req.user._id.toString()) {
+                await Notification.create({
+                    recipient: post.author,
+                    type: "like",
+                    relatedUser: req.user._id,
+                    relatedPost: post._id
+                });
+            }
         }
 
         await post.save();
-        res.status(200).json({ success: true, likes: post.likes });
+
+        res.status(200).json({ 
+            success: true,
+            post: {
+                ...post.toObject(),
+                likes: post.likes.length,
+                liked: !isLiked
+            }
+        });
     } catch (error) {
         console.error("Error in likePost: ", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
-};
+}
 

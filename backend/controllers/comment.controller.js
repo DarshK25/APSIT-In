@@ -3,7 +3,8 @@ import Comment from "../models/comment.model.js";
 
 export const createComment = async (req, res) => {
     try {
-        const { content, postId } = req.body;
+        const { content } = req.body;
+        const postId = req.params.postId;
 
         const post = await Post.findById(postId);
         if(!post){
@@ -16,19 +17,33 @@ export const createComment = async (req, res) => {
             content,
             likes: [],
             replies: [],
-        })
+        });
 
         await comment.save();
 
         post.comments.push(comment._id);
         await post.save();
 
-        const populatedComment = await comment.populate("author", "name profilePicture");
+        // Populate the comment with author details
+        const populatedComment = await Comment.findById(comment._id)
+            .populate("author", "name username profilePicture headline");
+
+        // Get updated post with all comments
+        const updatedPost = await Post.findById(postId)
+            .populate("author", "name username profilePicture headline")
+            .populate({
+                path: "comments",
+                populate: {
+                    path: "author",
+                    select: "name username profilePicture"
+                }
+            });
 
         res.status(201).json({
             success: true,
             message: "Comment created successfully",
             comment: populatedComment,
+            post: updatedPost
         });
     } catch (error) {
         console.error("Error in createComment: ", error);
