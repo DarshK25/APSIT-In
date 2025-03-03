@@ -1,12 +1,8 @@
-
-
-<div align="center">
+div align="center">
 
 # Apsit-In
 
 </div>
-
-
 
 ## 🚀 Quick Start
 
@@ -16,7 +12,7 @@
     git clone https://github.com/YourUsername/Project-ApsitIn.git
     ```
 
-3. **Commit and Push Changes**: Commit your changes and push them to your GitHub repository:
+2. **Commit and Push Changes**: Commit your changes and push them to your GitHub repository:
 
     ```bash
     git add .
@@ -24,18 +20,26 @@
     git push origin main
     ```
 
-4. **Configure GitHub Pages**: Navigate to your repository's settings on GitHub, select the `main` branch as the source for GitHub Pages, and enable the feature.
+3. **Configure GitHub Pages**: Navigate to your repository's settings on GitHub, select the `main` branch as the source for GitHub Pages, and enable the feature.
 
-5. **Access Apsit-In**: Once deployed, this will be accessible using the following URL format:
-   ```bash
-   ```
- 
 
 ## ✨ Features
 
 - **Stylish Neumorphic Design**: Experience a visually appealing, soft user interface with smooth animations.
-- **Animations** : Utilizing animations across the site to create smooth transitions and enhance user interactions. 
-- **Responsive Layout**: Enjoy seamless playback across desktop and mobile devices with a fully responsive design.
+- **Animations**: Utilizing animations across the site to create smooth transitions and enhance user interactions.
+- **Responsive Layout**: Enjoy seamless access across desktop and mobile devices with a fully responsive design.
+- **Secure Authentication**: Implemented JWT-based authentication for secure user sessions.
+- **Interactive Features**: CRUD operations for posts and profiles, messaging, notifications, and real-time updates.
+- **Cloud Integration**: Uses Cloudinary for image hosting and Nodemailer for email notifications.
+- **Dynamic Chat System**: Powered by Socket.io for real-time user interactions.
+
+## 🔧 Development Timeline
+
+### APSIT-In – January 2025 - Present
+- **Objective**: Designed and developed APSIT-In, an interactive platform connecting students, showcasing skills, and fostering collaboration.
+- **Frontend**: Built a responsive UI ensuring seamless navigation and user engagement.
+- **Backend**: Developed secure REST APIs with JWT authentication and cloud-enabled functionality.
+- **Current Progress**: Integrating backend and frontend to enhance dynamic user interactions.
 
 ## 🤝 Contributions
 
@@ -47,4 +51,5 @@ This project is licensed under the MIT License. For more information, see the [L
 
 ---
 
-Elevate your academic journey with Apsit-IN. Your network, your future.
+**Elevate your academic journey with Apsit-IN. Your network, your future.**
+
