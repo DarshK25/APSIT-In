@@ -1,6 +1,7 @@
 import Post from "../models/post.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import Notification from "../models/notification.model.js" 
+import fs from 'fs/promises';
 
 export const getFeedPosts = async (req, res) => {
     try {
@@ -37,16 +38,34 @@ export const getFeedPosts = async (req, res) => {
 export const createPost = async (req, res) => {
     try {
         const { content } = req.body;
+        
+        if (!content && !req.file) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Post must contain either text content or an image" 
+            });
+        }
+
         const post = new Post({
             author: req.user._id,
-            content,
+            content: content || "",
             likes: [],
             comments: []
         });
 
         if (req.file) {
-            const result = await cloudinary.uploader.upload(req.file.path);
-            post.image = result.secure_url;
+            try {
+                const result = await cloudinary.uploader.upload(req.file.path);
+                post.image = result.secure_url;
+                // Delete the local file after upload
+                await fs.unlink(req.file.path);
+            } catch (uploadError) {
+                console.error("Error uploading to Cloudinary:", uploadError);
+                return res.status(500).json({ 
+                    success: false, 
+                    message: "Error uploading image" 
+                });
+            }
         }
 
         await post.save();
@@ -71,6 +90,14 @@ export const createPost = async (req, res) => {
         res.status(201).json({ success: true, post: transformedPost });
     } catch (error) {
         console.error("Error in createPost: ", error);
+        // If there's a file and an error occurs, clean up the uploaded file
+        if (req.file) {
+            try {
+                await fs.unlink(req.file.path);
+            } catch (unlinkError) {
+                console.error("Error deleting uploaded file:", unlinkError);
+            }
+        }
         res.status(500).json({ success: false, message: "Server error" });
     }
 }

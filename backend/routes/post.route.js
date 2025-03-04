@@ -2,13 +2,14 @@ import express from "express";
 import {protectRoute} from "../middleware/auth.middleware.js";
 import {getFeedPosts, createPost, getPostById, updatePost, deletePost, likePost} from "../controllers/post.controller.js";
 import {createComment, updateComment, deleteComment, likeComment, replyToComment} from "../controllers/comment.controller.js";
+import upload from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
 router.get("/", protectRoute, getFeedPosts);
-router.post("/", protectRoute, createPost);
+router.post("/", protectRoute, upload.single('image'), createPost);
 router.get("/:id", protectRoute, getPostById);
-router.put("/update/:id", protectRoute, updatePost);
+router.put("/update/:id", protectRoute, upload.single('image'), updatePost);
 router.delete("/delete/:id", protectRoute, deletePost);
 router.post("/:id/like", protectRoute, likePost);
 // Comment routes
