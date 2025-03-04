@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Users, GraduationCap, Bell, MessageSquare, Target, Shield, Zap, Star, CheckCircle2, ArrowRight, BookOpen, Calendar, Users2, Building2 } from "lucide-react";
-import { motion } from "framer-motion";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
