@@ -148,3 +148,13 @@ export const getPublicProfile = async (username) => {
         throw error;
     }
 };
+
+export const getUnreadCounts = async () => {
+    try {
+        const response = await axiosInstance.get('/users/unread-counts');
+        return response.data.data;
+    } catch (error) {
+        console.error("Error fetching unread counts:", error);
+        throw error;
+    }
+};

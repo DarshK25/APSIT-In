@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 
 const Navbar = ({ children }) => {
@@ -17,29 +17,49 @@ const Navbar = ({ children }) => {
         unreadMessagesCount: 0
     });
 
-    // Fetch unread counts
-    useEffect(() => {
-        const fetchUnreadCounts = async () => {
-            if (!user) return;
-            
-            try {
-                const response = await axios.get('http://localhost:3000/api/v1/users/unread-counts', {
-                    withCredentials: true
-                });
-                if (response.data.success) {
-                    setUnreadCounts(response.data.data);
-                }
-            } catch (error) {
-                console.error('Failed to fetch unread counts:', error);
+    // Function to fetch unread counts
+    const fetchUnreadCounts = useCallback(async () => {
+        if (!user) return;
+        
+        try {
+            const response = await axios.get('http://localhost:3000/api/v1/users/unread-counts', {
+                withCredentials: true
+            });
+            if (response.data.success) {
+                setUnreadCounts(response.data.data);
             }
+        } catch (error) {
+            console.error('Failed to fetch unread counts:', error);
+        }
+    }, [user]);
+
+    // Fetch unread counts initially and set up polling
+    useEffect(() => {
+        fetchUnreadCounts();
+        // Poll every 30 seconds instead of every minute
+        const interval = setInterval(fetchUnreadCounts, 30000);
+        return () => clearInterval(interval);
+    }, [fetchUnreadCounts]);
+
+    // Refresh counts when the component gains focus
+    useEffect(() => {
+        const handleFocus = () => {
+            fetchUnreadCounts();
         };
 
-        fetchUnreadCounts();
-        // Set up interval to fetch counts every minute
-        const interval = setInterval(fetchUnreadCounts, 60000);
+        window.addEventListener('focus', handleFocus);
+        return () => window.removeEventListener('focus', handleFocus);
+    }, [fetchUnreadCounts]);
 
-        return () => clearInterval(interval);
-    }, [user]);
+    // Listen for unread count updates from other components
+    useEffect(() => {
+        const handleUnreadCountsUpdate = (event) => {
+            setUnreadCounts(event.detail);
+        };
+
+        window.addEventListener('unreadCountsUpdated', handleUnreadCountsUpdate);
+        return () => window.removeEventListener('unreadCountsUpdated', handleUnreadCountsUpdate);
+    }, []);
 
     const handleLogout = async () => {
         await logout();
@@ -104,34 +124,32 @@ const Navbar = ({ children }) => {
                                             </div>
                                         ) : (
                                             searchResults.map((result) => (
-                                                <div key={result._id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                                                    <Link 
-                                                        to={`/profile/${result.username}`}
-                                                        className="flex-shrink-0"
-                                                    >
-                                                        {result.profilePicture ? (
-                                                            <img
-                                                                src={result.profilePicture}
-                                                                alt={result.name}
-                                                                className="w-8 h-8 rounded-full object-cover hover:opacity-90 transition-opacity"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                                                <span className="text-blue-600 font-medium">
-                                                                    {result.name.charAt(0)}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </Link>
-                                                    <div className="flex-1 min-w-0">
-                                                        <Link 
-                                                            to={`/profile/${result.username}`}
-                                                            className="block group"
-                                                            onClick={() => {
-                                                                setShowDropdown(false);
-                                                                setSearchQuery("");
-                                                            }}
-                                                        >
+                                                <Link 
+                                                    key={result._id}
+                                                    to={`/profile/${result.username}`}
+                                                    className="block"
+                                                    onClick={() => {
+                                                        setShowDropdown(false);
+                                                        setSearchQuery("");
+                                                    }}
+                                                >
+                                                    <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                                        <div className="flex-shrink-0">
+                                                            {result.profilePicture ? (
+                                                                <img
+                                                                    src={result.profilePicture}
+                                                                    alt={result.name}
+                                                                    className="w-8 h-8 rounded-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                                    <span className="text-blue-600 font-medium">
+                                                                        {result.name.charAt(0)}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
                                                                 <div className="font-medium text-gray-900 group-hover:text-primary transition-colors">{result.name}</div>
                                                                 {result.isAlumni && (
@@ -145,9 +163,9 @@ const Navbar = ({ children }) => {
                                                             <div className="text-xs text-gray-400 mt-0.5">
                                                                 {result.department} • {result.yearOfStudy}
                                                             </div>
-                                                        </Link>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                </Link>
                                             ))
                                         )}
                                     </div>

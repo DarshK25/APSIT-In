@@ -123,7 +123,7 @@ export const getUnreadCounts = async (req, res) => {
         });
 
         // Get pending connection requests count
-        const unreadConnectionRequestsCount = await Connection.countDocuments({
+        const unreadConnectionRequestsCount = await ConnectionRequest.countDocuments({
             recipient: userId,
             status: 'pending'
         });

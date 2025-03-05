@@ -7,7 +7,8 @@ import {
     muteChat,
     reportUser,
     blockUser,
-    deleteChat
+    deleteChat,
+    markMessagesAsRead
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -21,5 +22,6 @@ router.post("/mute/:userId", protectRoute, muteChat);
 router.post("/report/:userId", protectRoute, reportUser);
 router.post("/block/:userId", protectRoute, blockUser);
 router.delete("/chat/:userId", protectRoute, deleteChat);
+router.post("/:userId/read", protectRoute, markMessagesAsRead);
 
 export default router;

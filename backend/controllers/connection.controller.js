@@ -33,6 +33,15 @@ export const sendConnectionRequest = async (req, res) => {
 
 		await newRequest.save();
 
+		// Create notification for connection request
+		const senderUser = await User.findById(senderId).select("name");
+		await Notification.create({
+			recipient: userId,
+			sender: senderId,
+			type: "connectionRequest",
+			message: `${senderUser.name} sent you a connection request`
+		});
+
 		res.status(201).json({ message: "Connection request sent successfully" });
 	} catch (error) {
 		res.status(500).json({ message: "Server error" });
@@ -68,13 +77,13 @@ export const acceptConnectionRequest = async (req, res) => {
 		await User.findByIdAndUpdate(request.sender._id, { $addToSet: { connections: userId } });
 		await User.findByIdAndUpdate(userId, { $addToSet: { connections: request.sender._id } });
 
-		const notification = new Notification({
+		// Create notification with proper message
+		await Notification.create({
 			recipient: request.sender._id,
+			sender: userId,
 			type: "connectionAccepted",
-			relatedUser: userId,
+			message: `${request.recipient.name} accepted your connection request`
 		});
-
-		await notification.save();
 
 		res.json({ message: "Connection accepted successfully" });
 

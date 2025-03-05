@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+
 const LoginForm = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const { login } = useAuth();
+	const { login, user } = useAuth();
 	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (user) {
+			navigate("/home");
+		}
+	}, [user, navigate]);
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setIsLoading(true);

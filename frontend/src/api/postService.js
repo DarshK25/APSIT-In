@@ -4,7 +4,7 @@ class PostService {
   async getAllPosts() {
     try {
       const response = await axiosInstance.get('/posts');
-      return response.data.newPost;
+      return response.data.posts || [];
     } catch (error) {
       console.error('Error fetching posts:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch posts');

@@ -52,9 +52,9 @@ export const AuthProvider = ({ children }) => {
                 });
                 setUser(userResponse.data.data);
                 toast.success('Logged in successfully');
-                navigate('/home');
                 return true;
             }
+            return false;
         } catch (error) {
             console.error('Login failed:', error);
             toast.error(error.response?.data?.message || 'Login failed');

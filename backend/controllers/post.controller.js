@@ -3,6 +3,7 @@ import cloudinary from "../lib/cloudinary.js";
 import Notification from "../models/notification.model.js" 
 import fs from 'fs/promises';
 import Comment from "../models/comment.model.js";
+import User from "../models/user.model.js";
 
 export const getFeedPosts = async (req, res) => {
     try {
@@ -48,16 +49,24 @@ export const getFeedPosts = async (req, res) => {
             }))
         }));
 
-        res.status(200).json({ success: true, newPost: transformedPosts });
+        res.status(200).json({ 
+            success: true, 
+            posts: transformedPosts // Changed from post to posts to match frontend expectation
+        });
     } catch (error) {
         console.error("Error in getFeedPosts: ", error);
-        res.status(500).json({ success: false, message: "Server Error" });
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || "Failed to fetch posts",
+            posts: [] // Changed from post to posts
+        });
     }
 }
 
 export const createPost = async (req, res) => {
     try {
         const { content } = req.body;
+        const userId = req.user._id;
         
         if (!content && !req.file) {
             return res.status(400).json({ 
@@ -66,21 +75,25 @@ export const createPost = async (req, res) => {
             });
         }
 
+        // Create the post
         const post = new Post({
-            author: req.user._id,
+            author: userId,
             content: content || "",
             likes: [],
             comments: []
         });
 
+        // Handle image upload if present
         if (req.file) {
             try {
                 const result = await cloudinary.uploader.upload(req.file.path);
                 post.image = result.secure_url;
-                // Delete the local file after upload
                 await fs.unlink(req.file.path);
             } catch (uploadError) {
                 console.error("Error uploading to Cloudinary:", uploadError);
+                if (req.file) {
+                    await fs.unlink(req.file.path).catch(console.error);
+                }
                 return res.status(500).json({ 
                     success: false, 
                     message: "Error uploading image" 
@@ -88,39 +101,67 @@ export const createPost = async (req, res) => {
             }
         }
 
+        // Save the post
         await post.save();
 
-        // Populate the post with author details
-        const populatedPost = await Post.findById(post._id)
-            .populate("author", "name username profilePicture headline")
-            .populate({
-                path: "comments",
-                populate: {
-                    path: "author",
-                    select: "name username profilePicture"
-                }
-            });
+        try {
+            // Populate the post with author details
+            const populatedPost = await Post.findById(post._id)
+                .populate("author", "name username profilePicture headline");
 
-        const transformedPost = {
-            ...populatedPost.toObject(),
-            likes: 0,
-            liked: false
-        };
-
-        res.status(201).json({ success: true, post: transformedPost });
-    } catch (error) {
-        console.error("Error in createPost: ", error);
-        // If there's a file and an error occurs, clean up the uploaded file
-        if (req.file) {
-            try {
-                await fs.unlink(req.file.path);
-            } catch (unlinkError) {
-                console.error("Error deleting uploaded file:", unlinkError);
+            if (!populatedPost) {
+                throw new Error("Failed to retrieve created post");
             }
+
+            const transformedPost = {
+                ...populatedPost.toObject(),
+                likes: 0,
+                liked: false,
+                comments: []
+            };
+
+            // Create notifications for connections
+            try {
+                const user = await User.findById(userId).select("name connections");
+                if (user?.connections?.length > 0) {
+                    await Promise.all(user.connections.map(connectionId => 
+                        Notification.create({
+                            recipient: connectionId,
+                            sender: userId,
+                            type: "newPost",
+                            message: `${user.name} shared a new post`,
+                            post: post._id
+                        }).catch(error => {
+                            console.error("Error creating notification:", error);
+                            return null; // Continue even if notification fails
+                        })
+                    ));
+                }
+            } catch (notificationError) {
+                console.error("Error handling notifications:", notificationError);
+                // Continue even if notifications fail
+            }
+
+            return res.status(201).json({ success: true, post: transformedPost });
+        } catch (populateError) {
+            console.error("Error after post creation:", populateError);
+            return res.status(201).json({ 
+                success: true, 
+                post: { ...post.toObject(), likes: 0, liked: false, comments: [] }
+            });
         }
-        res.status(500).json({ success: false, message: "Server error" });
+    } catch (error) {
+        console.error("Error in createPost:", error);
+        // Clean up uploaded file if it exists
+        if (req.file) {
+            await fs.unlink(req.file.path).catch(console.error);
+        }
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Failed to create post" 
+        });
     }
-}
+};
 
 export const getPostById = async (req, res) => {
     try{
@@ -286,51 +327,54 @@ export const deletePost = async (req, res) => {
 
 export const likePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.id)
-            .populate("author", "name username profilePicture headline");
-            
+        const { postId } = req.params;
+        const userId = req.user._id;
+
+        const post = await Post.findById(postId).populate("author", "name");
         if (!post) {
             return res.status(404).json({ success: false, message: "Post not found" });
         }
 
-        const isLiked = post.likes.includes(req.user._id);
-        
+        const isLiked = post.likes.includes(userId);
         if (isLiked) {
-            // Unlike the post
-            post.likes = post.likes.filter(id => id.toString() !== req.user._id.toString());
+            post.likes = post.likes.filter(id => id.toString() !== userId.toString());
         } else {
-            // Like the post
-            post.likes.push(req.user._id);
-
-            // Create notification for post like if the author is not the current user
-            if (post.author._id.toString() !== req.user._id.toString()) {
-                await Notification.create({
-                    recipient: post.author._id,
-                    type: "like",
-                    relatedUser: req.user._id,
-                    relatedPost: post._id
-                });
+            post.likes.push(userId);
+            
+            try {
+                // Create notification for post owner if it's not their own post
+                if (post.author._id.toString() !== userId.toString()) {
+                    const user = await User.findById(userId).select("name");
+                    if (user) {
+                        await Notification.create({
+                            recipient: post.author._id,
+                            sender: userId,
+                            type: "like",
+                            message: `${user.name} liked your post`,
+                            post: postId
+                        });
+                    }
+                }
+            } catch (notificationError) {
+                console.error("Error creating like notification:", notificationError);
+                // Continue even if notification fails
             }
         }
 
         await post.save();
-
-        // Return the updated post with transformed like data
-        const transformedPost = {
-            ...post.toObject(),
-            likes: post.likes.length,
-            liked: !isLiked
-        };
-
-        res.status(200).json({ 
-            success: true,
-            post: transformedPost
+        return res.json({ 
+            success: true, 
+            likes: post.likes,
+            likesCount: post.likes.length 
         });
     } catch (error) {
-        console.error("Error in likePost: ", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        console.error("Error in likePost:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Failed to process like" 
+        });
     }
-}
+};
 
 export const addComment = async (req, res) => {
     try {
@@ -376,11 +420,13 @@ export const addComment = async (req, res) => {
 
         // Create notification for comment if the author is not the current user
         if (post.author.toString() !== req.user._id.toString()) {
+            const user = await User.findById(req.user._id).select("name");
             await Notification.create({
                 recipient: post.author,
+                sender: req.user._id,
                 type: "comment",
-                relatedUser: req.user._id,
-                relatedPost: post._id
+                message: `${user.name} commented on your post`,
+                post: post._id
             });
         }
 
@@ -524,4 +570,40 @@ export const replyToComment = async (req, res) => {
         res.status(500).json({ success: false, message: "Server error" });
     }
 }
+
+export const createComment = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const { content } = req.body;
+        const userId = req.user._id;
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+
+        const comment = await Comment.create({
+            author: userId,
+            post: postId,
+            content
+        });
+
+        // Create notification for post owner if it's not their own comment
+        if (post.author.toString() !== userId.toString()) {
+            const user = await User.findById(userId).select("name");
+            await Notification.create({
+                recipient: post.author,
+                sender: userId,
+                type: "comment",
+                message: `${user.name} commented on your post`,
+                post: postId
+            });
+        }
+
+        res.status(201).json({ success: true, comment });
+    } catch (error) {
+        console.error("Error in createComment:", error);
+        res.status(500).json({ success: false, message: error.message || "Failed to create comment" });
+    }
+};
 

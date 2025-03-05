@@ -5,11 +5,12 @@ import { Send, Search, MessageSquare, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import ChatOptions from '../components/ChatOptions';
+import { getUnreadCounts } from '../api/userService';
 
 const MessagesPage = () => {
     const { user } = useAuth();
-    const [connections, setConnections] = useState([]);
-    const [filteredConnections, setFilteredConnections] = useState([]);
+    const [conversations, setConversations] = useState([]);
+    const [filteredConversations, setFilteredConversations] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -22,64 +23,52 @@ const MessagesPage = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
-    // Fetch connections
+    // Fetch conversations with latest messages
     useEffect(() => {
-        const fetchConnections = async () => {
+        const fetchConversations = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/connections', {
+                const response = await axios.get('http://localhost:3000/api/v1/messages/conversations', {
                     withCredentials: true
                 });
                 
-                // Handle both response formats
-                let connectionsData = [];
-                if (Array.isArray(response.data)) {
-                    connectionsData = response.data;
-                } else if (response.data.data && Array.isArray(response.data.data)) {
-                    connectionsData = response.data.data;
+                if (response.data.success) {
+                    // Sort conversations by latest message timestamp
+                    const sortedConversations = response.data.data.sort((a, b) => {
+                        return new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0);
+                    });
+                    
+                    setConversations(sortedConversations);
+                    setFilteredConversations(sortedConversations);
                 }
-                
-                console.log('Fetched connections:', connectionsData); // Debug log
-                
-                if (connectionsData.length === 0) {
-                    console.log('No connections found in response'); // Debug log
-                }
-                
-                setConnections(connectionsData);
-                setFilteredConnections(connectionsData);
             } catch (error) {
-                console.error('Failed to fetch connections:', error.response || error);
-                toast.error('Failed to load connections');
+                console.error('Failed to fetch conversations:', error);
+                toast.error('Failed to load conversations');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchConnections();
+        fetchConversations();
+        // Poll for new conversations every 10 seconds
+        const interval = setInterval(fetchConversations, 10000);
+        return () => clearInterval(interval);
     }, []);
 
     // Handle search
     useEffect(() => {
-        if (!Array.isArray(connections)) {
-            console.error('Connections is not an array:', connections);
-            return;
-        }
-        
-        const filtered = connections.filter(connection => {
-            if (!connection) return false;
-            
+        const filtered = conversations.filter(conversation => {
             const searchLower = searchQuery.toLowerCase();
-            const nameLower = (connection.name || '').toLowerCase();
-            const usernameLower = (connection.username || '').toLowerCase();
-            const headlineLower = (connection.headline || '').toLowerCase();
+            const nameLower = (conversation.user?.name || '').toLowerCase();
+            const usernameLower = (conversation.user?.username || '').toLowerCase();
+            const headlineLower = (conversation.user?.headline || '').toLowerCase();
             
             return nameLower.includes(searchLower) || 
                    usernameLower.includes(searchLower) ||
                    headlineLower.includes(searchLower);
         });
         
-        console.log('Filtered connections:', filtered); // Debug log
-        setFilteredConnections(filtered);
-    }, [searchQuery, connections]);
+        setFilteredConversations(filtered);
+    }, [searchQuery, conversations]);
 
     // Fetch messages when user is selected
     useEffect(() => {
@@ -94,6 +83,13 @@ const MessagesPage = () => {
                 if (response.data.success) {
                     setMessages(response.data.data);
                     scrollToBottom();
+                    
+                    // Mark messages as read
+                    await axios.post(
+                        `http://localhost:3000/api/v1/messages/${selectedUser._id}/read`,
+                        {},
+                        { withCredentials: true }
+                    );
                 }
             } catch (error) {
                 console.error('Failed to fetch messages:', error);
@@ -130,6 +126,15 @@ const MessagesPage = () => {
                 setMessages([...messages, response.data.data]);
                 setNewMessage('');
                 scrollToBottom();
+                
+                // Refresh unread counts after sending a message
+                try {
+                    const unreadCounts = await getUnreadCounts();
+                    // Dispatch a custom event to update the navbar
+                    window.dispatchEvent(new CustomEvent('unreadCountsUpdated', { detail: unreadCounts }));
+                } catch (error) {
+                    console.error('Failed to refresh unread counts:', error);
+                }
             }
         } catch (error) {
             console.error('Failed to send message:', error);
@@ -152,13 +157,13 @@ const MessagesPage = () => {
     return (
         <div className="container mx-auto p-4 max-w-8xl">
             <div className="flex h-[calc(100vh-8rem)] bg-white rounded-lg shadow-lg">
-                {/* Connections List */}
+                {/* Conversations List */}
                 <div className="w-1/3 border-r border-gray-200">
                     <div className="p-4 border-b border-gray-200">
                         <div className="relative">
                             <input
                                 type="text"
-                                placeholder="Search connections..."
+                                placeholder="Search messages..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -167,36 +172,72 @@ const MessagesPage = () => {
                         </div>
                     </div>
                     <div className="overflow-y-auto h-[calc(100%-4rem)]">
-                        {filteredConnections.length === 0 ? (
+                        {filteredConversations.length === 0 ? (
                             <div className="p-4 text-center text-gray-500">
-                                {searchQuery ? 'No connections found' : 'No connections yet'}
+                                {searchQuery ? 'No conversations found' : 'No messages yet'}
                             </div>
                         ) : (
-                            filteredConnections.map((connection) => (
+                            filteredConversations.map((conversation) => (
                                 <div
-                                    key={connection._id}
-                                    onClick={() => setSelectedUser(connection)}
-                                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                                        selectedUser?._id === connection._id ? 'bg-blue-50' : ''
+                                    key={conversation.user._id}
+                                    onClick={() => setSelectedUser(conversation.user)}
+                                    className={`p-4 border-b border-gray-100 cursor-pointer ${
+                                        selectedUser?._id === conversation.user._id 
+                                            ? 'bg-blue-100' 
+                                            : conversation.unreadCount > 0
+                                                ? 'bg-gray-50'
+                                                : 'hover:bg-gray-50'
                                     }`}
                                 >
                                     <div className="flex items-center space-x-3">
-                                        {connection.profilePicture ? (
-                                            <img
-                                                src={connection.profilePicture}
-                                                alt={connection.name}
-                                                className="w-10 h-10 rounded-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                <span className="text-gray-600 font-medium text-lg">
-                                                    {connection.name.charAt(0)}
+                                        <div className="relative">
+                                            {conversation.user.profilePicture ? (
+                                                <img
+                                                    src={conversation.user.profilePicture}
+                                                    alt={conversation.user.name}
+                                                    className="w-10 h-10 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                    <span className="text-gray-600 font-medium text-lg">
+                                                        {conversation.user.name.charAt(0)}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            {conversation.unreadCount > 0 && (
+                                                <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
+                                                    <span className="text-[11px] text-white font-bold">
+                                                        {conversation.unreadCount}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start">
+                                                <h3 className={`${
+                                                    conversation.unreadCount > 0
+                                                        ? 'text-black font-bold' 
+                                                        : 'text-gray-800 font-medium'
+                                                }`}>
+                                                    {conversation.user.name}
+                                                </h3>
+                                                <span className={`text-xs ${
+                                                    conversation.unreadCount > 0
+                                                        ? 'text-black font-semibold' 
+                                                        : 'text-gray-500'
+                                                }`}>
+                                                    {conversation.lastMessage && format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
                                                 </span>
                                             </div>
-                                        )}
-                                        <div>
-                                            <h3 className="font-medium text-gray-800">{connection.name}</h3>
-                                            <p className="text-sm text-gray-500">APSIT Student</p>
+                                            {conversation.lastMessage && (
+                                                <p className={`text-sm truncate ${
+                                                    conversation.unreadCount > 0
+                                                        ? 'text-black font-semibold' 
+                                                        : 'text-gray-500'
+                                                }`}>
+                                                    {conversation.lastMessage.content}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -307,8 +348,8 @@ const MessagesPage = () => {
                             <div className="mb-2">
                                 <MessageSquare size={48} className="mx-auto text-gray-400" />
                             </div>
-                            <h2 className="text-xl font-medium mb-2">Select a connection to start messaging</h2>
-                            <p className="text-sm">Choose from your existing connections or start a new conversation</p>
+                            <h2 className="text-xl font-medium mb-2">Select a conversation to start messaging</h2>
+                            <p className="text-sm">Choose from your existing conversations or start a new conversation</p>
                         </div>
                     )}
                 </div>

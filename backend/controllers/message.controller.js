@@ -219,4 +219,30 @@ export const deleteChat = async (req, res) => {
         console.error("Error in deleteChat: ", error);
         res.status(500).json({ success: false, message: "Server Error" });
     }
+};
+
+export const markMessagesAsRead = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUserId = req.user._id;
+
+        // Mark all messages from this user as read
+        const result = await Message.updateMany(
+            { 
+                sender: userId,
+                recipient: currentUserId,
+                isRead: false
+            },
+            { isRead: true }
+        );
+
+        res.json({
+            success: true,
+            message: 'Messages marked as read',
+            updatedCount: result.modifiedCount
+        });
+    } catch (error) {
+        console.error("Error in markMessagesAsRead: ", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
 }; 
