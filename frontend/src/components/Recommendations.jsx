@@ -35,12 +35,17 @@ const Recommendations = ({ currentUser }) => {
     const handleConnect = async (userId) => {
         try {
             await sendConnectionRequest(userId);
-            toast.success("Connection request sent!");
-            // Remove the user from recommendations
+            // Remove the user from recommendations immediately
             setRecommendations(prev => prev.filter(user => user._id !== userId));
+            toast.success("Connection request sent!");
         } catch (error) {
-            console.error("Failed to send connection request:", error);
-            toast.error(error.response?.data?.message || "Failed to send connection request");
+            if (error.response?.data?.message === "A connection request already exists") {
+                // If there's already a pending request, remove from recommendations
+                setRecommendations(prev => prev.filter(user => user._id !== userId));
+                toast.error("A connection request is already pending");
+            } else {
+                toast.error(error.response?.data?.message || "Failed to send connection request");
+            }
         }
     };
 

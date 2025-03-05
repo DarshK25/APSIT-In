@@ -26,8 +26,8 @@ createUploadsDir();
 const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'], // frontend URLs
   credentials: true, // Allow credentials (cookies, authorization headers)
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 };
 app.use(cors(corsOptions));  // Move this before routes
 

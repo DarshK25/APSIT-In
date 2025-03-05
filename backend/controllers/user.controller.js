@@ -3,20 +3,35 @@ import User from "../models/user.model.js"
 import Notification from "../models/notification.model.js";
 import Message from "../models/message.model.js";
 import Connection from "../models/connection.model.js";
+import ConnectionRequest from "../models/connectionRequest.model.js";
 
-// Only get the users that are not in my connection and is not myself
+// Only get the users that are not in my connection, not myself, and don't have pending requests
 export const getSuggestedConnections = async (req, res) => {
     try {
         const currentUser = await User.findById(req.user._id).select("connections");
         
+        // Get all pending connection requests involving the current user
+        const pendingRequests = await ConnectionRequest.find({
+            $or: [
+                { sender: req.user._id, status: "pending" },
+                { recipient: req.user._id, status: "pending" }
+            ]
+        });
+
+        // Extract user IDs from pending requests
+        const usersWithPendingRequests = pendingRequests.reduce((acc, request) => {
+            acc.push(request.sender.toString(), request.recipient.toString());
+            return acc;
+        }, []);
+
         const suggestedUsers = await User.find({
             _id: {
-                $ne: req.user._id, // $ne is not equal to in mongodb
-                $nin: currentUser.connections // $nin is not in in mongodb
+                $ne: req.user._id, // Not the current user
+                $nin: [...currentUser.connections, ...usersWithPendingRequests] // Not in connections and not in pending requests
             }
         })
         .select("name username profilePicture headline department yearOfStudy")
-        .limit(10); // Get the selected properties of the user and show only 10 users
+        .limit(10);
 
         res.json({
             success: true,
@@ -149,12 +164,25 @@ export const searchUsers = async (req, res) => {
                 { _id: { $ne: req.user._id } } // Exclude current user from results
             ]
         })
-        .select("name username profilePicture headline department yearOfStudy")
+        .select("name username profilePicture headline department yearOfStudy isAlumni education")
         .limit(10);
+
+        // Process users to determine alumni status from education
+        const processedUsers = users.map(user => {
+            const isAlumniFromEducation = user.education?.some(edu => {
+                if (!edu.endYear) return false;
+                return parseInt(edu.endYear) < new Date().getFullYear();
+            });
+
+            return {
+                ...user.toObject(),
+                isAlumni: user.isAlumni || isAlumniFromEducation
+            };
+        });
 
         res.json({
             success: true,
-            data: users
+            data: processedUsers
         });
     } catch (error) {
         console.error("Error in searchUsers: ", error);

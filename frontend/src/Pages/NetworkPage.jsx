@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Home, UserPlus, Bell } from "lucide-react";
 import { toast } from "react-hot-toast";
 import Sidebar from "../components/Sidebar.jsx";
+import Recommendations from "../components/Recommendations.jsx";
 import userService from "../api/userService";
 import connectionService from "../api/connectionService";
 
@@ -231,23 +232,6 @@ const NetworkPage = () => {
 					</div>
 				)}
 
-				{/* Suggested Connections */}
-				{suggestedUsers.length > 0 && (
-					<div className='bg-white rounded-lg shadow p-6'>
-						<h2 className='text-xl font-semibold mb-4'>People You May Know</h2>
-						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-							{suggestedUsers.map((user) => (
-								<UserCard
-									key={user._id}
-									user={user}
-									onConnect={handleSendRequest}
-									connectionStatus="not_connected"
-								/>
-							))}
-						</div>
-					</div>
-				)}
-
 				{/* My Connections */}
 				<div className='bg-white rounded-lg shadow p-6'>
 					<h2 className='text-xl font-semibold mb-4'>My Connections ({connections.length})</h2>
@@ -268,6 +252,28 @@ const NetworkPage = () => {
 						</p>
 					)}
 				</div>
+
+				{/* Recommendations Section */}
+				{user && <Recommendations currentUser={user} />}
+
+				{/* Suggested Connections */}
+				{suggestedUsers.length > 0 && (
+					<div className='bg-white rounded-lg shadow p-6'>
+						<h2 className='text-xl font-semibold mb-4'>People You May Know</h2>
+						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+							{suggestedUsers.map((user) => (
+								<UserCard
+									key={user._id}
+									user={user}
+									onConnect={handleSendRequest}
+									connectionStatus="not_connected"
+								/>
+							))}
+						</div>
+					</div>
+				)}
+
+				
 			</div>
 		</div>
 	);

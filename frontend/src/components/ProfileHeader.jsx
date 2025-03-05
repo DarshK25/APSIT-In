@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, MapPin, UserPlus, Mail, Calendar, GraduationCap } from "lucide-react";
+import { Camera, MapPin, UserPlus, Mail, Calendar, GraduationCap, User } from "lucide-react";
 import { uploadToCloudinary } from "../api/userService";
 import toast from "react-hot-toast";
 
@@ -8,8 +8,28 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
   const [editedData, setEditedData] = useState({
     name: userData.name,
     headline: userData.headline,
-    location: userData.location
+    location: userData.location,
+    department: userData.department,
+    yearOfStudy: userData.yearOfStudy,
+    studentId: userData.studentId,
+    about: userData.about
   });
+
+  const departments = [
+    'Computer Engineering',
+    'Information Technology',
+    'Computer Science & Engineering: Data Science',
+    'Computer Science & Engineering: Artificial Intelligence & Machine Learning',
+    'Civil Engineering',
+    'Mechanical Engineering'
+  ];
+
+  const yearOfStudyOptions = [
+    'First Year',
+    'Second Year',
+    'Third Year',
+    'Fourth Year'
+  ];
 
   // Function to check if user is an alumni
   const isAlumni = () => {
@@ -137,9 +157,9 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
         </div>
 
         {/* Profile Info */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-4">
               {isEditing ? (
                 <input
                   type="text"
@@ -148,7 +168,7 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                   className="text-3xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               ) : (
-                <>
+                <div className="flex items-center gap-3">
                   <h1 className="text-3xl font-bold text-gray-900">{userData.name}</h1>
                   {isAlumni() && (
                     <div 
@@ -159,40 +179,102 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                       <span className="text-sm font-medium">Alumni</span>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
 
             {isEditing ? (
-              <input
-                type="text"
-                value={editedData.headline}
-                onChange={(e) => setEditedData({ ...editedData, headline: e.target.value })}
-                className="mt-2 text-lg text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/20"
-              />
-            ) : (
-              <p className="mt-2 text-lg text-gray-600">{userData.headline}</p>
-            )}
-          </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    value={editedData.headline}
+                    onChange={(e) => setEditedData({ ...editedData, headline: e.target.value })}
+                    className="text-lg text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Headline"
+                  />
+                  
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={editedData.location}
+                      onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      placeholder="Location"
+                    />
+                  </div>
 
-          <div className="flex items-center space-x-6 text-gray-500">
-            <div className="flex items-center">
-              <MapPin className="h-5 w-5 mr-2" />
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedData.location}
-                  onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              ) : (
-                <span>{userData.location}</span>
-              )}
-            </div>
-            <div className="flex items-center">
-              <Calendar className="h-5 w-5 mr-2" />
-              <span>Joined {new Date(userData.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
-            </div>
+                  <select
+                    value={editedData.department}
+                    onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Select Department</option>
+                    {departments.map((dept) => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+
+                  {!isAlumni() && (
+                    <select
+                      value={editedData.yearOfStudy}
+                      onChange={(e) => setEditedData({ ...editedData, yearOfStudy: e.target.value })}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="">Select Year of Study</option>
+                      {yearOfStudyOptions.map((year) => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  <input
+                    type="text"
+                    value={editedData.studentId}
+                    onChange={(e) => setEditedData({ ...editedData, studentId: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Student ID"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-lg text-gray-600 font-medium">{userData.headline}</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                      <MapPin className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium truncate">{userData.location}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                      <GraduationCap className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium truncate">{userData.department}</span>
+                    </div>
+                  </div>
+
+                  {!isAlumni() && (
+                    <div className="flex items-center space-x-3 text-gray-600">
+                      <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                        <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                        <span className="font-medium">{userData.yearOfStudy}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-3 text-gray-600">
+                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                      <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                      <span className="font-medium">ID: {userData.studentId}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
