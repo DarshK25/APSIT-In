@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Send, Search, MessageSquare } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import ChatOptions from '../components/ChatOptions';
 
 const MessagesPage = () => {
     const { user } = useAuth();
@@ -14,6 +15,7 @@ const MessagesPage = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(true);
+    const [showOptions, setShowOptions] = useState(false);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -135,6 +137,10 @@ const MessagesPage = () => {
         }
     };
 
+    const handleOptionsClose = () => {
+        setShowOptions(false);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -205,25 +211,41 @@ const MessagesPage = () => {
                         <>
                             {/* Chat Header */}
                             <div className="p-4 border-b border-gray-200">
-                                <div className="flex items-center space-x-3">
-                                    {selectedUser.profilePicture ? (
-                                        <img
-                                            src={selectedUser.profilePicture}
-                                            alt={selectedUser.name}
-                                            className="w-10 h-10 rounded-full"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <span className="text-blue-600 font-medium">
-                                                {selectedUser.name.charAt(0)}
-                                            </span>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        {selectedUser.profilePicture ? (
+                                            <img
+                                                src={selectedUser.profilePicture}
+                                                alt={selectedUser.name}
+                                                className="w-10 h-10 rounded-full"
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <span className="text-blue-600 font-medium">
+                                                    {selectedUser.name.charAt(0)}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h3 className="font-medium">{selectedUser.name}</h3>
+                                            <p className="text-sm text-gray-500">
+                                                {selectedUser.headline || 'APSIT Student'}
+                                            </p>
                                         </div>
-                                    )}
-                                    <div>
-                                        <h3 className="font-medium">{selectedUser.name}</h3>
-                                        <p className="text-sm text-gray-500">
-                                            {selectedUser.headline || 'APSIT Student'}
-                                        </p>
+                                    </div>
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowOptions(!showOptions)}
+                                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                        >
+                                            <MoreVertical className="w-5 h-5 text-gray-600" />
+                                        </button>
+                                        {showOptions && (
+                                            <ChatOptions
+                                                selectedUser={selectedUser}
+                                                onClose={handleOptionsClose}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </div>

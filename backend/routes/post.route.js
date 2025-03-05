@@ -6,17 +6,37 @@ import upload from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
-router.get("/", protectRoute, getFeedPosts);
-router.post("/", protectRoute, upload.single('image'), createPost);
-router.get("/:id", protectRoute, getPostById);
-router.put("/update/:id", protectRoute, upload.single('image'), updatePost);
-router.delete("/delete/:id", protectRoute, deletePost);
-router.post("/:id/like", protectRoute, likePost);
+// Protect all routes
+router.use(protectRoute);
+
+// Post CRUD routes
+router.route("/")
+    .get(getFeedPosts)
+    .post(upload.single('image'), createPost);
+
+router.route("/:id")
+    .get(getPostById)
+    .put(upload.single('image'), updatePost)
+    .delete(deletePost);
+
+// Post interaction routes
+router.route("/:id/like")
+    .post(likePost)
+    .delete(likePost);
+
 // Comment routes
-router.post("/:postId/comments", protectRoute, createComment);
-router.put("/:postId/comments/:commentId", protectRoute, updateComment);
-router.delete("/:postId/comments/:commentId", protectRoute, deleteComment);
-router.post("/:postId/comments/:commentId/like", protectRoute, likeComment);
-router.post("/:postId/comments/:commentId/reply", protectRoute, replyToComment)
+router.route("/:postId/comments")
+    .post(createComment);
+
+router.route("/:postId/comments/:commentId")
+    .put(updateComment)
+    .delete(deleteComment);
+
+// Comment interaction routes
+router.route("/:postId/comments/:commentId/like")
+    .post(likeComment);
+
+router.route("/:postId/comments/:commentId/replies")
+    .post(replyToComment);
 
 export default router;

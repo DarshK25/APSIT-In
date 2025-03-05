@@ -1,46 +1,76 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+const API_URL = `${import.meta.env.VITE_API_URL}/api/v1`;
+
+console.log('API_URL:', API_URL); // Debug log
 
 const eventService = {
-    // Get all events
-    getAllEvents: async () => {
+    // Get all events (public route)
+    getAllEvents: async (queryParams = {}) => {
         try {
-            const response = await axios.get(`${API_URL}/events`);
-            return response.data.events;
+            console.log('Fetching events with params:', queryParams);
+            const params = new URLSearchParams(queryParams);
+            const url = `${API_URL}/events?${params}`;
+            console.log('Request URL:', url);
+            
+            const response = await axios.get(url); // Remove withCredentials for public route
+            console.log('Response:', response.data);
+            return response.data;
         } catch (error) {
-            console.error('Error fetching events:', error);
+            console.error('Error fetching events:', error.response || error);
             throw error;
         }
     },
 
-    // Create a new event (admin only)
+    // Create a new event (protected route)
     createEvent: async (eventData) => {
         try {
-            const response = await axios.post(`${API_URL}/events`, eventData);
-            return response.data.event;
+            const formData = new FormData();
+            Object.entries(eventData).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            const response = await axios.post(`${API_URL}/events`, formData, {
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
         } catch (error) {
             console.error('Error creating event:', error);
             throw error;
         }
     },
 
-    // Update an event (admin/moderator only)
+    // Update an event (protected route)
     updateEvent: async (eventId, eventData) => {
         try {
-            const response = await axios.put(`${API_URL}/events/${eventId}`, eventData);
-            return response.data.event;
+            const formData = new FormData();
+            Object.entries(eventData).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            const response = await axios.put(`${API_URL}/events/${eventId}`, formData, {
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
+            return response.data;
         } catch (error) {
             console.error('Error updating event:', error);
             throw error;
         }
     },
 
-    // Delete an event (admin only)
+    // Delete an event (protected route)
     deleteEvent: async (eventId) => {
         try {
-            await axios.delete(`${API_URL}/events/${eventId}`);
-            return eventId;
+            const response = await axios.delete(`${API_URL}/events/${eventId}`, {
+                withCredentials: true
+            });
+            return response.data;
         } catch (error) {
             console.error('Error deleting event:', error);
             throw error;

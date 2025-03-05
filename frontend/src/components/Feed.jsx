@@ -39,16 +39,14 @@ const Feed = ({ posts, setPosts }) => {
         )
       );
 
-      const updatedLikeStatus = post.liked
+      const updatedPost = post.liked
         ? await postService.unlikePost(postId)
         : await postService.likePost(postId);
 
       // Update with actual server response
       setPosts(prevPosts =>
         prevPosts.map(p =>
-          p._id === postId
-            ? { ...p, likes: updatedLikeStatus.likes, liked: updatedLikeStatus.liked }
-            : p
+          p._id === postId ? updatedPost : p
         )
       );
     } catch (error) {
@@ -78,6 +76,46 @@ const Feed = ({ posts, setPosts }) => {
     }
   };
 
+  const handleDelete = async (postId) => {
+    try {
+      await postService.deletePost(postId);
+      setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      throw error;
+    }
+  };
+
+  const handleUpdate = async (postId, content) => {
+    try {
+      const formData = new FormData();
+      formData.append('content', content);
+      const updatedPost = await postService.updatePost(postId, formData);
+      setPosts(prevPosts =>
+        prevPosts.map(p => p._id === postId ? updatedPost : p)
+      );
+      return updatedPost;
+    } catch (error) {
+      console.error("Error updating post:", error);
+      throw error;
+    }
+  };
+
+  // Transform posts to ensure proper data structure
+  const transformedPosts = posts.map(post => ({
+    ...post,
+    comments: Array.isArray(post.comments) ? post.comments.map(comment => ({
+      ...comment,
+      likes: typeof comment.likes === 'number' ? comment.likes : 0,
+      liked: Boolean(comment.liked),
+      replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+        ...reply,
+        likes: typeof reply.likes === 'number' ? reply.likes : 0,
+        liked: Boolean(reply.liked)
+      })) : []
+    })) : []
+  }));
+
   return (
     <div className="space-y-4">
       <CreatePost onPost={handlePost} />
@@ -85,13 +123,15 @@ const Feed = ({ posts, setPosts }) => {
         <div className="bg-white rounded-lg shadow p-4 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
         </div>
-      ) : posts.length > 0 ? (
-        posts.map((post) => (
+      ) : transformedPosts.length > 0 ? (
+        transformedPosts.map((post) => (
           <Post
             key={post._id}
             post={post}
             onLike={handleLikeToggle}
             onComment={handleComment}
+            onDelete={handleDelete}
+            onUpdate={handleUpdate}
           />
         ))
       ) : (
@@ -107,18 +147,46 @@ Feed.propTypes = {
   posts: PropTypes.arrayOf(
     PropTypes.shape({
       _id: PropTypes.string.isRequired,
-      content: PropTypes.string.isRequired,
+      content: PropTypes.string,
       image: PropTypes.string,
-      likes: PropTypes.number.isRequired,
-      liked: PropTypes.bool.isRequired,
+      likes: PropTypes.number,
+      liked: PropTypes.bool,
       createdAt: PropTypes.string.isRequired,
       author: PropTypes.shape({
+        _id: PropTypes.string.isRequired,
         username: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired,
         profilePicture: PropTypes.string,
         headline: PropTypes.string,
       }).isRequired,
-      comments: PropTypes.array.isRequired,
+      comments: PropTypes.arrayOf(
+        PropTypes.shape({
+          _id: PropTypes.string.isRequired,
+          content: PropTypes.string.isRequired,
+          createdAt: PropTypes.string.isRequired,
+          author: PropTypes.shape({
+            username: PropTypes.string.isRequired,
+            name: PropTypes.string.isRequired,
+            profilePicture: PropTypes.string,
+          }).isRequired,
+          likes: PropTypes.number,
+          liked: PropTypes.bool,
+          replies: PropTypes.arrayOf(
+            PropTypes.shape({
+              _id: PropTypes.string.isRequired,
+              content: PropTypes.string.isRequired,
+              createdAt: PropTypes.string.isRequired,
+              author: PropTypes.shape({
+                username: PropTypes.string.isRequired,
+                name: PropTypes.string.isRequired,
+                profilePicture: PropTypes.string,
+              }).isRequired,
+              likes: PropTypes.number,
+              liked: PropTypes.bool,
+            })
+          ),
+        })
+      ),
     })
   ).isRequired,
   setPosts: PropTypes.func.isRequired,

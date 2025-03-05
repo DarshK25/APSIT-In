@@ -11,10 +11,14 @@ import LandingPage from './Pages/LandingPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext.jsx';
+import EventsPage from './Pages/EventsPage';
+import EventDetailsPage from './Pages/EventDetailsPage';
+import CreateEventPage from './Pages/CreateEventPage';
+import EditEventPage from './Pages/EditEventPage';
 
 const App = () => {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Layout>
           <Toaster position="top-center" reverseOrder={false} />
@@ -23,6 +27,8 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/events/:id" element={<EventDetailsPage />} />
 
             {/* Protected Routes */}
             <Route
@@ -70,6 +76,22 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <NetworkPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/create"
+              element={
+                <ProtectedRoute>
+                  <CreateEventPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditEventPage />
                 </ProtectedRoute>
               }
             />

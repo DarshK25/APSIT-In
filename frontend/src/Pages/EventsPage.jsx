@@ -4,6 +4,7 @@ import { Calendar, MapPin, Clock, Users, Plus, Edit2, Trash2, MoreVertical } fro
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import eventService from '../api/eventService';
+import axios from 'axios';
 
 const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
     const [showMenu, setShowMenu] = useState(false);
@@ -50,7 +51,7 @@ const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
                 </div>
             </div>
             <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{event.name}</h3>
+                <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
                 <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
                 <div className="space-y-2">
                     <div className="flex items-center gap-2 text-gray-600">
@@ -67,8 +68,16 @@ const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
                         <Users className="w-4 h-4" />
-                        <span>{event.club}</span>
+                        <span>
+                            {event.category} - {event.department}
+                            {event.maxAttendees && ` (${event.attendees?.length || 0}/${event.maxAttendees})`}
+                        </span>
                     </div>
+                    {event.registrationDeadline && (
+                        <div className="text-sm text-gray-500">
+                            Registration closes: {format(new Date(event.registrationDeadline), 'MMM d, yyyy HH:mm')}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -77,12 +86,17 @@ const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
 
 const EventForm = ({ event, onSubmit, onCancel }) => {
     const [formData, setFormData] = useState(event || {
-        name: '',
+        title: '',
         description: '',
         date: '',
         time: '',
         location: '',
-        club: ''
+        category: '',
+        department: '',
+        maxAttendees: '',
+        registrationDeadline: '',
+        requirements: '',
+        isPublished: true
     });
 
     const handleSubmit = (e) => {
@@ -93,11 +107,11 @@ const EventForm = ({ event, onSubmit, onCancel }) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-gray-700">Event Name</label>
+                <label className="block text-sm font-medium text-gray-700">Event Title</label>
                 <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                 />
@@ -144,14 +158,77 @@ const EventForm = ({ event, onSubmit, onCancel }) => {
                     required
                 />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Category</label>
+                    <select
+                        value={formData.category}
+                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">Select Category</option>
+                        <option value="Coder's Club">Coder's Club</option>
+                        <option value="AIML Club">AIML Club</option>
+                        <option value="DevOps Club">DevOps Club</option>
+                        <option value="Cybersecurity Club">Cybersecurity Club</option>
+                        <option value="Data Science Club">Data Science Club</option>
+                        <option value="MAC Club">MAC Club</option>
+                        <option value="Student Council">Student Council</option>
+                        <option value="OJUS Team">OJUS Team</option>
+                        <option value="GDG APSIT">GDG APSIT</option>
+                        <option value="NSS Unit">NSS Unit</option>
+                        <option value="IEEE">IEEE</option>
+                        <option value="Antarang">Antarang</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Department</label>
+                    <select
+                        value={formData.department}
+                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">Select Department</option>
+                        <option value="Computer Engineering">Computer Engineering</option>
+                        <option value="IT Engineering">IT Engineering</option>
+                        <option value="AI&DS Engineering">AI&DS Engineering</option>
+                        <option value="EXTC Engineering">EXTC Engineering</option>
+                    </select>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Maximum Attendees</label>
+                    <input
+                        type="number"
+                        value={formData.maxAttendees}
+                        onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        min="1"
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Registration Deadline</label>
+                    <input
+                        type="datetime-local"
+                        value={formData.registrationDeadline}
+                        onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                    />
+                </div>
+            </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Club</label>
-                <input
-                    type="text"
-                    value={formData.club}
-                    onChange={(e) => setFormData({ ...formData, club: e.target.value })}
+                <label className="block text-sm font-medium text-gray-700">Requirements</label>
+                <textarea
+                    value={formData.requirements}
+                    onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
+                    rows="2"
+                    placeholder="Any specific requirements for attendees..."
                 />
             </div>
             <div className="flex justify-end gap-2">
@@ -181,21 +258,52 @@ const EventsPage = () => {
     const [showForm, setShowForm] = useState(false);
     const [editingEvent, setEditingEvent] = useState(null);
     const [filter, setFilter] = useState('all');
+    const [filters, setFilters] = useState({});
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
     const isAdmin = user?.email === 'darshkalathiya25@gmail.com' || user?.email === '23102187@apsit.edu.in';
 
+    console.log('User:', user); // Debug log
+
     useEffect(() => {
+        console.log('Effect triggered with filters:', filters, 'page:', pagination.page); // Debug log
         fetchEvents();
-    }, []);
+    }, [filters, pagination.page]);
 
     const fetchEvents = async () => {
         try {
+            console.log('Fetching events...'); // Debug log
             setLoading(true);
-            const data = await eventService.getAllEvents();
-            setEvents(data);
+            const queryParams = {
+                page: pagination.page,
+                limit: pagination.limit,
+                ...filters
+            };
+            
+            console.log('Query params:', queryParams); // Debug log
+            const response = await eventService.getAllEvents(queryParams);
+            console.log('Events response:', response); // Debug log
+
+            if (response.success) {
+                setEvents(response.data || []);
+                setPagination(prev => ({
+                    ...prev,
+                    ...response.pagination
+                }));
+            } else {
+                console.error('Failed response:', response); // Debug log
+                toast.error(response.message || 'Failed to load events');
+                setEvents([]);
+            }
         } catch (error) {
-            setError('Failed to fetch events');
-            toast.error('Failed to load events');
+            console.error('Fetch error:', error); // Debug log
+            if (error.response?.status === 404) {
+                setEvents([]);
+                setPagination(prev => ({ ...prev, total: 0, pages: 0 }));
+            } else {
+                toast.error(error.response?.data?.message || 'Failed to load events');
+                setEvents([]);
+            }
         } finally {
             setLoading(false);
         }
@@ -203,7 +311,12 @@ const EventsPage = () => {
 
     const handleCreateEvent = async (eventData) => {
         try {
-            await eventService.createEvent(eventData);
+            const eventWithDefaults = {
+                ...eventData,
+                isPublished: true,
+                status: 'upcoming'
+            };
+            await eventService.createEvent(eventWithDefaults);
             toast.success('Event created successfully');
             setShowForm(false);
             fetchEvents();
@@ -214,12 +327,39 @@ const EventsPage = () => {
 
     const handleUpdateEvent = async (eventData) => {
         try {
-            await eventService.updateEvent(editingEvent._id, eventData);
+            console.log('Updating event with data:', eventData);
+            
+            // Format dates properly and clean up the data
+            const formattedData = {
+                title: eventData.title,
+                description: eventData.description,
+                date: new Date(eventData.date).toISOString(),
+                time: eventData.time,
+                location: eventData.location,
+                category: eventData.category,
+                department: eventData.department,
+                maxAttendees: parseInt(eventData.maxAttendees) || null,
+                registrationDeadline: new Date(eventData.registrationDeadline).toISOString(),
+                requirements: eventData.requirements,
+                isPublished: eventData.isPublished
+            };
+
+            // Remove any undefined or null values
+            Object.keys(formattedData).forEach(key => {
+                if (formattedData[key] === undefined || formattedData[key] === null) {
+                    delete formattedData[key];
+                }
+            });
+
+            console.log('Formatted event data:', formattedData);
+            
+            await eventService.updateEvent(editingEvent._id, formattedData);
             toast.success('Event updated successfully');
             setEditingEvent(null);
             fetchEvents();
         } catch (error) {
-            toast.error('Failed to update event');
+            console.error('Error updating event:', error.response?.data || error);
+            toast.error(error.response?.data?.message || 'Failed to update event');
         }
     };
 
@@ -235,9 +375,47 @@ const EventsPage = () => {
         }
     };
 
+    const handleRegister = async (eventId) => {
+        try {
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/api/v1/events/${eventId}/register`,
+                {},
+                { withCredentials: true }
+            );
+
+            if (response.data.success) {
+                toast.success('Successfully registered for event');
+                fetchEvents(); // Refresh events list
+            } else {
+                throw new Error(response.data.message || 'Failed to register');
+            }
+        } catch (error) {
+            console.error('Failed to register:', error);
+            toast.error(error.response?.data?.message || 'Failed to register for event');
+        }
+    };
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => ({ ...prev, [name]: value }));
+        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on filter change
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            category: '',
+            department: '',
+            status: '',
+            search: '',
+            startDate: '',
+            endDate: ''
+        });
+        setPagination(prev => ({ ...prev, page: 1 }));
+    };
+
     const filteredEvents = events.filter(event => {
         if (filter === 'all') return true;
-        return event.club.toLowerCase() === filter.toLowerCase();
+        return event.category.toLowerCase() === filter.toLowerCase();
     });
 
     if (loading) {

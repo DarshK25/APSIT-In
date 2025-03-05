@@ -1,6 +1,7 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
+import Report from "../models/report.model.js";
 
 export const getUsersForSidebar = async (req, res) => {
     try {
@@ -119,6 +120,103 @@ export const sendMessage = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in sendMessage: ", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const muteChat = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { muted } = req.body;
+        const currentUserId = req.user._id;
+
+        // Update user's muted chats in their preferences/settings
+        await User.findByIdAndUpdate(currentUserId, {
+            $set: { [`mutedChats.${userId}`]: muted }
+        });
+
+        res.json({
+            success: true,
+            message: muted ? 'Chat muted successfully' : 'Chat unmuted successfully'
+        });
+    } catch (error) {
+        console.error("Error in muteChat: ", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const reportUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const reporterId = req.user._id;
+
+        // Create a report record
+        // This is a basic implementation - you might want to add more fields and validation
+        await Report.create({
+            reportedUser: userId,
+            reportedBy: reporterId,
+            type: 'chat',
+            status: 'pending'
+        });
+
+        res.json({
+            success: true,
+            message: 'User reported successfully'
+        });
+    } catch (error) {
+        console.error("Error in reportUser: ", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const blockUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUserId = req.user._id;
+
+        // Add user to blocked list
+        await User.findByIdAndUpdate(currentUserId, {
+            $addToSet: { blockedUsers: userId }
+        });
+
+        // Remove connection if exists
+        await User.findByIdAndUpdate(currentUserId, {
+            $pull: { connections: userId }
+        });
+
+        await User.findByIdAndUpdate(userId, {
+            $pull: { connections: currentUserId }
+        });
+
+        res.json({
+            success: true,
+            message: 'User blocked successfully'
+        });
+    } catch (error) {
+        console.error("Error in blockUser: ", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const deleteChat = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const currentUserId = req.user._id;
+
+        // Delete all messages between the two users
+        await Message.deleteMany({
+            $or: [
+                { sender: currentUserId, recipient: userId },
+                { sender: userId, recipient: currentUserId }
+            ]
+        });
+
+        res.json({
+            success: true,
+            message: 'Chat deleted successfully'
+        });
+    } catch (error) {
+        console.error("Error in deleteChat: ", error);
         res.status(500).json({ success: false, message: "Server Error" });
     }
 }; 
