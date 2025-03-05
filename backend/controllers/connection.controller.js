@@ -139,15 +139,19 @@ export const getUserConnections = async (req, res) => {
 	try {
 		const userId = req.user._id;
 
-		const user = await User.findById(userId).populate(
-			"connections",
-			"name username profilePicture headline connections"
-		);
+		const user = await User.findById(userId).populate({
+			path: 'connections',
+			select: 'name username profilePicture headline department yearOfStudy'
+		});
+
+		if (!user) {
+			return res.status(404).json({ success: false, message: "User not found" });
+		}
 
 		res.json(user.connections);
 	} catch (error) {
 		console.error("Error in getUserConnections controller:", error);
-		res.status(500).json({ message: "Server error" });
+		res.status(500).json({ success: false, message: "Server Error" });
 	}
 };
 

@@ -6,6 +6,7 @@ import HomePage from './Pages/HomePage.jsx';
 import NotificationsPage from './Pages/NotificationsPage.jsx';
 import ProfilePage from './Pages/ProfilePage.jsx';
 import NetworkPage from './Pages/NetworkPage.jsx';
+import MessagesPage from './Pages/MessagesPage.jsx';
 import LandingPage from './Pages/LandingPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { Toaster } from 'react-hot-toast';
@@ -29,6 +30,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <MessagesPage />
                 </ProtectedRoute>
               }
             />

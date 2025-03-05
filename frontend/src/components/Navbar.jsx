@@ -1,26 +1,138 @@
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Bell, Home, LogOut, User, Users } from "lucide-react";
+import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 const Navbar = ({ children }) => {
     const { user, logout } = useAuth();
-    // These would come from an API call in a real app
-    const unreadConnectionRequestsCount = 3;
-    const unreadNotificationCount = 5;
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [unreadCounts, setUnreadCounts] = useState({
+        unreadConnectionRequestsCount: 0,
+        unreadNotificationCount: 0,
+        unreadMessagesCount: 0
+    });
+
+    // Fetch unread counts
+    useEffect(() => {
+        const fetchUnreadCounts = async () => {
+            if (!user) return;
+            
+            try {
+                const response = await axios.get('http://localhost:3000/api/v1/users/unread-counts', {
+                    withCredentials: true
+                });
+                if (response.data.success) {
+                    setUnreadCounts(response.data.data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch unread counts:', error);
+            }
+        };
+
+        fetchUnreadCounts();
+        // Set up interval to fetch counts every minute
+        const interval = setInterval(fetchUnreadCounts, 60000);
+
+        return () => clearInterval(interval);
+    }, [user]);
 
     const handleLogout = async () => {
         await logout();
+    };
+
+    const handleSearch = async (query) => {
+        setSearchQuery(query);
+        if (query.trim().length === 0) {
+            setSearchResults([]);
+            setShowDropdown(false);
+            return;
+        }
+
+        setIsSearching(true);
+        setShowDropdown(true);
+
+        try {
+            const response = await axios.get(`http://localhost:3000/api/v1/users/search?query=${query}`, {
+                withCredentials: true
+            });
+            setSearchResults(response.data.data || []);
+        } catch (error) {
+            console.error('Search failed:', error);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleClickOutside = () => {
+        setTimeout(() => {
+            setShowDropdown(false);
+        }, 200);
     };
 
     return (
         <nav className='bg-white shadow-md sticky top-0 z-10'>
             <div className='max-w-7xl mx-auto px-4'>
                 <div className='flex justify-between items-center py-3'>
-                    <div className='flex items-center space-x-4'>
+                    <div className='flex items-center space-x-4 flex-grow'>
                         <Link to='/'>
                             <img className='h-8 rounded' src='ApsitINlogo.avif' alt='Apsit-In' />
                         </Link>
+                        {user && (
+                            <div className="relative flex-grow max-w-2xl">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Search users..."
+                                        value={searchQuery}
+                                        onChange={(e) => handleSearch(e.target.value)}
+                                        onBlur={handleClickOutside}
+                                        className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    />
+                                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                </div>
+                                {showDropdown && (searchResults.length > 0 || isSearching) && (
+                                    <div className="absolute mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+                                        {isSearching ? (
+                                            <div className="p-4 text-center text-gray-500">
+                                                Searching...
+                                            </div>
+                                        ) : (
+                                            searchResults.map((result) => (
+                                                <Link
+                                                    key={result._id}
+                                                    to={`/profile/${result.username}`}
+                                                    className="block px-4 py-3 hover:bg-gray-50 transition-colors duration-150 flex items-center space-x-3"
+                                                >
+                                                    {result.profilePicture ? (
+                                                        <img
+                                                            src={result.profilePicture}
+                                                            alt={result.name}
+                                                            className="w-8 h-8 rounded-full"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                                            <span className="text-blue-600 font-medium">
+                                                                {result.name.charAt(0)}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <div className="font-medium text-gray-900">{result.name}</div>
+                                                        <div className="text-sm text-gray-500">@{result.username}</div>
+                                                    </div>
+                                                </Link>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div className='flex items-center gap-4 md:gap-6'>
                         {user ? (
@@ -32,18 +144,31 @@ const Navbar = ({ children }) => {
                                 <Link to='/network' className='text-neutral flex flex-col items-center relative'>
                                     <Users size={20} />
                                     <span className='text-xs hidden md:block'>My Network</span>
-                                    {unreadConnectionRequestsCount > 0 && (
+                                    {unreadCounts.unreadConnectionRequestsCount > 0 && (
                                         <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
-                                            {unreadConnectionRequestsCount}
+                                            {unreadCounts.unreadConnectionRequestsCount}
                                         </span>
                                     )}
+                                </Link>
+                                <Link to='/messages' className='text-neutral flex flex-col items-center relative'>
+                                    <MessageSquare size={20} />
+                                    <span className='text-xs hidden md:block'>Messages</span>
+                                    {unreadCounts.unreadMessagesCount > 0 && (
+                                        <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
+                                            {unreadCounts.unreadMessagesCount}
+                                        </span>
+                                    )}
+                                </Link>
+                                <Link to='/events' className='text-neutral flex flex-col items-center relative'>
+                                    <Calendar size={20} />
+                                    <span className='text-xs hidden md:block'>Events</span>
                                 </Link>
                                 <Link to='/notifications' className='text-neutral flex flex-col items-center relative'>
                                     <Bell size={20} />
                                     <span className='text-xs hidden md:block'>Notifications</span>
-                                    {unreadNotificationCount > 0 && (
+                                    {unreadCounts.unreadNotificationCount > 0 && (
                                         <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
-                                            {unreadNotificationCount}
+                                            {unreadCounts.unreadNotificationCount}
                                         </span>
                                     )}
                                 </Link>

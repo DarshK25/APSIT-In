@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema({
+const connectionSchema = new mongoose.Schema({
     sender: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -11,19 +11,12 @@ const messageSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
-    content: {
+    status: {
         type: String,
-        required: true
-    },
-    isRead: {
-        type: Boolean,
-        default: false
-    },
-    image: {
-        type: String,
-        default: " ",
+        enum: ["pending", "accepted", "rejected"],
+        default: "pending"
     }
 }, { timestamps: true });
 
-const Message = mongoose.model("Message", messageSchema);
-export default Message;
+const Connection = mongoose.model("Connection", connectionSchema);
+export default Connection; 

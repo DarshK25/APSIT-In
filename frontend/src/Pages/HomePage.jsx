@@ -4,9 +4,9 @@ import { toast } from "react-hot-toast";
 import Sidebar from "../components/Sidebar.jsx";
 import Feed from "../components/Feed.jsx";
 import Recommendations from "../components/Recommendations.jsx";
-import userService from "../api/userService.js";
-import postService from "../api/postService.js";
-import authService from "../api/authService.js";
+import userService from "../api/userService";
+import postService from "../api/postService";
+import authService from "../api/authService";
 
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center">
