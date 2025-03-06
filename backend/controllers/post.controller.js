@@ -20,6 +20,14 @@ export const getFeedPosts = async (req, res) => {
                 {
                     path: "author",
                     select: "name username profilePicture"
+                },
+                {
+                    path: "replies",
+                    match: { parentComment: { $exists: true } },
+                    populate: {
+                        path: "author",
+                        select: "name username profilePicture"
+                    }
                 }
             ]
         })
@@ -32,9 +40,13 @@ export const getFeedPosts = async (req, res) => {
             liked: post.likes.includes(req.user._id),
             comments: post.comments.map(comment => ({
                 ...comment,
-                likes: comment.likes.length,
-                liked: comment.likes.includes(req.user._id),
-                replyCount: comment.replyCount || 0
+                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                liked: Array.isArray(comment.likes) ? comment.likes.includes(req.user._id) : false,
+                replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+                    ...reply,
+                    likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                    liked: Array.isArray(reply.likes) ? reply.likes.includes(req.user._id) : false
+                })) : []
             }))
         }));
 
@@ -75,17 +87,26 @@ export const createPost = async (req, res) => {
         // Handle image upload if present
         if (req.file) {
             try {
-                const result = await cloudinary.uploader.upload(req.file.path);
+                const result = await cloudinary.uploader.upload(req.file.path, {
+                    folder: 'posts',
+                    resource_type: 'auto'
+                });
                 post.image = result.secure_url;
+                // Clean up the local file after successful upload
                 await fs.unlink(req.file.path);
             } catch (uploadError) {
                 console.error("Error uploading to Cloudinary:", uploadError);
+                // Clean up the local file if upload fails
                 if (req.file) {
-                    await fs.unlink(req.file.path).catch(console.error);
+                    try {
+                        await fs.unlink(req.file.path);
+                    } catch (unlinkError) {
+                        console.error("Error deleting local file:", unlinkError);
+                    }
                 }
                 return res.status(500).json({ 
                     success: false, 
-                    message: "Error uploading image" 
+                    message: "Error uploading image. Please try again." 
                 });
             }
         }
@@ -117,7 +138,7 @@ export const createPost = async (req, res) => {
                         Notification.create({
                             recipient: connectionId,
                             sender: userId,
-                            type: "newPost",
+                            type: "post",
                             message: `${user.name} shared a new post`,
                             post: post._id
                         }).catch(error => {
@@ -158,10 +179,20 @@ export const getPostById = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
-                populate: {
-                    path: "author",
-                    select: "name username profilePicture"
-                }
+                populate: [
+                    {
+                        path: "author",
+                        select: "name username profilePicture"
+                    },
+                    {
+                        path: "replies",
+                        match: { parentComment: { $exists: true } },
+                        populate: {
+                            path: "author",
+                            select: "name username profilePicture"
+                        }
+                    }
+                ]
             });
 
         if (!post) {
@@ -406,6 +437,117 @@ export const likePost = async (req, res) => {
         return res.status(500).json({ 
             success: false, 
             message: error.message || "Failed to process like" 
+        });
+    }
+};
+
+export const addComment = async (req, res) => {
+    try {
+        const { content } = req.body;
+        const { postId } = req.params;
+        const { parentCommentId } = req.body; // Optional, for replies
+        const userId = req.user._id;
+
+        // Validate content
+        if (!content || !content.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Comment content is required"
+            });
+        }
+
+        // Check if post exists
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                message: "Post not found"
+            });
+        }
+
+        // Create the comment
+        const comment = new Comment({
+            content: content.trim(),
+            author: userId,
+            post: postId,
+            parentComment: parentCommentId || null
+        });
+
+        // Save the comment
+        await comment.save();
+
+        // If this is a reply, update the parent comment's replyCount
+        if (parentCommentId) {
+            await Comment.findByIdAndUpdate(parentCommentId, {
+                $inc: { replyCount: 1 }
+            });
+        }
+
+        // Add comment to post's comments array
+        post.comments.push(comment._id);
+        await post.save();
+
+        // Create notification for post author if it's not their own comment
+        if (post.author.toString() !== userId.toString()) {
+            const user = await User.findById(userId).select("name");
+            if (user) {
+                await Notification.create({
+                    recipient: post.author,
+                    sender: userId,
+                    type: "comment",
+                    message: `${user.name} commented on your post`,
+                    post: postId
+                });
+            }
+        }
+
+        // Fetch the updated post with populated fields
+        const updatedPost = await Post.findById(postId)
+            .populate("author", "name username profilePicture headline")
+            .populate({
+                path: "comments",
+                populate: [
+                    {
+                        path: "author",
+                        select: "name username profilePicture"
+                    },
+                    {
+                        path: "replies",
+                        match: { parentComment: { $exists: true } },
+                        populate: {
+                            path: "author",
+                            select: "name username profilePicture"
+                        }
+                    }
+                ]
+            });
+
+        // Transform the post for response
+        const transformedPost = {
+            ...updatedPost.toObject(),
+            likes: Array.isArray(updatedPost.likes) ? updatedPost.likes.length : 0,
+            liked: Array.isArray(updatedPost.likes) ? updatedPost.likes.includes(userId) : false,
+            comments: Array.isArray(updatedPost.comments) ? updatedPost.comments.map(comment => ({
+                ...comment,
+                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                liked: Array.isArray(comment.likes) ? comment.likes.includes(userId) : false,
+                replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+                    ...reply,
+                    likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                    liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
+                })) : []
+            })) : []
+        };
+
+        return res.status(201).json({
+            success: true,
+            post: transformedPost
+        });
+    } catch (error) {
+        console.error("Error in addComment:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Failed to add comment"
         });
     }
 };
