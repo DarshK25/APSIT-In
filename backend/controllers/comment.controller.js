@@ -1,11 +1,12 @@
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 
 export const createComment = async (req, res) => {
     try {
-        const { content } = req.body;
-        const postId = req.params.postId;
+        const { content, postId } = req.body;
+        const userId = req.user._id;
 
         if (!content || content.trim().length === 0) {
             return res.status(400).json({
@@ -14,177 +15,115 @@ export const createComment = async (req, res) => {
             });
         }
 
-        const post = await Post.findById(postId).populate("author");
+        const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ success: false, message: "Post not found" });
         }
 
-        const comment = new Comment({
-            author: req.user._id,
+        const comment = await Comment.create({
+            author: userId,
             post: postId,
-            content: content.trim(),
-            likes: [],
-            replies: [],
+            content: content.trim()
         });
 
-        await comment.save();
-
+        // Add comment to post
         post.comments.push(comment._id);
         await post.save();
 
-        // Create notification for comment if the author is not the current user
-        if (post.author._id.toString() !== req.user._id.toString()) {
+        // Create notification for post owner
+        if (post.author.toString() !== userId.toString()) {
+            const user = await User.findById(userId).select("name");
             await Notification.create({
-                recipient: post.author._id,
+                recipient: post.author,
+                sender: userId,
                 type: "comment",
-                relatedUser: req.user._id,
-                relatedPost: post._id
+                message: `${user.name} commented on your post`,
+                post: postId
             });
         }
 
-        // Get updated post with all comments
-        const updatedPost = await Post.findById(postId)
-            .populate("author", "name username profilePicture headline")
-            .populate({
-                path: "comments",
-                populate: [
-                    {
-                        path: "author",
-                        select: "name username profilePicture"
-                    },
-                    {
-                        path: "replies",
-                        populate: {
-                            path: "author",
-                            select: "name username profilePicture"
-                        }
-                    }
-                ]
-            });
-
-        // Transform the post data
-        const transformedPost = {
-            ...updatedPost.toObject(),
-            likes: updatedPost.likes.length,
-            liked: updatedPost.likes.includes(req.user._id),
-            comments: updatedPost.comments.map(comment => ({
-                ...comment,
-                likes: comment.likes.length,
-                liked: comment.likes.includes(req.user._id),
-                replies: comment.replies?.map(reply => ({
-                    ...reply,
-                    likes: reply.likes.length,
-                    liked: reply.likes.includes(req.user._id)
-                }))
-            }))
-        };
+        // Populate comment with author details
+        const populatedComment = await Comment.findById(comment._id)
+            .populate("author", "name username profilePicture");
 
         res.status(201).json({
             success: true,
             message: "Comment created successfully",
-            post: transformedPost
+            comment: populatedComment
         });
     } catch (error) {
-        console.error("Error in createComment: ", error);
+        console.error("Error in createComment:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
-}
+};
 
 export const updateComment = async (req, res) => {
     try {
         const { content } = req.body;
-        const commentId = req.params.commentId;
+        const { commentId } = req.params;
+        const userId = req.user._id;
 
-        const comment = await Comment.findById(commentId).populate("author", "name profilePicture");
-
-        if(!comment){
-            return res.status(404).json({success: false, message: "Comment not found"});
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ success: false, message: "Comment not found" });
         }
 
-        if(comment.author.toString() !== req.user._id.toString()){
-            return res.status(403).json({success: false, message: "You are not authorized to update this comment."});
+        if (comment.author.toString() !== userId.toString()) {
+            return res.status(403).json({ success: false, message: "You are not authorized to update this comment" });
         }
 
-        comment.content = content;
+        comment.content = content.trim();
         await comment.save();
 
-        res.status(200).json({success: true, message: "Comment updated successfully", comment});
+        const updatedComment = await Comment.findById(commentId)
+            .populate("author", "name username profilePicture");
+
+        res.status(200).json({
+            success: true,
+            message: "Comment updated successfully",
+            comment: updatedComment
+        });
     } catch (error) {
-        console.error("Error in updateComment: ", error);
-        res.status(500).json({success: false, message: "Server error"});
+        console.error("Error in updateComment:", error);
+        res.status(500).json({ success: false, message: "Server error" });
     }
-}
+};
 
 export const deleteComment = async (req, res) => {
     try {
         const { commentId } = req.params;
         const userId = req.user._id;
 
-        // Find the comment and populate post details
         const comment = await Comment.findById(commentId).populate('post');
         if (!comment) {
             return res.status(404).json({ success: false, message: "Comment not found" });
         }
 
         const { post } = comment;
-
-        // Check authorization: Either the comment author or the post author can delete the comment
         const isAuthorized = 
             comment.author.toString() === userId.toString() || 
             post.author.toString() === userId.toString();
 
         if (!isAuthorized) {
-            return res.status(403).json({ success: false, message: "You are not authorized to delete this comment." });
+            return res.status(403).json({ success: false, message: "You are not authorized to delete this comment" });
         }
 
-        // Remove the comment ID from the post's comments array
+        // Remove comment from post
         await Post.findByIdAndUpdate(post._id, {
             $pull: { comments: commentId }
         });
 
-        // Delete the comment
-        await Comment.deleteOne({ _id: commentId });
-
-        // Get updated post
-        const updatedPost = await Post.findById(post._id)
-            .populate("author", "name username profilePicture headline")
-            .populate({
-                path: "comments",
-                populate: [
-                    {
-                        path: "author",
-                        select: "name username profilePicture"
-                    },
-                    {
-                        path: "replies",
-                        populate: {
-                            path: "author",
-                            select: "name username profilePicture"
-                        }
-                    }
-                ]
-            });
-
-        const transformedPost = {
-            ...updatedPost.toObject(),
-            likes: updatedPost.likes.length,
-            liked: updatedPost.likes.includes(userId),
-            comments: updatedPost.comments.map(comment => ({
-                ...comment,
-                likes: comment.likes.length,
-                liked: comment.likes.includes(userId),
-                replies: comment.replies?.map(reply => ({
-                    ...reply,
-                    likes: reply.likes.length,
-                    liked: reply.likes.includes(userId)
-                }))
-            }))
-        };
+        // Delete comment and all its replies
+        await Comment.deleteMany({
+            $or: [
+                { _id: commentId },
+                { parentComment: commentId }
+            ]
+        });
 
         res.status(200).json({
             success: true,
-            message: "Comment deleted successfully",
-            post: transformedPost
+            message: "Comment deleted successfully"
         });
     } catch (error) {
         console.error("Error in deleteComment:", error);
@@ -193,75 +132,106 @@ export const deleteComment = async (req, res) => {
 };
 
 export const likeComment = async (req, res) => {
-    try{
-        const commentId = req.params.commentId;
-
+    try {
+        const { commentId } = req.params;
         const userId = req.user._id;
 
-        const comment = await Comment.findById(commentId).populate("author", "name profilePicture");
-        if(!comment){
-            return res.status(404).json({success: false, message: "Comment not found"});
-        }
-
-        const isLiked = comment.likes.includes(userId);
-        if(isLiked){
-            comment.likes.pull(userId); 
-        } else {
-            comment.likes.push(userId); 
-        }
-        await comment.save();
-
-        res.status(200).json({
-            success: true,
-            message: `Comment ${isLiked ? 'unliked' : 'liked'} successfully`,
-            comment,
-        });
-    } catch (error) {
-        console.error("Error in likeComment: ", error);
-        res.status(500).json({success: false, message: "Server error"});
-    }
-}
-
-export const replyToComment = async (req, res) => {
-    try {
-        const { content } = req.body;
-        const postId = req.params.postId;
-
-        const post = await Post.findById(postId);
-        if (!post) {
-            return res.status(404).json({ success: false, message: "Post not found" });
-        }
-
-        const commentId = req.params.commentId;
         const comment = await Comment.findById(commentId);
         if (!comment) {
             return res.status(404).json({ success: false, message: "Comment not found" });
         }
 
-        const reply = new Comment({
-            author: req.user._id,
-            post: postId,
-            content,
-            likes: [],
-            replies: [],
-        });
+        const isLiked = comment.likes.includes(userId);
+        if (isLiked) {
+            comment.likes = comment.likes.filter(id => id.toString() !== userId.toString());
+        } else {
+            comment.likes.push(userId);
+        }
 
-        await reply.save();
-
-        // Add reply ID to the parent comment's replies array
-        comment.replies.push(reply._id);
         await comment.save();
 
-        // Populate reply's author for response
-        const populatedReply = await reply.populate("author", "name profilePicture");
+        const updatedComment = await Comment.findById(commentId)
+            .populate("author", "name username profilePicture");
+
+        res.status(200).json({
+            success: true,
+            message: `Comment ${isLiked ? 'unliked' : 'liked'} successfully`,
+            comment: updatedComment
+        });
+    } catch (error) {
+        console.error("Error in likeComment:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+export const getCommentReplies = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const replies = await Comment.find({ parentComment: commentId })
+            .populate("author", "name username profilePicture")
+            .sort({ createdAt: 1 });
+
+        res.status(200).json({
+            success: true,
+            replies
+        });
+    } catch (error) {
+        console.error("Error in getCommentReplies:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+export const createReply = async (req, res) => {
+    try {
+        const { content } = req.body;
+        const { commentId } = req.params;
+        const userId = req.user._id;
+
+        if (!content || content.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Reply content is required and cannot be empty"
+            });
+        }
+
+        const parentComment = await Comment.findById(commentId);
+        if (!parentComment) {
+            return res.status(404).json({ success: false, message: "Parent comment not found" });
+        }
+
+        const reply = await Comment.create({
+            author: userId,
+            post: parentComment.post,
+            content: content.trim(),
+            parentComment: commentId
+        });
+
+        // Update parent comment's reply count
+        parentComment.replyCount += 1;
+        await parentComment.save();
+
+        // Create notification for comment author
+        if (parentComment.author.toString() !== userId.toString()) {
+            const user = await User.findById(userId).select("name");
+            await Notification.create({
+                recipient: parentComment.author,
+                sender: userId,
+                type: "reply",
+                message: `${user.name} replied to your comment`,
+                post: parentComment.post
+            });
+        }
+
+        const populatedReply = await Comment.findById(reply._id)
+            .populate("author", "name username profilePicture");
 
         res.status(201).json({
             success: true,
             message: "Reply created successfully",
-            reply: populatedReply,
+            reply: populatedReply
         });
     } catch (error) {
-        console.error("Error in replyToComment: ", error);
+        console.error("Error in createReply:", error);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };

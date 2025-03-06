@@ -2,8 +2,8 @@ import Post from "../models/post.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import Notification from "../models/notification.model.js" 
 import fs from 'fs/promises';
-import Comment from "../models/comment.model.js";
 import User from "../models/user.model.js";
+import Comment from "../models/comment.model.js";
 
 export const getFeedPosts = async (req, res) => {
     try {
@@ -20,13 +20,6 @@ export const getFeedPosts = async (req, res) => {
                 {
                     path: "author",
                     select: "name username profilePicture"
-                },
-                {
-                    path: "replies",
-                    populate: {
-                        path: "author",
-                        select: "name username profilePicture"
-                    }
                 }
             ]
         })
@@ -41,24 +34,20 @@ export const getFeedPosts = async (req, res) => {
                 ...comment,
                 likes: comment.likes.length,
                 liked: comment.likes.includes(req.user._id),
-                replies: comment.replies?.map(reply => ({
-                    ...reply,
-                    likes: reply.likes.length,
-                    liked: reply.likes.includes(req.user._id)
-                }))
+                replyCount: comment.replyCount || 0
             }))
         }));
 
         res.status(200).json({ 
             success: true, 
-            posts: transformedPosts // Changed from post to posts to match frontend expectation
+            posts: transformedPosts
         });
     } catch (error) {
         console.error("Error in getFeedPosts: ", error);
         res.status(500).json({ 
             success: false, 
             message: error.message || "Failed to fetch posts",
-            posts: [] // Changed from post to posts
+            posts: []
         });
     }
 }
@@ -164,17 +153,42 @@ export const createPost = async (req, res) => {
 };
 
 export const getPostById = async (req, res) => {
-    try{
+    try {
         const post = await Post.findById(req.params.id)
-        .populate("author", "name username profilePicture headline")
-        .populate("comments.user", "name username profilePicture headline");
-        if(!post){
-            return res.status(404).json({success: false, message: "Post not found"});
+            .populate("author", "name username profilePicture headline")
+            .populate({
+                path: "comments",
+                populate: {
+                    path: "author",
+                    select: "name username profilePicture"
+                }
+            });
+
+        if (!post) {
+            return res.status(404).json({ success: false, message: "Post not found" });
         }
-        res.status(200).json({success: true, post});
-    } catch(error) {
+
+        // Transform the post for response
+        const transformedPost = {
+            ...post.toObject(),
+            likes: Array.isArray(post.likes) ? post.likes.length : 0,
+            liked: Array.isArray(post.likes) ? post.likes.includes(req.user._id) : false,
+            comments: Array.isArray(post.comments) ? post.comments.map(comment => ({
+                ...comment,
+                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                liked: Array.isArray(comment.likes) ? comment.likes.includes(req.user._id) : false,
+                replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+                    ...reply,
+                    likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                    liked: Array.isArray(reply.likes) ? reply.likes.includes(req.user._id) : false
+                })) : []
+            })) : []
+        };
+
+        res.status(200).json({ success: true, post: transformedPost });
+    } catch (error) {
         console.error("Error in getPost: ", error);
-        res.status(500).json({success: false, message: "Server error"});
+        res.status(500).json({ success: false, message: "Server error" });
     }
 }
 
@@ -233,19 +247,10 @@ export const updatePost = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
-                populate: [
-                    {
-                        path: "author",
-                        select: "name username profilePicture"
-                    },
-                    {
-                        path: "replies",
-                        populate: {
-                            path: "author",
-                            select: "name username profilePicture"
-                        }
-                    }
-                ]
+                populate: {
+                    path: "author",
+                    select: "name username profilePicture"
+                }
             });
 
         // Transform the post for response
@@ -327,7 +332,7 @@ export const deletePost = async (req, res) => {
 
 export const likePost = async (req, res) => {
     try {
-        const { postId } = req.params;
+        const postId = req.params.id;
         const userId = req.user._id;
 
         const post = await Post.findById(postId).populate("author", "name");
@@ -335,220 +340,37 @@ export const likePost = async (req, res) => {
             return res.status(404).json({ success: false, message: "Post not found" });
         }
 
+        // Check if user has already liked the post
         const isLiked = post.likes.includes(userId);
+        
+        // Toggle like status
         if (isLiked) {
+            // Unlike: Remove user from likes array
             post.likes = post.likes.filter(id => id.toString() !== userId.toString());
         } else {
+            // Like: Add user to likes array
             post.likes.push(userId);
             
-            try {
-                // Create notification for post owner if it's not their own post
-                if (post.author._id.toString() !== userId.toString()) {
-                    const user = await User.findById(userId).select("name");
-                    if (user) {
-                        await Notification.create({
-                            recipient: post.author._id,
-                            sender: userId,
-                            type: "like",
-                            message: `${user.name} liked your post`,
-                            post: postId
-                        });
-                    }
+            // Create notification for post owner if it's not their own post
+            if (post.author._id.toString() !== userId.toString()) {
+                const user = await User.findById(userId).select("name");
+                if (user) {
+                    await Notification.create({
+                        recipient: post.author._id,
+                        sender: userId,
+                        type: "like",
+                        message: `${user.name} liked your post`,
+                        post: postId
+                    });
                 }
-            } catch (notificationError) {
-                console.error("Error creating like notification:", notificationError);
-                // Continue even if notification fails
             }
         }
 
-        await post.save();
-        return res.json({ 
-            success: true, 
-            likes: post.likes,
-            likesCount: post.likes.length 
-        });
-    } catch (error) {
-        console.error("Error in likePost:", error);
-        return res.status(500).json({ 
-            success: false, 
-            message: error.message || "Failed to process like" 
-        });
-    }
-};
-
-export const addComment = async (req, res) => {
-    try {
-        const { content } = req.body;
-        if (!content) {
-            return res.status(400).json({ success: false, message: "Comment content is required" });
-        }
-
-        const post = await Post.findById(req.params.id);
-        if (!post) {
-            return res.status(404).json({ success: false, message: "Post not found" });
-        }
-
-        const comment = {
-            content,
-            author: req.user._id,
-            likes: [],
-            replies: []
-        };
-
-        post.comments.push(comment);
+        // Save the updated post
         await post.save();
 
-        // Fetch the updated post with populated fields
-        const updatedPost = await Post.findById(post._id)
-            .populate("author", "name username profilePicture headline")
-            .populate({
-                path: "comments",
-                populate: [
-                    {
-                        path: "author",
-                        select: "name username profilePicture"
-                    },
-                    {
-                        path: "replies",
-                        populate: {
-                            path: "author",
-                            select: "name username profilePicture"
-                        }
-                    }
-                ]
-            });
-
-        // Create notification for comment if the author is not the current user
-        if (post.author.toString() !== req.user._id.toString()) {
-            const user = await User.findById(req.user._id).select("name");
-            await Notification.create({
-                recipient: post.author,
-                sender: req.user._id,
-                type: "comment",
-                message: `${user.name} commented on your post`,
-                post: post._id
-            });
-        }
-
-        const transformedPost = {
-            ...updatedPost.toObject(),
-            likes: updatedPost.likes.length,
-            liked: updatedPost.likes.includes(req.user._id),
-            comments: updatedPost.comments.map(comment => ({
-                ...comment,
-                likes: comment.likes.length,
-                liked: comment.likes.includes(req.user._id),
-                replies: comment.replies?.map(reply => ({
-                    ...reply,
-                    likes: reply.likes.length,
-                    liked: reply.likes.includes(req.user._id)
-                }))
-            }))
-        };
-
-        res.status(200).json({ success: true, post: transformedPost });
-    } catch (error) {
-        console.error("Error in addComment: ", error);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
-}
-
-export const likeComment = async (req, res) => {
-    try {
-        const post = await Post.findById(req.params.postId);
-        if (!post) {
-            return res.status(404).json({ success: false, message: "Post not found" });
-        }
-
-        const comment = post.comments.id(req.params.commentId);
-        if (!comment) {
-            return res.status(404).json({ success: false, message: "Comment not found" });
-        }
-
-        const isLiked = comment.likes.includes(req.user._id);
-        if (isLiked) {
-            comment.likes = comment.likes.filter(id => id.toString() !== req.user._id.toString());
-        } else {
-            comment.likes.push(req.user._id);
-        }
-
-        await post.save();
-
-        // Fetch the updated post with populated fields
-        const updatedPost = await Post.findById(post._id)
-            .populate("author", "name username profilePicture headline")
-            .populate({
-                path: "comments",
-                populate: [
-                    {
-                        path: "author",
-                        select: "name username profilePicture"
-                    },
-                    {
-                        path: "replies",
-                        populate: {
-                            path: "author",
-                            select: "name username profilePicture"
-                        }
-                    }
-                ]
-            });
-
-        const transformedPost = {
-            ...updatedPost.toObject(),
-            likes: updatedPost.likes.length,
-            liked: updatedPost.likes.includes(req.user._id),
-            comments: updatedPost.comments.map(comment => ({
-                ...comment,
-                likes: comment.likes.length,
-                liked: comment.likes.includes(req.user._id),
-                replies: comment.replies?.map(reply => ({
-                    ...reply,
-                    likes: reply.likes.length,
-                    liked: reply.likes.includes(req.user._id)
-                }))
-            }))
-        };
-
-        res.status(200).json({ success: true, post: transformedPost });
-    } catch (error) {
-        console.error("Error in likeComment: ", error);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
-}
-
-export const replyToComment = async (req, res) => {
-    try {
-        const { content } = req.body;
-        if (!content) {
-            return res.status(400).json({ success: false, message: "Reply content is required" });
-        }
-
-        const post = await Post.findById(req.params.postId);
-        if (!post) {
-            return res.status(404).json({ success: false, message: "Post not found" });
-        }
-
-        const comment = post.comments.id(req.params.commentId);
-        if (!comment) {
-            return res.status(404).json({ success: false, message: "Comment not found" });
-        }
-
-        const reply = {
-            content,
-            author: req.user._id,
-            likes: [],
-            createdAt: new Date()
-        };
-
-        if (!comment.replies) {
-            comment.replies = [];
-        }
-        comment.replies.push(reply);
-        await post.save();
-
-        // Fetch the updated post with populated fields
-        const updatedPost = await Post.findById(post._id)
+        // Fetch the updated post with all necessary fields
+        const updatedPost = await Post.findById(postId)
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
@@ -558,52 +380,32 @@ export const replyToComment = async (req, res) => {
                 }
             });
 
+        // Transform the post data
         const transformedPost = {
             ...updatedPost.toObject(),
             likes: updatedPost.likes.length,
-            liked: updatedPost.likes.includes(req.user._id)
+            liked: updatedPost.likes.includes(userId),
+            comments: updatedPost.comments.map(comment => ({
+                ...comment,
+                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                liked: Array.isArray(comment.likes) ? comment.likes.includes(userId) : false,
+                replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+                    ...reply,
+                    likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                    liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
+                })) : []
+            }))
         };
 
-        res.status(200).json({ success: true, post: transformedPost });
-    } catch (error) {
-        console.error("Error in replyToComment: ", error);
-        res.status(500).json({ success: false, message: "Server error" });
-    }
-}
-
-export const createComment = async (req, res) => {
-    try {
-        const { postId } = req.params;
-        const { content } = req.body;
-        const userId = req.user._id;
-
-        const post = await Post.findById(postId);
-        if (!post) {
-            return res.status(404).json({ message: "Post not found" });
-        }
-
-        const comment = await Comment.create({
-            author: userId,
-            post: postId,
-            content
+        return res.json({ 
+            success: true, 
+            post: transformedPost
         });
-
-        // Create notification for post owner if it's not their own comment
-        if (post.author.toString() !== userId.toString()) {
-            const user = await User.findById(userId).select("name");
-            await Notification.create({
-                recipient: post.author,
-                sender: userId,
-                type: "comment",
-                message: `${user.name} commented on your post`,
-                post: postId
-            });
-        }
-
-        res.status(201).json({ success: true, comment });
     } catch (error) {
-        console.error("Error in createComment:", error);
-        res.status(500).json({ success: false, message: error.message || "Failed to create comment" });
+        console.error("Error in likePost:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: error.message || "Failed to process like" 
+        });
     }
 };
-

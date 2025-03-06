@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import PropTypes from 'prop-types';
+import { Image, X } from 'lucide-react';
 
 const CreatePost = ({ onPost }) => {
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
 
   const handlePost = async () => {
     if (!content.trim() && !image) {
@@ -23,10 +25,10 @@ const CreatePost = ({ onPost }) => {
       await onPost(formData);
       setContent("");
       setImage(null);
-      toast.success("Post created successfully!");
+      setImagePreview(null);
     } catch (error) {
       console.error("Error creating post:", error);
-      toast.error(error?.response?.data?.message || "Failed to create post");
+      toast.error(error.message || "Failed to create post");
     } finally {
       setIsSubmitting(false);
     }
@@ -35,23 +37,40 @@ const CreatePost = ({ onPost }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size should be less than 5MB");
         return;
       }
+
+      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast.error("Please select an image file");
         return;
       }
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
       setImage(file);
+      setImagePreview(previewUrl);
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
     }
   };
 
   return (
     <div className="bg-white rounded-lg shadow p-4 mb-4">
-      <h2 className="text-xl font-bold mb-2">Create Post</h2>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xl font-bold">Create Post</h2>
+      </div>
       <textarea
-        className="w-full border rounded p-2"
+        className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         placeholder="What's on your mind?"
         rows="3"
         value={content}
@@ -59,23 +78,41 @@ const CreatePost = ({ onPost }) => {
         disabled={isSubmitting}
         maxLength={1000}
       />
-      <div className="mt-2">
-        <label
-          htmlFor="post-image"
-          className="bg-gray-200 text-gray-800 py-1 px-4 rounded cursor-pointer inline-block mr-2"
-        >
-          Add Image
-        </label>
-        <input
-          id="post-image"
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleImageChange}
-          disabled={isSubmitting}
-        />
+      {imagePreview && (
+        <div className="relative mt-4">
+          <img
+            src={imagePreview}
+            alt="Preview"
+            className="w-full h-auto rounded-lg"
+          />
+          <button
+            onClick={removeImage}
+            className="absolute top-2 right-2 p-1 bg-gray-800 bg-opacity-50 rounded-full text-white hover:bg-opacity-75 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <label
+            htmlFor="post-image"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer transition-colors"
+          >
+            <Image size={20} />
+            <span>Add Image</span>
+          </label>
+          <input
+            id="post-image"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageChange}
+            disabled={isSubmitting}
+          />
+        </div>
         <button
-          className={`bg-blue-500 text-white py-2 px-4 rounded ${
+          className={`px-6 py-2 rounded-lg bg-blue-500 text-white font-medium transition-colors ${
             isSubmitting ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
           }`}
           onClick={handlePost}
@@ -84,21 +121,9 @@ const CreatePost = ({ onPost }) => {
           {isSubmitting ? "Posting..." : "Post"}
         </button>
       </div>
-      {image && (
-        <div className="mt-4">
-          <img
-            src={URL.createObjectURL(image)}
-            alt="Selected"
-            className="max-w-full h-auto rounded"
-          />
-          <button
-            onClick={() => setImage(null)}
-            className="mt-2 text-red-500 text-sm hover:text-red-600"
-          >
-            Remove image
-          </button>
-        </div>
-      )}
+      <div className="mt-2 text-sm text-gray-500">
+        {content.length}/1000 characters
+      </div>
     </div>
   );
 };

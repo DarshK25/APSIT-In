@@ -27,21 +27,19 @@ class PostService {
 
   async likePost(postId) {
     try {
+      console.log('Attempting to like/unlike post:', postId);
+      
       const response = await axiosInstance.post(`/posts/${postId}/like`);
+      console.log('Like/unlike response:', response.data);
       return response.data.post;
     } catch (error) {
-      console.error('Error liking post:', error);
-      throw new Error(error.response?.data?.message || 'Failed to like post');
-    }
-  }
-
-  async unlikePost(postId) {
-    try {
-      const response = await axiosInstance.delete(`/posts/${postId}/like`);
-      return response.data.post;
-    } catch (error) {
-      console.error('Error unliking post:', error);
-      throw new Error(error.response?.data?.message || 'Failed to unlike post');
+      console.error('Error toggling like:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        postId: postId
+      });
+      throw new Error(error.response?.data?.message || 'Failed to toggle like');
     }
   }
 

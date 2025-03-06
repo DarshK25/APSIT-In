@@ -19,21 +19,39 @@ const commentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     }],
-    replies: [{
+    parentComment: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Comment",
-        createdAt: {
-            type: Date,
-            default: Date.now,
-        },
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now,
+        default: null
     },
-},{
+    replyCount: {
+        type: Number,
+        default: 0
+    }
+}, {
     timestamps: true,
-})
+});
+
+// Add indexes for better query performance
+commentSchema.index({ post: 1, createdAt: -1 });
+commentSchema.index({ author: 1 });
+commentSchema.index({ parentComment: 1 });
+
+// Virtual for replies
+commentSchema.virtual('replies', {
+    ref: 'Comment',
+    localField: '_id',
+    foreignField: 'parentComment',
+    count: true
+});
+
+// Update replyCount before saving
+commentSchema.pre('save', async function(next) {
+    if (this.isNew) {
+        this.replyCount = 0;
+    }
+    next();
+});
 
 const Comment = mongoose.model("Comment", commentSchema);
 export default Comment;

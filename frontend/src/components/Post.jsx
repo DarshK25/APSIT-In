@@ -14,53 +14,75 @@ const Comment = ({ comment, postId, onUpdate }) => {
   const [replyContent, setReplyContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!comment || typeof comment !== 'object') {
-    console.error("Invalid comment data: comment is null or not an object", comment);
-    return null;
-  }
-
-  if (!comment._id || !comment.content || !comment.author) {
-    console.error("Invalid comment data: missing required fields", {
-      hasId: Boolean(comment._id),
-      hasContent: Boolean(comment.content),
-      hasAuthor: Boolean(comment.author)
-    });
-    return null;
-  }
-
-  if (!comment.author.username || !comment.author.name) {
-    console.error("Invalid comment data: missing author fields", comment.author);
-    return null;
-  }
+  // Transform and validate comment data
+  const transformedComment = {
+    ...comment,
+    _id: comment?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    content: comment?.content || 'No content available',
+    createdAt: comment?.createdAt || new Date().toISOString(),
+    author: comment?.author || {
+      username: 'unknown',
+      name: 'Unknown User',
+      profilePicture: '/avatar.png'
+    },
+    likes: typeof comment?.likes === 'number' ? comment.likes : 0,
+    liked: Boolean(comment?.liked),
+    replies: Array.isArray(comment?.replies) 
+      ? comment.replies.map(reply => ({
+          ...reply,
+          _id: reply?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          content: reply?.content || 'No content available',
+          createdAt: reply?.createdAt || new Date().toISOString(),
+          author: reply?.author || {
+            username: 'unknown',
+            name: 'Unknown User',
+            profilePicture: '/avatar.png'
+          },
+          likes: typeof reply?.likes === 'number' ? reply.likes : 0,
+          liked: Boolean(reply?.liked)
+        }))
+      : []
+  };
 
   const handleLikeComment = async () => {
-    if (!user?._id) return;
+    if (!user?._id) {
+      toast.error("Please login to like comments");
+      return;
+    }
     
     try {
       setIsLiking(true);
-      await postService.likeComment(postId, comment._id);
+      await postService.likeComment(postId, transformedComment._id);
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Error liking comment:", error);
-      toast.error("Failed to like comment");
+      toast.error(error.message || "Failed to like comment");
     } finally {
       setIsLiking(false);
     }
   };
 
   const handleReply = async () => {
-    if (!replyContent.trim() || !user?._id) return;
+    if (!user?._id) {
+      toast.error("Please login to reply to comments");
+      return;
+    }
+
+    if (!replyContent.trim()) {
+      toast.error("Reply cannot be empty");
+      return;
+    }
 
     try {
       setIsSubmitting(true);
-      await postService.replyToComment(postId, comment._id, replyContent.trim());
+      await postService.replyToComment(postId, transformedComment._id, replyContent.trim());
       setReplyContent('');
       setShowReplyInput(false);
       if (onUpdate) onUpdate();
       toast.success("Reply added successfully!");
     } catch (error) {
       console.error("Error replying to comment:", error);
-      toast.error("Failed to add reply");
+      toast.error(error.message || "Failed to add reply");
     } finally {
       setIsSubmitting(false);
     }
@@ -69,38 +91,38 @@ const Comment = ({ comment, postId, onUpdate }) => {
   return (
     <div className="bg-gray-50 rounded-lg p-3">
       <div className="flex items-center space-x-2">
-        <Link to={`/profile/${comment.author.username}`}>
+        <Link to={`/profile/${transformedComment.author.username}`}>
           <img
-            src={comment.author.profilePicture || "/avatar.png"}
-            alt={comment.author.name || "User"}
+            src={transformedComment.author.profilePicture || "/avatar.png"}
+            alt={transformedComment.author.name || "User"}
             className="w-8 h-8 rounded-full object-cover"
           />
         </Link>
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <Link
-              to={`/profile/${comment.author.username}`}
+              to={`/profile/${transformedComment.author.username}`}
               className="font-semibold text-sm hover:underline"
             >
-              {comment.author.name || comment.author.username}
+              {transformedComment.author.name || transformedComment.author.username}
             </Link>
             <span className="text-gray-400 text-xs">
-              {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+              {formatDistanceToNow(new Date(transformedComment.createdAt), { addSuffix: true })}
             </span>
           </div>
-          <p className="text-gray-700 text-sm mt-1">{comment.content}</p>
+          <p className="text-gray-700 text-sm mt-1">{transformedComment.content}</p>
           <div className="flex items-center gap-4 mt-2">
             <button
               onClick={handleLikeComment}
               disabled={isLiking || !user?._id}
               className={`text-xs flex items-center gap-1 ${
-                comment.liked
+                transformedComment.liked
                   ? "text-blue-500"
                   : "text-gray-500 hover:text-blue-500"
               }`}
             >
-              <ThumbsUp size={14} className={comment.liked ? "fill-current" : ""} />
-              <span>{comment.likes || 0}</span>
+              <ThumbsUp size={14} className={transformedComment.liked ? "fill-current" : ""} />
+              <span>{transformedComment.likes}</span>
             </button>
             <button
               onClick={() => setShowReplyInput(!showReplyInput)}
@@ -119,6 +141,7 @@ const Comment = ({ comment, postId, onUpdate }) => {
                 onChange={(e) => setReplyContent(e.target.value)}
                 placeholder="Write a reply..."
                 className="flex-1 text-sm border rounded-full px-3 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && handleReply()}
               />
               <button
                 onClick={handleReply}
@@ -131,11 +154,11 @@ const Comment = ({ comment, postId, onUpdate }) => {
           )}
         </div>
       </div>
-      {Array.isArray(comment.replies) && comment.replies.length > 0 && (
+      {transformedComment.replies.length > 0 && (
         <div className="ml-8 mt-2 space-y-2">
-          {comment.replies.map((reply) => (
+          {transformedComment.replies.map((reply) => (
             <Comment 
-              key={reply._id || `${comment._id}-reply-${reply.createdAt}`} 
+              key={`reply-${reply._id}-${reply.createdAt}`}
               comment={reply} 
               postId={postId} 
               onUpdate={onUpdate} 
@@ -158,29 +181,68 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
 
   const isAuthor = user?._id === post?.author?._id;
 
+  if (!post || !post._id || !post.author) {
+    console.error("Invalid post data:", post);
+    return null;
+  }
+
+  const safeComments = post.comments?.map(comment => ({
+    ...comment,
+    _id: comment?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    content: comment?.content || 'No content available',
+    createdAt: comment?.createdAt || new Date().toISOString(),
+    likes: typeof comment?.likes === 'number' ? comment.likes : 0,
+    liked: Boolean(comment?.liked),
+    replies: Array.isArray(comment?.replies) ? comment.replies.map(reply => ({
+      ...reply,
+      _id: reply?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      content: reply?.content || 'No content available',
+      createdAt: reply?.createdAt || new Date().toISOString(),
+      likes: typeof reply?.likes === 'number' ? reply.likes : 0,
+      liked: Boolean(reply?.liked)
+    })) : []
+  })) || [];
+
   const handleComment = async () => {
-    if (!comment.trim()) return;
+    if (!user?._id) {
+      toast.error("Please login to comment");
+      return;
+    }
+
+    if (!comment.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
 
     try {
       setIsSubmitting(true);
       await onComment(post._id, comment.trim());
       setComment("");
-      toast.success("Comment added successfully!");
     } catch (error) {
       console.error("Error adding comment:", error);
-      toast.error(error?.response?.data?.message || "Failed to add comment");
+      toast.error(error.message || "Failed to add comment");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleLike = async () => {
+    if (!user?._id) {
+      toast.error("Please login to like posts");
+      return;
+    }
+    
     try {
       setIsLiking(true);
       await onLike(post._id);
     } catch (error) {
       console.error("Error liking post:", error);
-      toast.error(error?.response?.data?.message || "Failed to update like");
+      if (error.message === 'Post not found' || error.response?.status === 404) {
+        toast.error("This post no longer exists");
+        // The post will be removed from the feed by the parent component
+      } else {
+        toast.error(error.message || "Failed to update like");
+      }
     } finally {
       setIsLiking(false);
     }
@@ -189,10 +251,9 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
   const handleDelete = async () => {
     try {
       await onDelete(post._id);
-      toast.success("Post deleted successfully!");
     } catch (error) {
       console.error("Error deleting post:", error);
-      toast.error(error?.response?.data?.message || "Failed to delete post");
+      toast.error(error.message || "Failed to delete post");
     }
   };
 
@@ -238,10 +299,9 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
     try {
       await onUpdate(post._id, editedContent.trim());
       setIsEditing(false);
-      toast.success("Post updated successfully!");
     } catch (error) {
       console.error("Error updating post:", error);
-      toast.error(error?.response?.data?.message || "Failed to update post");
+      toast.error(error.message || "Failed to update post");
     }
   };
 
@@ -251,27 +311,25 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
     toast.success("Post link copied to clipboard!");
   };
 
-  if (!post) return null;
-
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <Link to={`/profile/${post.author.username}`} className="flex items-center">
-          <img
-            src={post.author.profilePicture || "/avatar.png"}
-            alt={post.author.name}
+              <img
+                src={post.author.profilePicture || "/avatar.png"}
+                alt={post.author.name}
                 className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
               />
               <div className="ml-3">
                 <h3 className="font-semibold text-gray-900 hover:underline">
-            {post.author.name}
+                  {post.author.name}
                 </h3>
-          <p className="text-gray-500 text-sm">{post.author.headline}</p>
-          <p className="text-gray-400 text-xs">
-            {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-          </p>
+                <p className="text-gray-500 text-sm">{post.author.headline}</p>
+                <p className="text-gray-400 text-xs">
+                  {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                </p>
               </div>
             </Link>
           </div>
@@ -333,34 +391,34 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
               >
                 Save
               </button>
-        </div>
-      </div>
+            </div>
+          </div>
         ) : (
           <p className="text-gray-800 whitespace-pre-wrap mb-4">{post.content}</p>
         )}
 
-      {post.image && (
+        {post.image && (
           <div className="mb-4 rounded-lg overflow-hidden">
-          <img
-            src={post.image}
-            alt="Post content"
+            <img
+              src={post.image}
+              alt="Post content"
               className="w-full h-auto"
-            loading="lazy"
-          />
-        </div>
-      )}
+              loading="lazy"
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-between border-t border-b border-gray-200 py-3">
           <div className="flex items-center gap-6">
-        <button
+            <button
               className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${
-            isLiking ? 'opacity-50 cursor-not-allowed' : 
+                isLiking ? 'opacity-50 cursor-not-allowed' : 
                 post.liked ? "text-blue-500 bg-blue-50" : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
-          }`}
-          onClick={handleLike}
-          disabled={isLiking}
-        >
-          <ThumbsUp size={18} className={post.liked ? "fill-current" : ""} />
+              }`}
+              onClick={handleLike}
+              disabled={isLiking || !user?._id}
+            >
+              <ThumbsUp size={18} className={post.liked ? "fill-current" : ""} />
               <span className="font-medium">{post.likes || 0}</span>
             </button>
             <button
@@ -376,8 +434,8 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
             >
               <Share2 size={18} />
               <span className="font-medium">Share</span>
-        </button>
-      </div>
+            </button>
+          </div>
         </div>
 
         <div className="mt-4 space-y-4">
@@ -390,13 +448,13 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
             <input
               id={`comment-input-${post._id}`}
               type="text"
-          placeholder="Write a comment..."
+              placeholder="Write a comment..."
               className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-        />
-        <button
+            />
+            <button
               onClick={handleComment}
               disabled={isSubmitting || !comment.trim()}
               className={`p-2 rounded-full ${
@@ -406,12 +464,12 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
               }`}
             >
               <Send size={18} />
-        </button>
+            </button>
           </div>
 
-          {post.comments?.map((comment) => (
+          {safeComments.map((comment) => (
             <Comment
-              key={comment._id}
+              key={`comment-${comment._id}-${comment.createdAt}`}
               comment={comment}
               postId={post._id}
               onUpdate={() => onUpdate(post._id)}
@@ -425,16 +483,30 @@ const Post = ({ post, onLike, onComment, onDelete, onUpdate }) => {
 
 Comment.propTypes = {
   comment: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    content: PropTypes.string.isRequired,
-    createdAt: PropTypes.string.isRequired,
+    _id: PropTypes.string,
+    content: PropTypes.string,
+    createdAt: PropTypes.string,
     author: PropTypes.shape({
-      username: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
+      username: PropTypes.string,
+      name: PropTypes.string,
       profilePicture: PropTypes.string,
-    }).isRequired,
-    likes: PropTypes.arrayOf(PropTypes.string),
-    replies: PropTypes.array,
+    }),
+    likes: PropTypes.number,
+    liked: PropTypes.bool,
+    replies: PropTypes.arrayOf(
+      PropTypes.shape({
+        _id: PropTypes.string,
+        content: PropTypes.string,
+        createdAt: PropTypes.string,
+        author: PropTypes.shape({
+          username: PropTypes.string,
+          name: PropTypes.string,
+          profilePicture: PropTypes.string,
+        }),
+        likes: PropTypes.number,
+        liked: PropTypes.bool,
+      })
+    ),
   }).isRequired,
   postId: PropTypes.string.isRequired,
   onUpdate: PropTypes.func,
@@ -457,18 +529,32 @@ Post.propTypes = {
     }).isRequired,
     comments: PropTypes.arrayOf(
       PropTypes.shape({
-        _id: PropTypes.string.isRequired,
-        content: PropTypes.string.isRequired,
-        createdAt: PropTypes.string.isRequired,
+        _id: PropTypes.string,
+        content: PropTypes.string,
+        createdAt: PropTypes.string,
         author: PropTypes.shape({
-          username: PropTypes.string.isRequired,
-          name: PropTypes.string.isRequired,
+          username: PropTypes.string,
+          name: PropTypes.string,
           profilePicture: PropTypes.string,
-        }).isRequired,
-        likes: PropTypes.arrayOf(PropTypes.string),
-        replies: PropTypes.array,
+        }),
+        likes: PropTypes.number,
+        liked: PropTypes.bool,
+        replies: PropTypes.arrayOf(
+          PropTypes.shape({
+            _id: PropTypes.string,
+            content: PropTypes.string,
+            createdAt: PropTypes.string,
+            author: PropTypes.shape({
+              username: PropTypes.string,
+              name: PropTypes.string,
+              profilePicture: PropTypes.string,
+            }),
+            likes: PropTypes.number,
+            liked: PropTypes.bool,
+          })
+        ),
       })
-    ).isRequired,
+    ),
   }),
   onLike: PropTypes.func.isRequired,
   onComment: PropTypes.func.isRequired,

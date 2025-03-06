@@ -1,7 +1,6 @@
 import express from "express";
 import {protectRoute} from "../middleware/auth.middleware.js";
 import {getFeedPosts, createPost, getPostById, updatePost, deletePost, likePost} from "../controllers/post.controller.js";
-import {createComment, updateComment, deleteComment, likeComment, replyToComment} from "../controllers/comment.controller.js";
 import upload from "../middleware/upload.middleware.js";
 
 const router = express.Router();
@@ -20,23 +19,6 @@ router.route("/:id")
     .delete(deletePost);
 
 // Post interaction routes
-router.route("/:id/like")
-    .post(likePost)
-    .delete(likePost);
-
-// Comment routes
-router.route("/:postId/comments")
-    .post(createComment);
-
-router.route("/:postId/comments/:commentId")
-    .put(updateComment)
-    .delete(deleteComment);
-
-// Comment interaction routes
-router.route("/:postId/comments/:commentId/like")
-    .post(likeComment);
-
-router.route("/:postId/comments/:commentId/replies")
-    .post(replyToComment);
+router.post("/:id/like", likePost);
 
 export default router;
