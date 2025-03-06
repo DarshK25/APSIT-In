@@ -23,32 +23,41 @@ const SignUpForm = () => {
 		}));
 	};
 
+	const validateEmail = (email) => {
+		return email.toLowerCase().endsWith('@apsit.edu.in');
+	};
+
 	const handleSubmit = async (e) => {
 		e.preventDefault();
+		
+		// Validate email
+		if (!validateEmail(formData.email)) {
+			toast.error('Please use your APSIT college email (example@apsit.edu.in)');
+			return;
+		}
+
+		// Validate password
+		if (formData.password.length < 6) {
+			toast.error('Password must be at least 6 characters long');
+			return;
+		}
+
 		setIsLoading(true);
 		try {
-			const success = await signup(formData);
+			const success = await signup({
+				name: formData.name.trim(),
+				username: formData.username.trim().toLowerCase(),
+				email: formData.email.trim().toLowerCase(),
+				password: formData.password
+			});
+			
 			if (success) {
 				toast.success('Account created successfully!');
-				toast((t) => (
-					<div className="flex flex-col gap-2">
-						<p>Welcome to ApsitIn! Please complete your profile to get started.</p>
-						<button
-							onClick={() => {
-								toast.dismiss(t.id);
-								navigate('/profile/edit');
-							}}
-							className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-						>
-							Complete Profile
-						</button>
-					</div>
-				), {
-					duration: 5000,
-				});
+				navigate('/profile/edit');
 			}
 		} catch (error) {
 			console.error("Signup error:", error);
+			toast.error(error.response?.data?.message || 'Signup failed. Please try again.');
 		} finally {
 			setIsLoading(false);
 		}
@@ -64,6 +73,7 @@ const SignUpForm = () => {
 				onChange={handleChange}
 				className="input input-bordered w-full"
 				required
+				maxLength={50}
 			/>
 			<input
 				type="text"
@@ -73,15 +83,16 @@ const SignUpForm = () => {
 				onChange={handleChange}
 				className="input input-bordered w-full"
 				required
+				pattern="^[a-zA-Z0-9._]{3,30}$"
+				title="Username can contain letters, numbers, dots and underscores (3-30 characters)"
+				maxLength={30}
 			/>
 			<input
 				type="email"
 				name="email"
-				placeholder="College Email"
+				placeholder="College Email (example@apsit.edu.in)"
 				value={formData.email}
 				onChange={handleChange}
-				pattern="[a-zA-Z0-9._%+-]+@apsit\.edu\.in$"
-				title="Please use your APSIT college email (e.g., example@apsit.edu.in)"
 				className="input input-bordered w-full"
 				required
 			/>
@@ -91,9 +102,10 @@ const SignUpForm = () => {
 				placeholder="Password (6+ characters)"
 				value={formData.password}
 				onChange={handleChange}
-				minLength={6}
 				className="input input-bordered w-full"
 				required
+				minLength={6}
+				maxLength={50}
 			/>
 
 			<button 

@@ -75,11 +75,14 @@ const userSchema = new mongoose.Schema({
             'Civil Engineering',
             'Mechanical Engineering',
         ],
-            required: true },
+        required: false,
+        default: null
+    },
     yearOfStudy: { 
         type: String,
         enum: ["First Year", "Second Year", "Third Year", "Fourth Year"],
-        required: true
+        required: false,
+        default: null
     },
     connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
 }, {

@@ -7,6 +7,9 @@ import Comment from "../models/comment.model.js";
 
 export const getFeedPosts = async (req, res) => {
     try {
+        // First, cleanup any orphaned comments
+        await cleanupOrphanedComments();
+
         const posts = await Post.find({
             $or: [
                 { author: { $in: req.user.connections } }, // Posts from connections
@@ -16,38 +19,35 @@ export const getFeedPosts = async (req, res) => {
         .populate("author", "name username profilePicture headline")
         .populate({
             path: "comments",
-            populate: [
-                {
-                    path: "author",
-                    select: "name username profilePicture"
-                },
-                {
-                    path: "replies",
-                    match: { parentComment: { $exists: true } },
-                    populate: {
-                        path: "author",
-                        select: "name username profilePicture"
-                    }
-                }
-            ]
+            populate: {
+                path: "author",
+                select: "name username profilePicture headline",
+                model: "User"
+            }
         })
         .sort({ createdAt: -1 });
 
         // Transform posts to include liked status
         const transformedPosts = posts.map(post => ({
             ...post.toObject(),
-            likes: post.likes.length,
-            liked: post.likes.includes(req.user._id),
-            comments: post.comments.map(comment => ({
-                ...comment,
-                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
-                liked: Array.isArray(comment.likes) ? comment.likes.includes(req.user._id) : false,
-                replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
-                    ...reply,
-                    likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
-                    liked: Array.isArray(reply.likes) ? reply.likes.includes(req.user._id) : false
-                })) : []
-            }))
+            likes: Array.isArray(post.likes) ? post.likes.length : 0,
+            liked: Array.isArray(post.likes) ? post.likes.includes(req.user._id) : false,
+            comments: Array.isArray(post.comments) ? post.comments.map(comment => {
+                // Skip comments with invalid/deleted authors
+                if (!comment.author) {
+                    return null;
+                }
+                return {
+                    ...comment,
+                    likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                    liked: Array.isArray(comment.likes) ? comment.likes.includes(req.user._id) : false,
+                    replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+                        ...reply,
+                        likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                        liked: Array.isArray(reply.likes) ? reply.likes.includes(req.user._id) : false
+                    })) : []
+                };
+            }).filter(Boolean) : [] // Remove null comments
         }));
 
         res.status(200).json({ 
@@ -344,15 +344,23 @@ export const deletePost = async (req, res) => {
             }
         }
 
-        // Delete all comments associated with the post
-        await Comment.deleteMany({ post: post._id });
+        // Delete all comments and their replies associated with the post
+        await Comment.deleteMany({ 
+            $or: [
+                { post: post._id },
+                { post: post._id, parentComment: { $exists: true } }
+            ]
+        });
+
+        // Delete all notifications related to this post
+        await Notification.deleteMany({ post: post._id });
 
         // Delete the post
         await Post.findByIdAndDelete(post._id);
 
         res.status(200).json({
             success: true,
-            message: "Post deleted successfully",
+            message: "Post and all associated data deleted successfully",
             deletedPostId: post._id
         });
     } catch (error) {
@@ -444,7 +452,7 @@ export const likePost = async (req, res) => {
 export const addComment = async (req, res) => {
     try {
         const { content } = req.body;
-        const { postId } = req.params;
+        const postId = req.params.id;
         const { parentCommentId } = req.body; // Optional, for replies
         const userId = req.user._id;
 
@@ -506,20 +514,11 @@ export const addComment = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
-                populate: [
-                    {
-                        path: "author",
-                        select: "name username profilePicture"
-                    },
-                    {
-                        path: "replies",
-                        match: { parentComment: { $exists: true } },
-                        populate: {
-                            path: "author",
-                            select: "name username profilePicture"
-                        }
-                    }
-                ]
+                populate: {
+                    path: "author",
+                    select: "name username profilePicture headline",
+                    model: "User"
+                }
             });
 
         // Transform the post for response
@@ -527,16 +526,22 @@ export const addComment = async (req, res) => {
             ...updatedPost.toObject(),
             likes: Array.isArray(updatedPost.likes) ? updatedPost.likes.length : 0,
             liked: Array.isArray(updatedPost.likes) ? updatedPost.likes.includes(userId) : false,
-            comments: Array.isArray(updatedPost.comments) ? updatedPost.comments.map(comment => ({
-                ...comment,
-                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
-                liked: Array.isArray(comment.likes) ? comment.likes.includes(userId) : false,
-                replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
-                    ...reply,
-                    likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
-                    liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
-                })) : []
-            })) : []
+            comments: Array.isArray(updatedPost.comments) ? updatedPost.comments.map(comment => {
+                // Skip comments with invalid/deleted authors
+                if (!comment.author) {
+                    return null;
+                }
+                return {
+                    ...comment,
+                    likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                    liked: Array.isArray(comment.likes) ? comment.likes.includes(userId) : false,
+                    replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+                        ...reply,
+                        likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                        liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
+                    })) : []
+                };
+            }).filter(Boolean) : [] // Remove null comments
         };
 
         return res.status(201).json({
@@ -549,5 +554,26 @@ export const addComment = async (req, res) => {
             success: false,
             message: error.message || "Failed to add comment"
         });
+    }
+};
+
+export const cleanupOrphanedComments = async () => {
+    try {
+        // Find all comments
+        const comments = await Comment.find({});
+        
+        for (const comment of comments) {
+            // Check if the associated post exists
+            const postExists = await Post.exists({ _id: comment.post });
+            if (!postExists) {
+                // Delete the comment if its post doesn't exist
+                await Comment.findByIdAndDelete(comment._id);
+                console.log(`Deleted orphaned comment: ${comment._id}`);
+            }
+        }
+        
+        console.log('Orphaned comments cleanup completed');
+    } catch (error) {
+        console.error('Error cleaning up orphaned comments:', error);
     }
 };

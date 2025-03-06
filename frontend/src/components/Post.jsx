@@ -17,29 +17,29 @@ const Comment = ({ comment, postId, onUpdate }) => {
   // Transform and validate comment data
   const transformedComment = {
     ...comment,
-    _id: comment?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    content: comment?.content || 'No content available',
-    createdAt: comment?.createdAt || new Date().toISOString(),
-    author: comment?.author || {
+    _id: comment._id,
+    content: comment.content,
+    createdAt: comment.createdAt,
+    author: comment.author || {
       username: 'unknown',
       name: 'Unknown User',
       profilePicture: '/avatar.png'
     },
-    likes: typeof comment?.likes === 'number' ? comment.likes : 0,
-    liked: Boolean(comment?.liked),
-    replies: Array.isArray(comment?.replies) 
+    likes: typeof comment.likes === 'number' ? comment.likes : 0,
+    liked: Boolean(comment.liked),
+    replies: Array.isArray(comment.replies) 
       ? comment.replies.map(reply => ({
           ...reply,
-          _id: reply?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: reply?.content || 'No content available',
-          createdAt: reply?.createdAt || new Date().toISOString(),
-          author: reply?.author || {
+          _id: reply._id,
+          content: reply.content,
+          createdAt: reply.createdAt,
+          author: reply.author || {
             username: 'unknown',
             name: 'Unknown User',
             profilePicture: '/avatar.png'
           },
-          likes: typeof reply?.likes === 'number' ? reply.likes : 0,
-          liked: Boolean(reply?.liked)
+          likes: typeof reply.likes === 'number' ? reply.likes : 0,
+          liked: Boolean(reply.liked)
         }))
       : []
   };

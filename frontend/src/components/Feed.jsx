@@ -127,32 +127,41 @@ const Feed = ({ posts, setPosts }) => {
       ...post,
       likes: typeof post.likes === 'number' ? post.likes : 0,
       liked: Boolean(post.liked),
-      comments: Array.isArray(post.comments) ? post.comments.map(comment => ({
-        ...comment,
-        _id: comment?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        content: comment?.content || 'No content available',
-        createdAt: comment?.createdAt || new Date().toISOString(),
-        author: comment?.author || {
+      comments: Array.isArray(post.comments) ? post.comments.map(comment => {
+        // Only use defaults if the data is missing
+        const commentAuthor = comment?.author || {
           username: 'unknown',
           name: 'Unknown User',
           profilePicture: '/avatar.png'
-        },
-        likes: typeof comment?.likes === 'number' ? comment.likes : 0,
-        liked: Boolean(comment?.liked),
-        replies: Array.isArray(comment?.replies) ? comment.replies.map(reply => ({
-          ...reply,
-          _id: reply?._id || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: reply?.content || 'No content available',
-          createdAt: reply?.createdAt || new Date().toISOString(),
-          author: reply?.author || {
-            username: 'unknown',
-            name: 'Unknown User',
-            profilePicture: '/avatar.png'
-          },
-          likes: typeof reply?.likes === 'number' ? reply.likes : 0,
-          liked: Boolean(reply?.liked)
-        })) : []
-      })) : []
+        };
+
+        return {
+          ...comment,
+          _id: comment._id,
+          content: comment.content,
+          createdAt: comment.createdAt,
+          author: commentAuthor,
+          likes: typeof comment.likes === 'number' ? comment.likes : 0,
+          liked: Boolean(comment.liked),
+          replies: Array.isArray(comment.replies) ? comment.replies.map(reply => {
+            const replyAuthor = reply?.author || {
+              username: 'unknown',
+              name: 'Unknown User',
+              profilePicture: '/avatar.png'
+            };
+
+            return {
+              ...reply,
+              _id: reply._id,
+              content: reply.content,
+              createdAt: reply.createdAt,
+              author: replyAuthor,
+              likes: typeof reply.likes === 'number' ? reply.likes : 0,
+              liked: Boolean(reply.liked)
+            };
+          }) : []
+        };
+      }) : []
     };
   }).filter(Boolean) || [];
 
