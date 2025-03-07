@@ -15,6 +15,11 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
     about: userData.about
   });
 
+  const ifClub = userData.email === 'devopsclub@apsit.edu.in' 
+  || userData.email === 'codersclub@apsit.edu.in' 
+  || userData.email === 'cybersecurityclub@apsit.edu.in' 
+  || userData.email === 'datascienceclub@apsit.edu.in';
+
   const departments = [
     'Computer Engineering',
     'Information Technology',
@@ -216,26 +221,28 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                     ))}
                   </select>
 
-                  {!isAlumni() && (
+                  {!ifClub && !isAlumni() && (
                     <select
                       value={editedData.yearOfStudy}
                       onChange={(e) => setEditedData({ ...editedData, yearOfStudy: e.target.value })}
                       className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="">Select Year of Study</option>
+                      <option value="">Select Year of Study</option> 
                       {yearOfStudyOptions.map((year) => (
                         <option key={year} value={year}>{year}</option>
                       ))}
                     </select>
                   )}
 
-                  <input
-                    type="text"
-                    value={editedData.studentId}
-                    onChange={(e) => setEditedData({ ...editedData, studentId: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Student ID"
-                  />
+                  {!ifClub && (
+                    <input
+                      type="text"
+                      value={editedData.studentId}
+                      onChange={(e) => setEditedData({ ...editedData, studentId: e.target.value })}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      placeholder="Student ID"
+                    />
+                  )}
                 </div>
               </div>
             ) : (
@@ -257,7 +264,7 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                     </div>
                   </div>
 
-                  {!isAlumni() && (
+                  {!ifClub && !isAlumni() && (
                     <div className="flex items-center space-x-3 text-gray-600">
                       <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
                         <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
@@ -266,12 +273,14 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                     </div>
                   )}
 
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                      <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium">ID: {userData.studentId}</span>
+                  {!ifClub && (
+                    <div className="flex items-center space-x-3 text-gray-600">
+                      <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                        <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                        <span className="font-medium">ID: {userData.studentId}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             )}

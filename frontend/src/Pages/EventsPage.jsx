@@ -261,7 +261,8 @@ const EventsPage = () => {
     const [filters, setFilters] = useState({});
     const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
 
-    const isAdmin = user?.email === 'darshkalathiya25@gmail.com' || user?.email === '23102187@apsit.edu.in';
+    const isAdmin = user?.email === 'darshkalathiya25@gmail.com' || user?.email === '23102187@apsit.edu.in' || user?.email === 'devopsclub@apsit.edu.in' 
+    || user?.email === 'codersclub@apsit.edu.in' || user?.email === 'cybersecurityclub@apsit.edu.in' || user?.email === 'datascienceclub@apsit.edu.in';
 
     console.log('User:', user); // Debug log
 

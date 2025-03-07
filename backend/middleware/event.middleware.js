@@ -1,9 +1,8 @@
 const authorizedEmails = {
-    admin: ["darshkalathiya25@gmail.com", "23102187@apsit.edu.in"],
+    admin: ["darshkalathiya25@gmail.com", "23102187@apsit.edu.in", "devopsclub@apsit.edu.in"],
     moderators: [
         "codersclub@apsit.edu.in",
         "aimlclub@apsit.edu.in",
-        "devopsclub@apsit.edu.in",
         "cybersecurityclub@apsit.edu.in",
         "datascienceclub@apsit.edu.in",
         "macclub@apsit.edu.in",
