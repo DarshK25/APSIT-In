@@ -25,16 +25,48 @@ const MessagesPage = () => {
 
     // Fetch conversations with latest messages
     useEffect(() => {
-        const fetchConversations = async () => {
+        const fetchConversationsAndConnections = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/messages/conversations', {
-                    withCredentials: true
-                });
+                setLoading(true);
+                // Fetch both conversations and connections in parallel
+                const [conversationsResponse, connectionsResponse] = await Promise.all([
+                    axios.get('http://localhost:3000/api/v1/messages/conversations', {
+                        withCredentials: true
+                    }),
+                    axios.get('http://localhost:3000/api/v1/connections', {
+                        withCredentials: true
+                    })
+                ]);
                 
-                if (response.data.success) {
-                    // Sort conversations by latest message timestamp
-                    const sortedConversations = response.data.data.sort((a, b) => {
-                        return new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0);
+                if (conversationsResponse.data.success) {
+                    // Get existing conversations
+                    const existingConversations = conversationsResponse.data.data;
+                    
+                    // Get all connections
+                    const connections = connectionsResponse.data;
+                    
+                    // Create a map of users we already have conversations with
+                    const existingConversationUsers = new Set(
+                        existingConversations.map(conv => conv.user._id)
+                    );
+                    
+                    // Create conversation objects for connections we haven't messaged yet
+                    const newConversations = connections
+                        .filter(connection => !existingConversationUsers.has(connection._id))
+                        .map(connection => ({
+                            user: connection,
+                            lastMessage: null,
+                            unreadCount: 0
+                        }));
+                    
+                    // Combine existing conversations with potential new ones
+                    const allConversations = [...existingConversations, ...newConversations];
+                    
+                    // Sort conversations by latest message timestamp (if exists)
+                    const sortedConversations = allConversations.sort((a, b) => {
+                        const timeA = a.lastMessage?.createdAt || 0;
+                        const timeB = b.lastMessage?.createdAt || 0;
+                        return new Date(timeB) - new Date(timeA);
                     });
                     
                     setConversations(sortedConversations);
@@ -48,9 +80,9 @@ const MessagesPage = () => {
             }
         };
 
-        fetchConversations();
+        fetchConversationsAndConnections();
         // Poll for new conversations every 10 seconds
-        const interval = setInterval(fetchConversations, 10000);
+        const interval = setInterval(fetchConversationsAndConnections, 10000);
         return () => clearInterval(interval);
     }, []);
 
