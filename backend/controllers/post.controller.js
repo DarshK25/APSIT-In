@@ -10,6 +10,8 @@ export const getFeedPosts = async (req, res) => {
         // First, cleanup any orphaned comments
         await cleanupOrphanedComments();
 
+        console.log("Fetching feed posts for user:", req.user._id);
+
         const posts = await Post.find({
             $or: [
                 { author: { $in: req.user.connections } }, // Posts from connections
@@ -19,36 +21,83 @@ export const getFeedPosts = async (req, res) => {
         .populate("author", "name username profilePicture headline")
         .populate({
             path: "comments",
-            populate: {
-                path: "author",
-                select: "name username profilePicture headline",
-                model: "User"
-            }
+            populate: [
+                {
+                    path: "author",
+                    select: "name username profilePicture headline",
+                    model: "User"
+                },
+                {
+                    path: "replies",
+                    populate: {
+                        path: "author",
+                        select: "name username profilePicture headline",
+                        model: "User"
+                    }
+                }
+            ]
         })
         .sort({ createdAt: -1 });
 
+        console.log("Found posts:", posts.length);
+        
+        // For debugging, log the first post's comments
+        if (posts.length > 0) {
+            console.log("First post comments:", posts[0].comments);
+            
+            // Check if the first post has comments with replies
+            if (posts[0].comments && posts[0].comments.length > 0) {
+                console.log("First comment replies:", posts[0].comments[0].replies);
+            }
+        }
+
         // Transform posts to include liked status
-        const transformedPosts = posts.map(post => ({
-            ...post.toObject(),
-            likes: Array.isArray(post.likes) ? post.likes.length : 0,
-            liked: Array.isArray(post.likes) ? post.likes.includes(req.user._id) : false,
-            comments: Array.isArray(post.comments) ? post.comments.map(comment => {
-                // Skip comments with invalid/deleted authors
-                if (!comment.author) {
-                    return null;
-                }
-                return {
-                    ...comment,
-                    likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
-                    liked: Array.isArray(comment.likes) ? comment.likes.includes(req.user._id) : false,
-                    replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
-                        ...reply,
-                        likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
-                        liked: Array.isArray(reply.likes) ? reply.likes.includes(req.user._id) : false
-                    })) : []
-                };
-            }).filter(Boolean) : [] // Remove null comments
-        }));
+        const transformedPosts = posts.map(post => {
+            const postObj = post.toObject();
+            
+            // Ensure comments is an array
+            const comments = Array.isArray(postObj.comments) ? postObj.comments : [];
+            
+            console.log(`Post ${post._id} has ${comments.length} comments`);
+            
+            return {
+                ...postObj,
+                likes: Array.isArray(post.likes) ? post.likes.length : 0,
+                liked: Array.isArray(post.likes) ? post.likes.includes(req.user._id) : false,
+                comments: comments.map(comment => {
+                    // Skip comments with invalid/deleted authors
+                    if (!comment || !comment.author) {
+                        console.log("Skipping comment with missing author:", comment?._id);
+                        return null;
+                    }
+                    
+                    // Ensure replies is an array
+                    const replies = Array.isArray(comment.replies) ? comment.replies : [];
+                    
+                    console.log(`Comment ${comment._id} has ${replies.length} replies`);
+                    
+                    return {
+                        ...comment,
+                        likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                        liked: Array.isArray(comment.likes) ? comment.likes.includes(req.user._id) : false,
+                        replies: replies.map(reply => {
+                            if (!reply || !reply.author) {
+                                console.log("Skipping reply with missing author:", reply?._id);
+                                return null;
+                            }
+                            
+                            return {
+                                ...reply,
+                                likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                                liked: Array.isArray(reply.likes) ? reply.likes.includes(req.user._id) : false
+                            };
+                        }).filter(Boolean)
+                    };
+                }).filter(Boolean) // Remove null comments
+            };
+        });
+
+        console.log("Transformed posts:", transformedPosts.length);
 
         res.status(200).json({ 
             success: true, 
@@ -176,7 +225,7 @@ export const createPost = async (req, res) => {
 export const getPostById = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id)
-            .populate("author", "name username profilePicture headline")
+        .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
                 populate: [
@@ -278,10 +327,10 @@ export const updatePost = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
-                populate: {
-                    path: "author",
-                    select: "name username profilePicture"
-                }
+                        populate: {
+                            path: "author",
+                            select: "name username profilePicture"
+                        }
             });
 
         // Transform the post for response
@@ -413,10 +462,10 @@ export const likePost = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
-                populate: {
-                    path: "author",
-                    select: "name username profilePicture"
-                }
+                        populate: {
+                            path: "author",
+                            select: "name username profilePicture"
+                        }
             });
 
         // Transform the post data
@@ -456,6 +505,8 @@ export const addComment = async (req, res) => {
         const { parentCommentId } = req.body; // Optional, for replies
         const userId = req.user._id;
 
+        console.log("Adding comment to post:", postId, "Content:", content, "User:", userId);
+
         // Validate content
         if (!content || !content.trim()) {
             return res.status(400).json({
@@ -483,17 +534,20 @@ export const addComment = async (req, res) => {
 
         // Save the comment
         await comment.save();
+        console.log("Comment created:", comment._id);
 
         // If this is a reply, update the parent comment's replyCount
         if (parentCommentId) {
             await Comment.findByIdAndUpdate(parentCommentId, {
                 $inc: { replyCount: 1 }
             });
+            console.log("Updated parent comment replyCount");
         }
 
         // Add comment to post's comments array
         post.comments.push(comment._id);
         await post.save();
+        console.log("Added comment to post");
 
         // Create notification for post author if it's not their own comment
         if (post.author.toString() !== userId.toString()) {
@@ -506,6 +560,7 @@ export const addComment = async (req, res) => {
                     message: `${user.name} commented on your post`,
                     post: postId
                 });
+                console.log("Created notification for post author");
             }
         }
 
@@ -514,35 +569,75 @@ export const addComment = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
-                populate: {
-                    path: "author",
-                    select: "name username profilePicture headline",
-                    model: "User"
-                }
+                populate: [
+                    {
+                        path: "author",
+                        select: "name username profilePicture headline",
+                        model: "User"
+                    },
+                    {
+                        path: "replies",
+                        populate: {
+                            path: "author",
+                            select: "name username profilePicture headline",
+                            model: "User"
+                        }
+                    }
+                ]
             });
 
+        if (!updatedPost) {
+            return res.status(404).json({
+                success: false,
+                message: "Failed to fetch updated post"
+            });
+        }
+
+        console.log("Fetched updated post with comments:", updatedPost.comments.length);
+
         // Transform the post for response
+        const postObj = updatedPost.toObject();
+        const comments = Array.isArray(postObj.comments) ? postObj.comments : [];
+        
+        console.log("Processing comments for response, count:", comments.length);
+        
         const transformedPost = {
-            ...updatedPost.toObject(),
+            ...postObj,
             likes: Array.isArray(updatedPost.likes) ? updatedPost.likes.length : 0,
             liked: Array.isArray(updatedPost.likes) ? updatedPost.likes.includes(userId) : false,
-            comments: Array.isArray(updatedPost.comments) ? updatedPost.comments.map(comment => {
+            comments: comments.map(comment => {
                 // Skip comments with invalid/deleted authors
-                if (!comment.author) {
+                if (!comment || !comment.author) {
+                    console.log("Skipping comment with missing author:", comment?._id);
                     return null;
                 }
+                
+                // Ensure replies is an array
+                const replies = Array.isArray(comment.replies) ? comment.replies : [];
+                
+                console.log(`Comment ${comment._id} has ${replies.length} replies`);
+                
                 return {
                     ...comment,
                     likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
                     liked: Array.isArray(comment.likes) ? comment.likes.includes(userId) : false,
-                    replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
-                        ...reply,
-                        likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
-                        liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
-                    })) : []
+                    replies: replies.map(reply => {
+                        if (!reply || !reply.author) {
+                            console.log("Skipping reply with missing author:", reply?._id);
+                            return null;
+                        }
+                        
+                        return {
+                            ...reply,
+                            likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
+                            liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
+                        };
+                    }).filter(Boolean)
                 };
-            }).filter(Boolean) : [] // Remove null comments
+            }).filter(Boolean) // Remove null comments
         };
+
+        console.log("Transformed post has comments:", transformedPost.comments.length);
 
         return res.status(201).json({
             success: true,

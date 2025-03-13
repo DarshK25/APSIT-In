@@ -1,10 +1,72 @@
 import axiosInstance from './axiosConfig';
+import axios from 'axios';
+
+// Simple in-memory cache for API responses
+const cache = {
+  posts: new Map(),
+  postDetails: new Map(),
+};
+
+// Cache TTL in milliseconds (5 seconds)
+const CACHE_TTL = 5000;
 
 class PostService {
+  constructor() {
+    // Create a map to store cancellation tokens
+    this.cancelTokens = new Map();
+  }
+
+  // Helper method to get cached data if available
+  _getCachedData(cacheKey, cacheStore) {
+    const cachedData = cacheStore.get(cacheKey);
+    if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
+      return cachedData.data;
+    }
+    return null;
+  }
+
+  // Helper method to set cache data
+  _setCacheData(cacheKey, cacheStore, data) {
+    cacheStore.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  // Helper method to cancel previous requests
+  _cancelPreviousRequest(requestKey) {
+    if (this.cancelTokens.has(requestKey)) {
+      try {
+        const source = this.cancelTokens.get(requestKey);
+        source.cancel('Operation canceled due to new request');
+      } catch (error) {
+        console.error('Error canceling request:', error);
+      }
+      this.cancelTokens.delete(requestKey);
+    }
+  }
+
   async getAllPosts() {
     try {
+      // Check cache first
+      const cachedPosts = this._getCachedData('all', cache.posts);
+      if (cachedPosts) {
+        return cachedPosts;
+      }
+
+      // Make API call without cancellation token for now to simplify
       const response = await axiosInstance.get('/posts');
-      return response.data.posts || [];
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to fetch posts');
+      }
+      
+      const posts = response.data.posts || [];
+      
+      // Cache the result
+      this._setCacheData('all', cache.posts, posts);
+      
+      return posts;
     } catch (error) {
       console.error('Error fetching posts:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch posts');
@@ -13,11 +75,19 @@ class PostService {
 
   async createPost(formData) {
     try {
+      // Clear posts cache when creating a new post
+      cache.posts.clear();
+      
       const response = await axiosInstance.post('/posts', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to create post');
+      }
+      
       return response.data.post;
     } catch (error) {
       console.error('Error creating post:', error);
@@ -27,18 +97,19 @@ class PostService {
 
   async likePost(postId) {
     try {
-      console.log('Attempting to like/unlike post:', postId);
-      
       const response = await axiosInstance.post(`/posts/${postId}/like`);
-      console.log('Like/unlike response:', response.data);
-      return response.data.post;
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to toggle like');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error toggling like:', error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        postId: postId
-      });
       throw new Error(error.response?.data?.message || 'Failed to toggle like');
     }
   }
@@ -46,7 +117,16 @@ class PostService {
   async addComment(postId, content) {
     try {
       const response = await axiosInstance.post(`/posts/${postId}/comments`, { content });
-      return response.data.post;
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to add comment');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error adding comment:', error);
       throw new Error(error.response?.data?.message || 'Failed to add comment');
@@ -56,7 +136,16 @@ class PostService {
   async updateComment(postId, commentId, content) {
     try {
       const response = await axiosInstance.put(`/posts/${postId}/comments/${commentId}`, { content });
-      return response.data.post;
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to update comment');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error updating comment:', error);
       throw new Error(error.response?.data?.message || 'Failed to update comment');
@@ -66,17 +155,54 @@ class PostService {
   async deleteComment(postId, commentId) {
     try {
       const response = await axiosInstance.delete(`/posts/${postId}/comments/${commentId}`);
-      return response.data.post;
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to delete comment');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error deleting comment:', error);
       throw new Error(error.response?.data?.message || 'Failed to delete comment');
     }
   }
 
+  async deleteReply(postId, commentId, replyId) {
+    try {
+      const response = await axiosInstance.delete(`/posts/${postId}/comments/${commentId}/replies/${replyId}`);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to delete reply');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete reply');
+    }
+  }
+
   async likeComment(postId, commentId) {
     try {
       const response = await axiosInstance.post(`/posts/${postId}/comments/${commentId}/like`);
-      return response.data.post;
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to like comment');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error liking comment:', error);
       throw new Error(error.response?.data?.message || 'Failed to like comment');
@@ -86,10 +212,55 @@ class PostService {
   async replyToComment(postId, commentId, content) {
     try {
       const response = await axiosInstance.post(`/posts/${postId}/comments/${commentId}/replies`, { content });
-      return response.data.post;
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to reply to comment');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
     } catch (error) {
       console.error('Error replying to comment:', error);
       throw new Error(error.response?.data?.message || 'Failed to reply to comment');
+    }
+  }
+
+  async likeReply(postId, commentId, replyId) {
+    try {
+      const response = await axiosInstance.post(`/posts/${postId}/comments/${commentId}/replies/${replyId}/like`);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to like reply');
+      }
+      
+      // Update cache with the new post data
+      const updatedPost = response.data.post;
+      this._updatePostInCache(updatedPost);
+      
+      return updatedPost;
+    } catch (error) {
+      console.error('Error liking reply:', error);
+      throw new Error(error.response?.data?.message || 'Failed to like reply');
+    }
+  }
+
+  // Helper method to update a post in all caches
+  _updatePostInCache(updatedPost) {
+    if (!updatedPost || !updatedPost._id) return;
+    
+    // Update in post details cache
+    this._setCacheData(updatedPost._id, cache.postDetails, updatedPost);
+    
+    // Update in posts list cache if it exists
+    const cachedPosts = this._getCachedData('all', cache.posts);
+    if (cachedPosts) {
+      const updatedPosts = cachedPosts.map(post => 
+        post._id === updatedPost._id ? updatedPost : post
+      );
+      this._setCacheData('all', cache.posts, updatedPosts);
     }
   }
 
@@ -97,6 +268,11 @@ class PostService {
     try {
       const response = await axiosInstance.delete(`/posts/${postId}`);
       if (response.data.success) {
+        // Clear cache after deleting a post
+        cache.posts.clear();
+        if (cache.postDetails.has(postId)) {
+          cache.postDetails.delete(postId);
+        }
         return { success: true, deletedPostId: response.data.deletedPostId };
       } else {
         throw new Error(response.data.message || 'Failed to delete post');
@@ -131,7 +307,10 @@ class PostService {
       });
 
       if (response.data.success) {
-        return response.data.post;
+        // Update cache with the new post data
+        const updatedPost = response.data.post;
+        this._updatePostInCache(updatedPost);
+        return updatedPost;
       } else {
         throw new Error(response.data.message || 'Failed to update post');
       }
@@ -143,8 +322,21 @@ class PostService {
 
   async getUserPosts(username) {
     try {
+      const cacheKey = `user-${username}`;
+      const cachedPosts = this._getCachedData(cacheKey, cache.posts);
+      if (cachedPosts) {
+        return cachedPosts;
+      }
+
       const response = await axiosInstance.get(`/posts/user/${username}`);
-      return response.data;
+      
+      if (response.data.success) {
+        const posts = response.data.posts || [];
+        this._setCacheData(cacheKey, cache.posts, posts);
+        return posts;
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch user posts');
+      }
     } catch (error) {
       console.error('Error fetching user posts:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch user posts');

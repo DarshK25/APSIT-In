@@ -30,6 +30,8 @@ const commentSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
 // Add indexes for better query performance
@@ -37,12 +39,13 @@ commentSchema.index({ post: 1, createdAt: -1 });
 commentSchema.index({ author: 1 });
 commentSchema.index({ parentComment: 1 });
 
-// Virtual for replies
+// Virtual for replies - return actual reply documents instead of just a count
 commentSchema.virtual('replies', {
     ref: 'Comment',
     localField: '_id',
     foreignField: 'parentComment',
-    count: true
+    // Remove the count option to return the actual documents
+    options: { sort: { createdAt: 1 } }
 });
 
 // Update replyCount before saving

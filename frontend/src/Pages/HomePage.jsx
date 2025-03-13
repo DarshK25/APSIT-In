@@ -45,20 +45,26 @@ const HomePage = () => {
         return;
       }
 
-      const [userData, postsData] = await Promise.all([
-        userService.getCurrentUser(),
-        postService.getAllPosts()
-      ]);
-
+      // Fetch user data first
+      const userData = await userService.getCurrentUser();
       if (!userData) {
         throw new Error("Failed to fetch user data");
       }
-
       setUser(userData);
-      setPosts(postsData);
+
+      // Then fetch posts
+      try {
+        const postsData = await postService.getAllPosts();
+        setPosts(postsData || []);
+      } catch (postsError) {
+        console.error("Error fetching posts:", postsError);
+        // Don't set error state for posts, just show empty posts
+        setPosts([]);
+        toast.error("Failed to load posts. Please try again later.");
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
-      setError(error?.response?.data?.message || "Failed to load data");
+      setError(error?.message || "Failed to load data");
       toast.error("Failed to load data");
     } finally {
       setIsLoading(false);
@@ -67,6 +73,25 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchData();
+    
+    // Set up an interval to refresh posts every 30 seconds
+    const refreshInterval = setInterval(() => {
+      if (!isLoading) {
+        // Only refresh posts, not user data
+        postService.getAllPosts()
+          .then(postsData => {
+            if (postsData) {
+              setPosts(postsData);
+            }
+          })
+          .catch(error => {
+            console.error("Error refreshing posts:", error);
+            // Don't show toast for background refresh errors
+          });
+      }
+    }, 30000);
+    
+    return () => clearInterval(refreshInterval);
   }, [navigate]);
 
   if (isLoading) {
