@@ -16,34 +16,44 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
   const [showReplies, setShowReplies] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReplyMenu, setShowReplyMenu] = useState(null);
+  const [localComment, setLocalComment] = useState(comment);
+  const [isReplyLiking, setIsReplyLiking] = useState(null);
 
-  // Transform the comment to ensure it has all required properties
-  const transformedComment = useMemo(() => {
-    if (!comment) return null;
+  // Transform and update the comment when it changes from parent
+  useEffect(() => {
+    if (!comment) return;
     
-    return {
-    ...comment,
-    _id: comment._id,
-      content: comment.content || 'No content available',
-      createdAt: comment.createdAt || new Date().toISOString(),
-      author: comment.author && typeof comment.author === 'object' ? {
-        _id: comment.author._id,
-        username: comment.author.username || 'unknown',
-        name: comment.author.name || 'Unknown User',
-        profilePicture: comment.author.profilePicture || '/avatar.png'
-      } : {
-        _id: 'unknown',
-      username: 'unknown',
-      name: 'Unknown User',
-      profilePicture: '/avatar.png'
-    },
-    likes: typeof comment.likes === 'number' ? comment.likes : 0,
-    liked: Boolean(comment.liked),
-      replies: Array.isArray(comment.replies) ? comment.replies : []
-    };
-  }, [comment]);
+    // Only update if the liked state hasn't been modified locally
+    // or if the server state is different from our local state
+    if (!isLiking && !isReplyLiking) {
+      setLocalComment({
+        ...comment,
+        _id: comment._id,
+        content: comment.content || 'No content available',
+        createdAt: comment.createdAt || new Date().toISOString(),
+        author: comment.author && typeof comment.author === 'object' ? {
+          _id: comment.author._id,
+          username: comment.author.username || 'unknown',
+          name: comment.author.name || 'Unknown User',
+          profilePicture: comment.author.profilePicture || '/avatar.png'
+        } : {
+          _id: 'unknown',
+          username: 'unknown',
+          name: 'Unknown User',
+          profilePicture: '/avatar.png'
+        },
+        likes: typeof comment.likes === 'number' ? comment.likes : 0,
+        liked: Boolean(comment.liked),
+        replies: Array.isArray(comment.replies) ? comment.replies.map(reply => ({
+          ...reply,
+          liked: Boolean(reply.liked),
+          likes: typeof reply.likes === 'number' ? reply.likes : 0
+        })) : []
+      });
+    }
+  }, [comment, isLiking, isReplyLiking]);
 
-  const isCommentAuthor = user?._id === transformedComment?.author?._id;
+  const isCommentAuthor = user?._id === localComment?.author?._id;
 
   const handleLikeComment = useCallback(async () => {
     if (!user?._id) {
@@ -53,23 +63,48 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
     
     try {
       setIsLiking(true);
-      // Create a temporary optimistic update
-      const originalComment = { ...transformedComment };
-      const newLikedState = !transformedComment.liked;
-      const newLikesCount = transformedComment.liked ? transformedComment.likes - 1 : transformedComment.likes + 1;
+      const previousState = { ...localComment };
+      
+      // Optimistically update the UI
+      setLocalComment(prev => ({
+        ...prev,
+        liked: !prev.liked,
+        likes: prev.liked ? prev.likes - 1 : prev.likes + 1
+      }));
       
       // Call the API
-      const updatedPost = await postService.likeComment(postId, transformedComment._id);
+      const updatedPost = await postService.likeComment(postId, localComment._id);
       
       // Update the parent component with the new post data
       if (onUpdate) onUpdate(updatedPost);
     } catch (error) {
+      // Revert optimistic update on error
+      setLocalComment(prev => ({
+        ...prev,
+        liked: !prev.liked,
+        likes: prev.liked ? prev.likes - 1 : prev.likes + 1
+      }));
       console.error("Error liking comment:", error);
       toast.error(error.message || "Failed to like comment");
     } finally {
       setIsLiking(false);
     }
-  }, [user, transformedComment, postId, onUpdate]);
+  }, [user, localComment, postId, onUpdate]);
+
+  // Update the like button UI to use localComment
+  const likeButtonClasses = useMemo(() => {
+    const baseClasses = "flex items-center space-x-1 px-2 py-1 rounded-full transition-colors";
+    const stateClasses = isLiking 
+      ? 'opacity-50 cursor-not-allowed' 
+      : (localComment?.liked || localComment?.likes > 0)
+        ? "text-blue-500 fill-current" 
+        : "text-gray-500 hover:text-blue-500 hover:bg-gray-50";
+    return `${baseClasses} ${stateClasses}`;
+  }, [isLiking, localComment?.liked, localComment?.likes]);
+
+  const thumbsUpClasses = useMemo(() => {
+    return (localComment?.liked || localComment?.likes > 0) ? "fill-current text-blue-500" : "";
+  }, [localComment?.liked, localComment?.likes]);
 
   const handleReply = useCallback(async () => {
     if (!user?._id) {
@@ -85,7 +120,7 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
     try {
       setIsSubmitting(true);
       // Call the API
-      const updatedPost = await postService.replyToComment(postId, transformedComment._id, replyContent.trim());
+      const updatedPost = await postService.replyToComment(postId, localComment._id, replyContent.trim());
       
       // Reset the form
       setReplyContent('');
@@ -101,7 +136,7 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [user, replyContent, postId, transformedComment._id, onUpdate]);
+  }, [user, replyContent, postId, localComment._id, onUpdate]);
 
   const toggleReplies = useCallback(() => {
     setShowReplies(prev => !prev);
@@ -109,25 +144,25 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
 
   const handleDeleteComment = useCallback(async () => {
     try {
-      const updatedPost = await postService.deleteComment(postId, transformedComment._id);
+      const updatedPost = await postService.deleteComment(postId, localComment._id);
       if (onUpdate) onUpdate(updatedPost);
       toast.success("Comment deleted successfully");
     } catch (error) {
       console.error("Error deleting comment:", error);
       toast.error(error.message || "Failed to delete comment");
     }
-  }, [postId, transformedComment._id, onUpdate]);
+  }, [postId, localComment._id, onUpdate]);
 
   const handleDeleteReply = useCallback(async (replyId) => {
     try {
-      const updatedPost = await postService.deleteReply(postId, transformedComment._id, replyId);
+      const updatedPost = await postService.deleteReply(postId, localComment._id, replyId);
       if (onUpdate) onUpdate(updatedPost);
       toast.success("Reply deleted successfully");
     } catch (error) {
       console.error("Error deleting reply:", error);
       toast.error(error.message || "Failed to delete reply");
     }
-  }, [postId, transformedComment._id, onUpdate]);
+  }, [postId, localComment._id, onUpdate]);
 
   const confirmDeleteComment = useCallback(() => {
     toast.custom((t) => (
@@ -202,38 +237,69 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
     }
     
     try {
+      setIsReplyLiking(replyId);
+      
+      // Optimistically update the UI
+      setLocalComment(prev => ({
+        ...prev,
+        replies: prev.replies.map(reply => 
+          reply._id === replyId 
+            ? {
+                ...reply,
+                liked: !reply.liked,
+                likes: reply.liked ? reply.likes - 1 : reply.likes + 1
+              }
+            : reply
+        )
+      }));
+      
       // Call the API
-      const updatedPost = await postService.likeReply(postId, transformedComment._id, replyId);
+      const updatedPost = await postService.likeReply(postId, localComment._id, replyId);
       
       // Update the parent component with the new post data
       if (onUpdate) onUpdate(updatedPost);
     } catch (error) {
+      // Revert optimistic update on error
+      setLocalComment(prev => ({
+        ...prev,
+        replies: prev.replies.map(reply => 
+          reply._id === replyId 
+            ? {
+                ...reply,
+                liked: !reply.liked,
+                likes: reply.liked ? reply.likes - 1 : reply.likes + 1
+              }
+            : reply
+        )
+      }));
       console.error("Error liking reply:", error);
       toast.error(error.message || "Failed to like reply");
+    } finally {
+      setIsReplyLiking(null);
     }
-  }, [user, transformedComment, postId, onUpdate]);
+  }, [user, localComment, postId, onUpdate]);
 
-  if (!transformedComment) return null;
+  if (!localComment) return null;
 
   return (
     <div className="bg-gray-50 rounded-lg p-3">
       <div className="flex items-start space-x-2">
-        <Link to={`/profile/${transformedComment.author.username}`} className="flex-shrink-0">
+        <Link to={`/profile/${localComment.author.username}`} className="flex-shrink-0">
           <img
-            src={transformedComment.author.profilePicture || "/avatar.png"}
-            alt={transformedComment.author.name || "User"}
+            src={localComment.author.profilePicture || "/avatar.png"}
+            alt={localComment.author.name || "User"}
             className="w-8 h-8 my-4 rounded-full object-cover"
           />  
         </Link>
         <div className="flex-1">
           <div className="bg-white rounded-lg p-3 shadow-sm relative">
             <div className="flex justify-between items-start">
-              <Link to={`/profile/${transformedComment.author.username}`} className="font-medium text-gray-900 hover:underline">
-                {transformedComment.author.name || "Unknown User"}
+              <Link to={`/profile/${localComment.author.username}`} className="font-medium text-gray-900 hover:underline">
+                {localComment.author.name || "Unknown User"}
             </Link>
               <div className="flex items-center">
                 <span className="text-xs text-gray-500 mr-2">
-              {formatDistanceToNow(new Date(transformedComment.createdAt), { addSuffix: true })}
+              {formatDistanceToNow(new Date(localComment.createdAt), { addSuffix: true })}
             </span>
                 {isCommentAuthor && (
                   <div className="relative">
@@ -261,18 +327,16 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
                 )}
               </div>
             </div>
-            <p className="mt-1 text-gray-800">{transformedComment.content}</p>
+            <p className="mt-1 text-gray-800">{localComment.content}</p>
           </div>
           <div className="flex items-center mt-2 space-x-4 text-xs">
             <button
               onClick={handleLikeComment}
               disabled={isLiking}
-              className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-colors ${
-                transformedComment.liked ? "text-blue-500 bg-blue-50" : "text-gray-500 hover:text-blue-500 hover:bg-blue-50"
-              }`}
+              className={likeButtonClasses}
             >
-              <ThumbsUp size={14} className={`transition-colors ${transformedComment.liked ? "fill-current text-blue-500" : ""}`} />
-              <span>{transformedComment.likes || 0} Likes</span>
+              <ThumbsUp size={14} className={thumbsUpClasses} />
+              <span>{localComment?.likes || 0} Likes</span>
             </button>
             <button
               onClick={() => setShowReplyInput(!showReplyInput)}
@@ -281,12 +345,12 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
               <MessageCircle size={14} />
               <span>Reply</span>
             </button>
-            {transformedComment.replies && transformedComment.replies.length > 0 && (
+            {localComment.replies && localComment.replies.length > 0 && (
               <button
                 onClick={toggleReplies}
                 className="flex items-center space-x-1 text-gray-500 hover:text-blue-500"
               >
-                <span>{showReplies ? "Hide" : "Show"} {transformedComment.replies.length} {transformedComment.replies.length === 1 ? "reply" : "replies"}</span>
+                <span>{showReplies ? "Hide" : "Show"} {localComment.replies.length} {localComment.replies.length === 1 ? "reply" : "replies"}</span>
               </button>
             )}
           </div>
@@ -320,10 +384,22 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
             </div>
           )}
           
-          {showReplies && transformedComment.replies && transformedComment.replies.length > 0 && (
+          {showReplies && localComment.replies && localComment.replies.length > 0 && (
             <div className="mt-3 space-y-3 pl-6 border-l-2 border-gray-200">
-              {transformedComment.replies.map((reply) => {
+              {localComment.replies.map((reply) => {
                 const isReplyAuthor = user?._id === reply.author?._id;
+                const isLikingThisReply = isReplyLiking === reply._id;
+                
+                const replyLikeButtonClasses = `flex items-center space-x-1 px-2 py-1 rounded-full transition-colors ${
+                  isLikingThisReply 
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : reply.liked 
+                      ? "text-blue-500 fill-current" 
+                      : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
+                }`;
+                
+                const replyThumbsUpClasses = reply.liked ? "fill-current text-blue-500" : "";
+
                 return (
                   <div key={reply._id} className="flex items-start space-x-2">
                     <Link to={`/profile/${reply.author.username}`} className="flex-shrink-0">
@@ -374,11 +450,10 @@ const Comment = memo(({ comment, postId, onUpdate }) => {
                       <div className="flex items-center mt-1 space-x-4 text-xs">
                         <button
                           onClick={() => handleLikeReply(reply._id)}
-                          className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-colors ${
-                            reply.liked ? "text-blue-500 bg-blue-50" : "text-gray-500 hover:text-blue-500 hover:bg-blue-50"
-                          }`}
+                          disabled={isLikingThisReply}
+                          className={replyLikeButtonClasses}
                         >
-                          <ThumbsUp size={12} className={`transition-colors ${reply.liked ? "fill-current text-blue-500" : ""}`} />
+                          <ThumbsUp size={12} className={replyThumbsUpClasses} />
                           <span>{reply.likes || 0} Likes</span>
                         </button>
                       </div>
@@ -656,7 +731,7 @@ const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
             <button
               className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${
                 isLiking ? 'opacity-50 cursor-not-allowed' : 
-                currentPost.liked ? "text-blue-500 bg-blue-50" : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
+                currentPost.liked ? "fill-current text-blue-500" : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
               }`}
               onClick={handleLike}
               disabled={isLiking || !user?._id}
@@ -736,22 +811,11 @@ const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
                 id={`comment-input-${currentPost._id}`}
                 type="text"
                 placeholder="Write a comment..."
-                className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
+                className="flex-1 bg-gray-100 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleComment()}
               />
-              <button
-                onClick={handleComment}
-                disabled={isSubmitting || !comment.trim()}
-                className={`p-2 rounded-full ${
-                  isSubmitting || !comment.trim()
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "text-blue-500 hover:bg-blue-50"
-                }`}
-              >
-                <Send size={18} />
-              </button>
             </div>
           </div>
         )}
@@ -760,85 +824,12 @@ const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
   );
 });
 
-Comment.propTypes = {
-  comment: PropTypes.shape({
-    _id: PropTypes.string,
-    content: PropTypes.string,
-    createdAt: PropTypes.string,
-    author: PropTypes.shape({
-      username: PropTypes.string,
-      name: PropTypes.string,
-      profilePicture: PropTypes.string,
-    }),
-    likes: PropTypes.number,
-    liked: PropTypes.bool,
-    replies: PropTypes.arrayOf(
-      PropTypes.shape({
-        _id: PropTypes.string,
-        content: PropTypes.string,
-        createdAt: PropTypes.string,
-        author: PropTypes.shape({
-          username: PropTypes.string,
-          name: PropTypes.string,
-          profilePicture: PropTypes.string,
-        }),
-        likes: PropTypes.number,
-        liked: PropTypes.bool,
-      })
-    ),
-  }).isRequired,
-  postId: PropTypes.string.isRequired,
-  onUpdate: PropTypes.func,
-};
-
 Post.propTypes = {
-  post: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    content: PropTypes.string,
-    image: PropTypes.string,
-    likes: PropTypes.number,
-    liked: PropTypes.bool,
-    createdAt: PropTypes.string.isRequired,
-    author: PropTypes.shape({
-      _id: PropTypes.string.isRequired,
-      username: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      profilePicture: PropTypes.string,
-      headline: PropTypes.string,
-    }).isRequired,
-    comments: PropTypes.arrayOf(
-      PropTypes.shape({
-        _id: PropTypes.string.isRequired,
-        content: PropTypes.string,
-        createdAt: PropTypes.string,
-        author: PropTypes.shape({
-          username: PropTypes.string,
-          name: PropTypes.string,
-          profilePicture: PropTypes.string,
-        }),
-        likes: PropTypes.number,
-        liked: PropTypes.bool,
-        replies: PropTypes.arrayOf(
-          PropTypes.shape({
-            _id: PropTypes.string,
-            content: PropTypes.string,
-            createdAt: PropTypes.string,
-            author: PropTypes.shape({
-              username: PropTypes.string,
-              name: PropTypes.string,
-              profilePicture: PropTypes.string,
-            }),
-            likes: PropTypes.number,
-            liked: PropTypes.bool,
-          })
-        ),
-      })
-    ),
-  }).isRequired,
+  post: PropTypes.object.isRequired,
   onLike: PropTypes.func.isRequired,
   onComment: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
 };
 
-export default Post; 
+export default Post;
