@@ -247,6 +247,32 @@ class PostService {
     }
   }
 
+  async getPost(postId) {
+    try {
+      // Check cache first
+      const cachedPost = this._getCachedData(postId, cache.postDetails);
+      if (cachedPost) {
+        return cachedPost;
+      }
+
+      const response = await axiosInstance.get(`/posts/${postId}`);
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to fetch post');
+      }
+      
+      const post = response.data.post;
+      
+      // Cache the result
+      this._setCacheData(postId, cache.postDetails, post);
+      
+      return post;
+    } catch (error) {
+      console.error('Error fetching post:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch post');
+    }
+  }
+
   // Helper method to update a post in all caches
   _updatePostInCache(updatedPost) {
     if (!updatedPost || !updatedPost._id) return;
