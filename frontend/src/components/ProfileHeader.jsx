@@ -88,7 +88,7 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
           className="w-full h-full object-cover"
         />
         {isOwnProfile && (
-          <label className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition-colors duration-200">
+          <label className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition-colors duration-200 z-10">
             <Camera className="h-5 w-5 text-gray-700" />
             <input
               type="file"
