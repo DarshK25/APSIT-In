@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import PropTypes from 'prop-types';
@@ -6,6 +6,52 @@ import { formatDistanceToNow } from 'date-fns';
 import { ThumbsUp, MoreVertical, Trash2, Edit, MessageCircle, Share2, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import postService from "../api/postService";
+
+// LikeButton component for consistent like functionality
+const LikeButton = ({ initialLikes = 0, initialLiked = false, size = 18, onLike }) => {
+  const [liked, setLiked] = useState(initialLiked);
+  const [likes, setLikes] = useState(initialLikes);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    setLiked(initialLiked);
+    setLikes(initialLikes);
+  }, [initialLiked, initialLikes]);
+
+  const toggleLike = async () => {
+    if (!user?._id) {
+      toast.error("Please login to like");
+      return;
+    }
+
+    try {
+      // Call API first
+      if (onLike) {
+        await onLike();
+      }
+      // Only update state after successful API call
+      setLiked(!liked);
+      setLikes(likes + (liked ? -1 : 1));
+    } catch (error) {
+      toast.error(error.message || "Failed to update like");
+    }
+  };
+
+  return (
+    <button
+      onClick={toggleLike}
+      className="flex items-center space-x-2 hover:bg-gray-50 px-3 py-1 rounded-full transition-colors"
+    >
+      <ThumbsUp
+        size={size}
+        className={`transition-all ${
+          liked ? "fill-blue-500 text-blue-500" : "text-gray-500 hover:text-blue-500"
+        }`}
+      />
+      <span className={`text-sm font-medium ${liked ? "text-blue-500" : "text-gray-500"}`}>{likes}</span>
+    </button>
+  );
+};
 
 // Reply component - extracted to improve code organization and readability
 const Reply = memo(({ 
@@ -123,21 +169,12 @@ const Reply = memo(({
           <p className="mt-1 text-gray-800 text-sm">{reply.content}</p>
         </div>
         <div className="flex items-center mt-1 space-x-4 text-xs">
-          <button
-            onClick={handleLikeReply}
-            disabled={isLiking}
-            className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-colors ${
-              isLiking ? 'opacity-50 cursor-not-allowed' : 
-              reply.liked ? "text-blue-500" : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
-            }`}
-          >
-            <ThumbsUp 
-              size={12} 
-              className="transition-colors" 
-              fill={reply.liked ? "currentColor" : "none"} 
-            />
-            <span className="ml-1">{reply.likes || 0} Likes</span>
-          </button>
+          <LikeButton
+            initialLikes={reply.likes || 0}
+            initialLiked={reply.liked}
+            size={12}
+            onLike={handleLikeReply}
+          />
         </div>
       </div>
     </div>
@@ -379,21 +416,12 @@ const Comment = memo(({
             <p className="mt-1 text-gray-800">{comment.content}</p>
           </div>
           <div className="flex items-center mt-2 space-x-4 text-xs">
-            <button
-              onClick={handleLikeComment}
-              disabled={isLiking}
-              className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-colors ${
-                isLiking ? 'opacity-50 cursor-not-allowed' : 
-                comment?.liked ? "text-blue-500" : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
-              }`}
-            >
-              <ThumbsUp 
-                size={14} 
-                className="transition-colors" 
-                fill={comment?.liked ? "currentColor" : "none"} 
-              />
-              <span className="ml-1">{comment?.likes || 0} Likes</span>
-            </button>
+            <LikeButton
+              initialLikes={comment?.likes || 0}
+              initialLiked={comment?.liked}
+              size={14}
+              onLike={handleLikeComment}
+            />
             <button
               onClick={() => setShowReplyInput(!showReplyInput)}
               className="flex items-center space-x-1 text-gray-500 hover:text-blue-500"
@@ -473,6 +501,26 @@ const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
   const [visibleComments, setVisibleComments] = useState(2);
   const [showComments, setShowComments] = useState(true);
   
+  // Store comment visibility state in ref to persist across re-renders
+  const commentStateRef = useRef({
+    visibleComments: 2,
+    showComments: true
+  });
+
+  // Update ref when state changes
+  useEffect(() => {
+    commentStateRef.current.visibleComments = visibleComments;
+    commentStateRef.current.showComments = showComments;
+  }, [visibleComments, showComments]);
+
+  // Restore comment state when post updates, but NOT on like changes
+  useEffect(() => {
+    if (post._id) {
+      setVisibleComments(commentStateRef.current.visibleComments);
+      setShowComments(commentStateRef.current.showComments);
+    }
+  }, [post._id]); // Only run when post ID changes, indicating a new post
+
   // Initialize edited content when the post changes
   useEffect(() => {
     if (post) {
@@ -720,21 +768,12 @@ const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
         {/* Post actions (like, comment, share) */}
         <div className="flex items-center justify-between border-t border-b border-gray-200 py-3">
           <div className="flex items-center gap-6">
-            <button
-              className={`flex items-center gap-2 px-3 py-1 rounded-full transition-colors ${
-                isLiking ? 'opacity-50 cursor-not-allowed' : 
-                post.liked ? "text-blue-500" : "text-gray-500 hover:text-blue-500 hover:bg-gray-50"
-              }`}
-              onClick={handleLike}
-              disabled={isLiking || !user?._id}
-            >
-              <ThumbsUp 
-                size={18} 
-                className="transition-colors" 
-                fill={post.liked ? "currentColor" : "none"}
-              />
-              <span className="font-medium">{post.likes || 0}</span>
-            </button>
+            <LikeButton
+              initialLikes={post.likes || 0}
+              initialLiked={post.liked}
+              size={18}
+              onLike={handleLike}
+            />
             <button
               className="flex items-center gap-2 px-3 py-1 rounded-full text-gray-500 hover:text-blue-500 hover:bg-gray-50 transition-colors"
               onClick={() => {
@@ -834,6 +873,47 @@ const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
       </div>
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  const prevPost = prevProps.post;
+  const nextPost = nextProps.post;
+  
+  if (prevPost._id !== nextPost._id) return false;
+  if (prevPost.content !== nextPost.content) return false;
+  if (prevPost.comments?.length !== nextPost.comments?.length) return false;
+  if (JSON.stringify(prevPost.author) !== JSON.stringify(nextPost.author)) return false;
+  if (prevPost.image !== nextPost.image) return false;
+  
+  // For comments, compare their content, structure, and replies
+  const areCommentsEqual = prevPost.comments?.every((prevComment, index) => {
+    const nextComment = nextPost.comments[index];
+    if (!nextComment) return false;
+
+    // Compare basic comment properties
+    if (prevComment._id !== nextComment._id ||
+        prevComment.content !== nextComment.content ||
+        JSON.stringify(prevComment.author) !== JSON.stringify(nextComment.author)) {
+      return false;
+    }
+
+    // Compare replies
+    const prevReplies = prevComment.replies || [];
+    const nextReplies = nextComment.replies || [];
+    
+    if (prevReplies.length !== nextReplies.length) return false;
+
+    return prevReplies.every((prevReply, replyIndex) => {
+      const nextReply = nextReplies[replyIndex];
+      return prevReply._id === nextReply._id &&
+             prevReply.content === nextReply.content &&
+             JSON.stringify(prevReply.author) === JSON.stringify(nextReply.author);
+    });
+  });
+  
+  if (!areCommentsEqual) return false;
+  
+  // If we got here, only likes might have changed, so preserve the component's state
+  return true;
 });
 
 Comment.propTypes = {
@@ -858,6 +938,13 @@ Post.propTypes = {
   onComment: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,
   onUpdate: PropTypes.func.isRequired,
+};
+
+LikeButton.propTypes = {
+  initialLikes: PropTypes.number,
+  initialLiked: PropTypes.bool,
+  size: PropTypes.number,
+  onLike: PropTypes.func
 };
 
 export default Post; 

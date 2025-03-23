@@ -104,11 +104,8 @@ const Feed = ({ posts, setPosts }) => {
       return;
     }
 
-    // Store the original post state for rollback
-    const originalPost = { ...post };
-
     try {
-      // Optimistic update
+      // Optimistic update - only update likes and liked status
       setPosts(prevPosts =>
         prevPosts.map(p =>
           p._id === postId
@@ -120,28 +117,30 @@ const Feed = ({ posts, setPosts }) => {
       // Make API call
       const updatedPost = await postService.likePost(postId);
 
-      // Update with server response - use functional update to ensure we're working with the latest state
+      // Update only the like-related fields from server response
       setPosts(prevPosts =>
         prevPosts.map(p =>
-          p._id === postId ? updatedPost : p
+          p._id === postId
+            ? { ...p, likes: updatedPost.likes, liked: updatedPost.liked }
+            : p
         )
       );
       
-      // Return the updated post for local state updates
       return updatedPost;
     } catch (error) {
       console.error("Error toggling like:", error);
-      // Rollback on error
+      
+      // Rollback on error - only rollback like-related fields
       setPosts(prevPosts =>
         prevPosts.map(p =>
-          p._id === postId ? originalPost : p
+          p._id === postId
+            ? { ...p, likes: post.likes, liked: post.liked }
+            : p
         )
       );
       
-      // Handle specific error cases
       if (error.message === 'Post not found' || error.response?.status === 404) {
         toast.error("This post no longer exists");
-        // Remove the post from the list since it's been deleted
         setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
       } else {
         toast.error(error.message || "Failed to update like");

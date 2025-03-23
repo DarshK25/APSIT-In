@@ -462,18 +462,33 @@ export const likePost = async (req, res) => {
             .populate("author", "name username profilePicture headline")
             .populate({
                 path: "comments",
+                populate: [
+                    {
+                        path: "author",
+                        select: "name username profilePicture headline",
+                        model: "User"
+                    },
+                    {
+                        path: "replies",
                         populate: {
                             path: "author",
-                            select: "name username profilePicture"
+                            select: "name username profilePicture headline",
+                            model: "User"
                         }
+                    }
+                ]
             });
+
+        if (!updatedPost) {
+            return res.status(404).json({ success: false, message: "Post not found after update" });
+        }
 
         // Transform the post data
         const transformedPost = {
             ...updatedPost.toObject(),
             likes: updatedPost.likes.length,
             liked: updatedPost.likes.includes(userId),
-            comments: updatedPost.comments.map(comment => ({
+            comments: Array.isArray(updatedPost.comments) ? updatedPost.comments.map(comment => ({
                 ...comment,
                 likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
                 liked: Array.isArray(comment.likes) ? comment.likes.includes(userId) : false,
@@ -482,7 +497,7 @@ export const likePost = async (req, res) => {
                     likes: Array.isArray(reply.likes) ? reply.likes.length : 0,
                     liked: Array.isArray(reply.likes) ? reply.likes.includes(userId) : false
                 })) : []
-            }))
+            })) : []
         };
 
         return res.json({ 
