@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar.jsx";
 import Feed from "../components/Feed.jsx";
 import Recommendations from "../components/Recommendations.jsx";
 import userService from "../api/userService";
-import postService from "../api/postService";
+import * as postService from "../api/postService";
 import authService from "../api/authService";
 
 const LoadingSpinner = () => (

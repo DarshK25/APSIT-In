@@ -1,333 +1,228 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import * as postService from '../api/postService';
+import { Post } from './Post';
+import { toast } from 'react-hot-toast';
 import PropTypes from 'prop-types';
-import Post from "./Post";
-import CreatePost from "./CreatePost";
-import { toast } from "react-hot-toast";
-import postService from "../api/postService";
+import { ImagePlus, Loader2 } from 'lucide-react';
 
-const Feed = ({ posts, setPosts }) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const Feed = () => {
+    const { user } = useAuth();
+    const [posts, setPosts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [newPostContent, setNewPostContent] = useState('');
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [imagePreview, setImagePreview] = useState(null);
 
-  // Transform posts to ensure proper data structure - memoized to prevent unnecessary recalculations
-  const transformedPosts = useMemo(() => {
-    return posts?.map(post => {
-      if (!post || !post._id || !post.author) {
-        return null;
-      }
+    useEffect(() => {
+        fetchPosts();
+    }, []);
 
-      // Ensure comments is an array
-      const comments = Array.isArray(post.comments) ? post.comments : [];
-      
-      return {
-        ...post,
-        likes: typeof post.likes === 'number' ? post.likes : 0,
-        liked: Boolean(post.liked),
-        comments: comments.map(comment => {
-          if (!comment || !comment._id) {
-            return null;
-          }
-
-          // Only use defaults if the data is missing
-          const commentAuthor = comment.author && typeof comment.author === 'object' ? {
-            _id: comment.author._id,
-            username: comment.author.username || 'unknown',
-            name: comment.author.name || 'Unknown User',
-            profilePicture: comment.author.profilePicture || '/avatar.png'
-          } : {
-            _id: 'unknown',
-            username: 'unknown',
-            name: 'Unknown User',
-            profilePicture: '/avatar.png'
-          };
-
-          return {
-            ...comment,
-            _id: comment._id,
-            content: comment.content || 'No content available',
-            createdAt: comment.createdAt || new Date().toISOString(),
-            author: commentAuthor,
-            likes: typeof comment.likes === 'number' ? comment.likes : 0,
-            liked: Boolean(comment.liked),
-            replies: Array.isArray(comment.replies) ? comment.replies.map(reply => {
-              if (!reply || !reply._id) {
-                return null;
-              }
-
-              const replyAuthor = reply.author && typeof reply.author === 'object' ? {
-                _id: reply.author._id,
-                username: reply.author.username || 'unknown',
-                name: reply.author.name || 'Unknown User',
-                profilePicture: reply.author.profilePicture || '/avatar.png'
-              } : {
-                _id: 'unknown',
-                username: 'unknown',
-                name: 'Unknown User',
-                profilePicture: '/avatar.png'
-              };
-
-              return {
-                ...reply,
-                _id: reply._id,
-                content: reply.content || 'No content available',
-                createdAt: reply.createdAt || new Date().toISOString(),
-                author: replyAuthor,
-                likes: typeof reply.likes === 'number' ? reply.likes : 0,
-                liked: Boolean(reply.liked)
-              };
-            }).filter(Boolean) : []
-          };
-        }).filter(Boolean)
-      };
-    }).filter(Boolean) || [];
-  }, [posts]);
-
-  const handlePost = async (formData) => {
-    try {
-      setIsLoading(true);
-      const createdPost = await postService.createPost(formData);
-      setPosts(prevPosts => [createdPost, ...prevPosts]);
-      toast.success("Post created successfully!");
-      return createdPost;
-    } catch (error) {
-      console.error("Error creating post:", error);
-      toast.error(error.message || "Failed to create post");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLikeToggle = async (postId) => {
-    const post = posts.find(p => p._id === postId);
-    if (!post) {
-      toast.error("Post not found");
-      return;
-    }
-
-    try {
-      // Optimistic update - only update likes and liked status
-      setPosts(prevPosts =>
-        prevPosts.map(p =>
-          p._id === postId
-            ? { ...p, likes: p.liked ? p.likes - 1 : p.likes + 1, liked: !p.liked }
-            : p
-        )
-      );
-
-      // Make API call
-      const updatedPost = await postService.likePost(postId);
-
-      // Update only the like-related fields from server response
-      setPosts(prevPosts =>
-        prevPosts.map(p =>
-          p._id === postId
-            ? { ...p, likes: updatedPost.likes, liked: updatedPost.liked }
-            : p
-        )
-      );
-      
-      return updatedPost;
-    } catch (error) {
-      console.error("Error toggling like:", error);
-      
-      // Rollback on error - only rollback like-related fields
-      setPosts(prevPosts =>
-        prevPosts.map(p =>
-          p._id === postId
-            ? { ...p, likes: post.likes, liked: post.liked }
-            : p
-        )
-      );
-      
-      if (error.message === 'Post not found' || error.response?.status === 404) {
-        toast.error("This post no longer exists");
-        setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
-      } else {
-        toast.error(error.message || "Failed to update like");
-      }
-      
-      throw error;
-    }
-  };
-
-  const handleComment = async (postId, comment) => {
-    try {
-      // Optimistic update - find the post and add a temporary comment
-      const post = posts.find(p => p._id === postId);
-      if (!post) {
-        toast.error("Post not found");
-        return;
-      }
-
-      // Make API call
-      const updatedPost = await postService.addComment(postId, comment);
-      
-      // Update with server response
-      setPosts(prevPosts =>
-        prevPosts.map(p => p._id === postId ? updatedPost : p)
-      );
-      
-      toast.success("Comment added successfully!");
-      return updatedPost;
-    } catch (error) {
-      console.error("Error adding comment:", error);
-      toast.error(error.message || "Failed to add comment");
-      throw error;
-    }
-  };
-
-  const handleDelete = async (postId) => {
-    try {
-      // Optimistic update - remove the post immediately
-      setPosts(prevPosts => prevPosts.filter(p => p._id !== postId));
-      
-      // Make API call
-      await postService.deletePost(postId);
-      toast.success("Post deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      toast.error(error.message || "Failed to delete post");
-      
-      // Rollback on error - fetch the posts again
-      try {
-        const posts = await postService.getAllPosts();
-        setPosts(posts);
-      } catch (fetchError) {
-        console.error("Error fetching posts after delete failure:", fetchError);
-      }
-      
-      throw error;
-    }
-  };
-
-  const handleUpdate = async (postId, content) => {
-    try {
-      const formData = new FormData();
-      formData.append('content', content);
-      
-      // Optimistic update
-      setPosts(prevPosts =>
-        prevPosts.map(p => p._id === postId ? { ...p, content } : p)
-      );
-      
-      // Make API call
-      const updatedPost = await postService.updatePost(postId, formData);
-      
-      // Update with server response
-      setPosts(prevPosts =>
-        prevPosts.map(p => p._id === postId ? updatedPost : p)
-      );
-      
-      toast.success("Post updated successfully!");
-      return updatedPost;
-    } catch (error) {
-      console.error("Error updating post:", error);
-      toast.error(error.message || "Failed to update post");
-      
-      // Rollback on error - fetch the post again
-      try {
-        const posts = await postService.getAllPosts();
-        setPosts(posts);
-      } catch (fetchError) {
-        console.error("Error fetching posts after update failure:", fetchError);
-      }
-      
-      throw error;
-    }
-  };
-
-  // Handle post updates from child components - optimized to use functional updates
-  const handlePostUpdate = (postId, updatedPost) => {
-    if (updatedPost) {
-      setPosts(prevPosts => {
-        // Check if the post exists in the current state
-        const postExists = prevPosts.some(p => p._id === postId);
-        
-        if (postExists) {
-          // Update the existing post
-          return prevPosts.map(p => p._id === postId ? updatedPost : p);
-        } else {
-          // If the post doesn't exist (rare case), add it
-          return [...prevPosts, updatedPost];
+    const fetchPosts = async () => {
+        try {
+            setIsLoading(true);
+            const fetchedPosts = await postService.getAllPosts();
+            const formattedPosts = fetchedPosts.map(post => ({
+                ...post,
+                author: typeof post.author === 'string' 
+                    ? { _id: post.author, username: 'Loading...', profilePicture: null }
+                    : post.author
+            }));
+            setPosts(formattedPosts);
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            toast.error('Failed to fetch posts');
+        } finally {
+            setIsLoading(false);
         }
-      });
-    }
-  };
+    };
 
-  return (
-    <div className="space-y-4">
-      <CreatePost onPost={handlePost} />
-      {isLoading ? (
-        <div className="bg-white rounded-lg shadow p-4 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+    const handleCreatePost = async (e) => {
+        e.preventDefault();
+        if (!newPostContent.trim() && !selectedImage) {
+            toast.error('Please add some content or an image');
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            const formData = new FormData();
+            formData.append('content', newPostContent);
+            if (selectedImage) {
+                formData.append('image', selectedImage);
+            }
+
+            const newPost = await postService.createPost(formData);
+            const formattedPost = {
+                ...newPost,
+                author: typeof newPost.author === 'string'
+                    ? { _id: newPost.author, username: user.username, profilePicture: user.profilePicture }
+                    : newPost.author
+            };
+            setPosts([formattedPost, ...posts]);
+            setNewPostContent('');
+            setSelectedImage(null);
+            setImagePreview(null);
+            toast.success('Post created successfully');
+        } catch (error) {
+            console.error('Error creating post:', error);
+            toast.error('Failed to create post');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdatePost = async (updatedPost) => {
+        const formattedPost = {
+            ...updatedPost,
+            author: typeof updatedPost.author === 'string'
+                ? { _id: updatedPost.author, username: 'Loading...', profilePicture: null }
+                : updatedPost.author
+        };
+        setPosts(posts.map(post => 
+            post._id === formattedPost._id ? formattedPost : post
+        ));
+    };
+
+    const handleDeletePost = async (postId) => {
+        setPosts(posts.filter(post => post._id !== postId));
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size should be less than 5MB');
+                return;
+            }
+            setSelectedImage(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-2xl mx-auto p-4">
+            <form onSubmit={handleCreatePost} className="mb-6 bg-white rounded-xl shadow-sm p-4">
+                <div className="flex items-start space-x-3">
+                    <img
+                        src={user.profilePicture || '/default-avatar.png'}
+                        alt={user.username}
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                    />
+                    <div className="flex-1">
+                        <textarea
+                            value={newPostContent}
+                            onChange={(e) => setNewPostContent(e.target.value)}
+                            placeholder="What's on your mind?"
+                            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-200"
+                            rows="3"
+                        />
+                        {imagePreview && (
+                            <div className="mt-2 relative group">
+                                <img
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    className="w-full h-48 object-cover rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSelectedImage(null);
+                                        setImagePreview(null);
+                                    }}
+                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center mt-3">
+                            <label className="cursor-pointer">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                />
+                                <span className="flex items-center text-blue-500 hover:text-blue-600 transition-colors">
+                                    <ImagePlus className="w-5 h-5 mr-1" />
+                                    <span className="text-sm">Add Photo</span>
+                                </span>
+                            </label>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || (!newPostContent.trim() && !selectedImage)}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                                    isSubmitting || (!newPostContent.trim() && !selectedImage)
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                                }`}
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 inline animate-spin" />
+                                        Posting...
+                                    </>
+                                ) : (
+                                    'Post'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            <div className="space-y-6">
+                {posts.map(post => (
+                    <Post
+                        key={post._id}
+                        post={post}
+                        onUpdate={handleUpdatePost}
+                        onDelete={handleDeletePost}
+                    />
+                ))}
+            </div>
         </div>
-      ) : transformedPosts.length > 0 ? (
-        transformedPosts.map((post) => (
-          <Post
-            key={post._id}
-            post={post}
-            onLike={handleLikeToggle}
-            onComment={handleComment}
-            onDelete={handleDelete}
-            onUpdate={handlePostUpdate}
-          />
-        ))
-      ) : (
-        <div className="bg-white rounded-lg shadow p-4 text-center text-gray-500">
-          No posts yet. Be the first to post!
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 Feed.propTypes = {
-  posts: PropTypes.arrayOf(
-    PropTypes.shape({
-      _id: PropTypes.string.isRequired,
-      content: PropTypes.string,
-      image: PropTypes.string,
-      likes: PropTypes.number,
-      liked: PropTypes.bool,
-      createdAt: PropTypes.string.isRequired,
-      author: PropTypes.shape({
-        _id: PropTypes.string.isRequired,
-        username: PropTypes.string.isRequired,
-        name: PropTypes.string.isRequired,
-        profilePicture: PropTypes.string,
-        headline: PropTypes.string,
-      }).isRequired,
-      comments: PropTypes.arrayOf(
+    posts: PropTypes.arrayOf(
         PropTypes.shape({
-          _id: PropTypes.string,
-          content: PropTypes.string,
-          createdAt: PropTypes.string,
-          author: PropTypes.shape({
-            username: PropTypes.string,
-            name: PropTypes.string,
-            profilePicture: PropTypes.string,
-          }),
-          likes: PropTypes.number,
-          liked: PropTypes.bool,
-          replies: PropTypes.arrayOf(
-            PropTypes.shape({
-              _id: PropTypes.string,
-              content: PropTypes.string,
-              createdAt: PropTypes.string,
-              author: PropTypes.shape({
-                username: PropTypes.string,
-                name: PropTypes.string,
-                profilePicture: PropTypes.string,
-              }),
-              likes: PropTypes.number,
-              liked: PropTypes.bool,
-            })
-          ),
+            _id: PropTypes.string.isRequired,
+            content: PropTypes.string.isRequired,
+            author: PropTypes.shape({
+                _id: PropTypes.string.isRequired,
+                username: PropTypes.string.isRequired,
+                profilePicture: PropTypes.string
+            }).isRequired,
+            likes: PropTypes.arrayOf(PropTypes.string).isRequired,
+            comments: PropTypes.arrayOf(
+                PropTypes.shape({
+                    _id: PropTypes.string.isRequired,
+                    content: PropTypes.string.isRequired,
+                    author: PropTypes.shape({
+                        _id: PropTypes.string.isRequired,
+                        username: PropTypes.string.isRequired,
+                        profilePicture: PropTypes.string
+                    }).isRequired,
+                    likes: PropTypes.arrayOf(PropTypes.string).isRequired
+                })
+            ).isRequired,
+            createdAt: PropTypes.string.isRequired
         })
-      ),
-    })
-  ).isRequired,
-  setPosts: PropTypes.func.isRequired,
+    ).isRequired
 };
 
-export default Feed; 
+export default Feed;

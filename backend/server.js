@@ -14,6 +14,7 @@ import { connectDB } from "./lib/db.js";
 import { initSocket } from './socket/socket.js';
 import { createServer } from "http";
 import { createUploadsDir } from './utils/createUploadsDir.js';
+import mongoose from 'mongoose';
 
 dotenv.config();
 
@@ -96,6 +97,7 @@ process.on('SIGTERM', () => {
 const startServer = async () => {
     try {
         await connectDB(); // Connect to database first
+        console.log('Connected to MongoDB');
         httpServer.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });

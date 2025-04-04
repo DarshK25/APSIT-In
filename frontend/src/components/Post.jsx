@@ -1,950 +1,503 @@
-import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
-import { Link } from "react-router-dom";
-import { toast } from "react-hot-toast";
-import PropTypes from 'prop-types';
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ThumbsUp, MoreVertical, Trash2, Edit, MessageCircle, Share2, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import postService from "../api/postService";
+import * as postService from '../api/postService';
+import * as commentService from '../api/commentService';
+import { FaHeart, FaRegHeart, FaComment, FaShare, FaTrash, FaEdit } from 'react-icons/fa';
+import PropTypes from 'prop-types';
+import { toast } from 'react-hot-toast';
 
-// LikeButton component for consistent like functionality
-const LikeButton = ({ initialLikes = 0, initialLiked = false, size = 18, onLike }) => {
-  const [liked, setLiked] = useState(initialLiked);
-  const [likes, setLikes] = useState(initialLikes);
-  const { user } = useAuth();
+export const Post = ({ post, onUpdate, onDelete }) => {
+    const { user } = useAuth();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedContent, setEditedContent] = useState(post.content);
+    const [newComment, setNewComment] = useState('');
+    const [replyingTo, setReplyingTo] = useState(null);
+    const [replyContent, setReplyContent] = useState('');
+    const [showComments, setShowComments] = useState(false);
+    const [isLiking, setIsLiking] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  useEffect(() => {
-    setLiked(initialLiked);
-    setLikes(initialLikes);
-  }, [initialLiked, initialLikes]);
+    const handleLike = async () => {
+        try {
+            setIsLiking(true);
+            const updatedPost = await postService.likePost(post._id);
+            onUpdate(updatedPost);
+            toast.success('Post liked successfully');
+        } catch (error) {
+            console.error('Error liking post:', error);
+            toast.error('Failed to like post');
+        } finally {
+            setIsLiking(false);
+        }
+    };
 
-  const toggleLike = async () => {
-    if (!user?._id) {
-      toast.error("Please login to like");
-      return;
-    }
+    const handleShare = async () => {
+        try {
+            setIsSharing(true);
+            const sharedPost = await postService.sharePost(post._id);
+            onUpdate(sharedPost);
+            toast.success('Post shared successfully');
+        } catch (error) {
+            console.error('Error sharing post:', error);
+            toast.error('Failed to share post');
+        } finally {
+            setIsSharing(false);
+        }
+    };
 
-    try {
-      // Call API first
-      if (onLike) {
-        await onLike();
-      }
-      // Only update state after successful API call
-      setLiked(!liked);
-      setLikes(likes + (liked ? -1 : 1));
-    } catch (error) {
-      toast.error(error.message || "Failed to update like");
-    }
-  };
-
-  return (
-    <button
-      onClick={toggleLike}
-      className="flex items-center space-x-2 hover:bg-gray-50 px-3 py-1 rounded-full transition-colors"
-    >
-      <ThumbsUp
-        size={size}
-        className={`transition-all ${
-          liked ? "fill-blue-500 text-blue-500" : "text-gray-500 hover:text-blue-500"
-        }`}
-      />
-      <span className={`text-sm font-medium ${liked ? "text-blue-500" : "text-gray-500"}`}>{likes}</span>
-    </button>
-  );
-};
-
-// Reply component - extracted to improve code organization and readability
-const Reply = memo(({ 
-  reply, 
-  postId, 
-  commentId, 
-  onLikeReply, 
-  onDeleteReply, 
-  currentUserId 
-}) => {
-  const [showMenu, setShowMenu] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-
-  // Check if the current user is the author of this reply
-  const isReplyAuthor = currentUserId === reply.author?._id;
-
-  // Format the creation time
-  const formattedTime = useMemo(() => 
-    formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true }),
-    [reply.createdAt]
-  );
-
-  // Handler for confirming reply deletion
-  const confirmDeleteReply = useCallback(() => {
-    toast.custom((t) => (
-      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex flex-col`}>
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium">Delete Reply</h3>
-        </div>
-        <div className="p-4">
-          <p className="text-gray-600">Are you sure you want to delete this reply? This action cannot be undone.</p>
-        </div>
-        <div className="p-4 border-t flex justify-end space-x-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              onDeleteReply(postId, commentId, reply._id);
-              toast.dismiss(t.id);
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ), {
-      duration: Infinity,
-      position: 'top-center',
-    });
-  }, [postId, commentId, reply._id, onDeleteReply]);
-
-  // Handler for liking a reply
-  const handleLikeReply = useCallback(async () => {
-    try {
-      setIsLiking(true);
-      await onLikeReply(postId, commentId, reply._id);
-    } catch (error) {
-      console.error("Error liking reply:", error);
-      toast.error(error.message || "Failed to like reply");
-    } finally {
-      setIsLiking(false);
-    }
-  }, [postId, commentId, reply._id, onLikeReply]);
-
-  return (
-    <div className="flex items-start space-x-2">
-      <Link to={`/profile/${reply.author.username}`} className="flex-shrink-0">
-        <img
-          src={reply.author.profilePicture || "/avatar.png"}
-          alt={reply.author.name || "User"}
-          className="w-6 h-6 mt-4 rounded-full object-cover"
-        />
-      </Link>
-      <div className="flex-1">
-        <div className="bg-white rounded-lg p-2 shadow-sm relative">
-          <div className="flex justify-between items-start">
-            <Link to={`/profile/${reply.author.username}`} className="font-medium text-gray-900 hover:underline">
-              {reply.author.name || "Unknown User"}
-            </Link>
-            <div className="flex items-center">
-              <span className="text-xs text-gray-500 mr-2">
-                {formattedTime}
-              </span>
-              {isReplyAuthor && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowMenu(!showMenu)}
-                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <MoreVertical size={14} className="text-gray-500" />
-                  </button>
-                  {showMenu && (
-                    <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10 border">
-                      <button
-                        onClick={() => {
-                          confirmDeleteReply();
-                          setShowMenu(false);
-                        }}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 flex items-center gap-2 text-sm"
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <p className="mt-1 text-gray-800 text-sm">{reply.content}</p>
-        </div>
-        <div className="flex items-center mt-1 space-x-4 text-xs">
-          <LikeButton
-            initialLikes={reply.likes || 0}
-            initialLiked={reply.liked}
-            size={12}
-            onLike={handleLikeReply}
-          />
-        </div>
-      </div>
-    </div>
-  );
-});
-
-// Comment component - Handles comments and their replies
-const Comment = memo(({ 
-  comment, 
-  postId, 
-  onUpdatePost, 
-  currentUserId 
-}) => {
-  const { user } = useAuth();
-  const [isLiking, setIsLiking] = useState(false);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showReplies, setShowReplies] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [isDeleted, setIsDeleted] = useState(false);
-
-  // Check if the current user is the author of this comment
-  const isCommentAuthor = currentUserId === comment?.author?._id;
-
-  // Format the creation time
-  const formattedTime = useMemo(() => 
-    formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true }),
-    [comment.createdAt]
-  );
-
-  // Handle liking a comment
-  const handleLikeComment = useCallback(async () => {
-    if (!user?._id) {
-      toast.error("Please login to like comments");
-      return;
-    }
-    
-    try {
-      setIsLiking(true);
-      
-      // Make the API call
-      const updatedPost = await postService.likeComment(postId, comment._id);
-      
-      // Update the post in the parent component
-      if (onUpdatePost) {
-        onUpdatePost(updatedPost);
-      }
-    } catch (error) {
-      console.error("Error liking comment:", error);
-      toast.error(error.message || "Failed to like comment");
-    } finally {
-      setIsLiking(false);
-    }
-  }, [user, comment._id, postId, onUpdatePost]);
-
-  // Handle replying to a comment
-  const handleReply = useCallback(async () => {
-    if (!user?._id) {
-      toast.error("Please login to reply to comments");
-      return;
-    }
-
-    if (!replyContent.trim()) {
-      toast.error("Reply cannot be empty");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      // Call the API
-      const updatedPost = await postService.replyToComment(postId, comment._id, replyContent.trim());
-      
-      // Reset the form
-      setReplyContent('');
-      setShowReplyInput(false);
-      
-      // Update the parent component
-      if (onUpdatePost) {
-        onUpdatePost(updatedPost);
-      }
-      
-      // Show replies after adding one
-      setShowReplies(true);
-      
-      toast.success("Reply added successfully!");
-    } catch (error) {
-      console.error("Error replying to comment:", error);
-      toast.error(error.message || "Failed to add reply");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [user, replyContent, postId, comment._id, onUpdatePost]);
-
-  // Handle liking a reply
-  const handleLikeReply = useCallback(async (postId, commentId, replyId) => {
-    if (!user?._id) {
-      toast.error("Please login to like replies");
-      return;
-    }
-    
-    try {
-      // Call the API
-      const updatedPost = await postService.likeReply(postId, commentId, replyId);
-      
-      // Update the parent component
-      if (onUpdatePost) {
-        onUpdatePost(updatedPost);
-      }
-    } catch (error) {
-      console.error("Error liking reply:", error);
-      toast.error(error.message || "Failed to like reply");
-    }
-  }, [user, onUpdatePost]);
-
-  // Handle deleting a comment
-  const handleDeleteComment = useCallback(async () => {
-    try {
-      // Optimistically update UI first
-      setIsDeleted(true);
-      
-      const updatedPost = await postService.deleteComment(postId, comment._id);
-      if (onUpdatePost) {
-        onUpdatePost(updatedPost);
-      }
-      toast.success("Comment deleted successfully");
-    } catch (error) {
-      // Revert UI update if API call fails
-      setIsDeleted(false);
-      console.error("Error deleting comment:", error);
-      toast.error(error.message || "Failed to delete comment");
-    }
-  }, [postId, comment._id, onUpdatePost]);
-
-  // Handle deleting a reply
-  const handleDeleteReply = useCallback(async (postId, commentId, replyId) => {
-    try {
-      const updatedPost = await postService.deleteReply(postId, commentId, replyId);
-      if (onUpdatePost) {
-        onUpdatePost(updatedPost);
-      }
-      toast.success("Reply deleted successfully");
-    } catch (error) {
-      console.error("Error deleting reply:", error);
-      toast.error(error.message || "Failed to delete reply");
-    }
-  }, [onUpdatePost]);
-
-  // Confirmation dialog for deleting a comment
-  const confirmDeleteComment = useCallback(() => {
-    toast.custom((t) => (
-      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex flex-col`}>
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium">Delete Comment</h3>
-        </div>
-        <div className="p-4">
-          <p className="text-gray-600">Are you sure you want to delete this comment? This action cannot be undone.</p>
-        </div>
-        <div className="p-4 border-t flex justify-end space-x-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              handleDeleteComment();
-              toast.dismiss(t.id);
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ), {
-      duration: Infinity,
-      position: 'top-center',
-    });
-  }, [handleDeleteComment]);
-
-  // Toggle showing replies
-  const toggleReplies = useCallback(() => {
-    setShowReplies(prev => !prev);
-  }, []);
-
-  // If comment is deleted, don't render anything
-  if (isDeleted) return null;
-  if (!comment) return null;
-
-  return (
-    <div className="bg-gray-50 rounded-lg p-3">
-      <div className="flex items-start space-x-2">
-        <Link to={`/profile/${comment.author.username}`} className="flex-shrink-0">
-          <img
-            src={comment.author.profilePicture || "/avatar.png"}
-            alt={comment.author.name || "User"}
-            className="w-8 h-8 my-4 rounded-full object-cover"
-          />  
-        </Link>
-        <div className="flex-1">
-          <div className="bg-white rounded-lg p-3 shadow-sm relative">
-            <div className="flex justify-between items-start">
-              <Link to={`/profile/${comment.author.username}`} className="font-medium text-gray-900 hover:underline">
-                {comment.author.name || "Unknown User"}
-              </Link>
-              <div className="flex items-center">
-                <span className="text-xs text-gray-500 mr-2">
-                  {formattedTime}
-                </span>
-                {isCommentAuthor && (
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowMenu(!showMenu)}
-                      className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <MoreVertical size={16} className="text-gray-500" />
-                    </button>
-                    {showMenu && (
-                      <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg z-10 border">
-                        <button
-                          onClick={() => {
-                            confirmDeleteComment();
-                            setShowMenu(false);
-                          }}
-                          className="w-full text-left px-3 py-2 hover:bg-gray-100 text-red-500 flex items-center gap-2 text-sm"
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-            <p className="mt-1 text-gray-800">{comment.content}</p>
-          </div>
-          <div className="flex items-center mt-2 space-x-4 text-xs">
-            <LikeButton
-              initialLikes={comment?.likes || 0}
-              initialLiked={comment?.liked}
-              size={14}
-              onLike={handleLikeComment}
-            />
-            <button
-              onClick={() => setShowReplyInput(!showReplyInput)}
-              className="flex items-center space-x-1 text-gray-500 hover:text-blue-500"
-            >
-              <MessageCircle size={14} />
-              <span>Reply</span>
-            </button>
-            {comment.replies && comment.replies.length > 0 && (
-              <button
-                onClick={toggleReplies}
-                className="flex items-center space-x-1 text-gray-500 hover:text-blue-500"
-              >
-                <span>{showReplies ? "Hide" : "Show"} {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}</span>
-              </button>
-            )}
-          </div>
-          
-          {showReplyInput && (
-            <div className="mt-3 flex items-center gap-2">
-              <img
-                src={user?.profilePicture || "/avatar.png"}
-                alt={user?.name}
-                className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-              />
-              <input
-                type="text"
-                placeholder="Write a reply..."
-                className="flex-1 bg-gray-100 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && replyContent.trim() && handleReply()}
-              />
-              <button
-                onClick={handleReply}
-                disabled={isSubmitting || !replyContent.trim()}
-                className={`p-1 rounded-full flex-shrink-0 ${
-                  isSubmitting || !replyContent.trim()
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "text-blue-500 hover:bg-blue-50"
-                }`}
-              >
-                <Send size={14} />
-              </button>
-            </div>
-          )}
-          
-          {showReplies && comment.replies && comment.replies.length > 0 && (
-            <div className="mt-3 space-y-3 pl-6 border-l-2 border-gray-200">
-              {comment.replies.map((reply) => (
-                <Reply
-                  key={reply._id}
-                  reply={reply}
-                  postId={postId}
-                  commentId={comment._id}
-                  onLikeReply={handleLikeReply}
-                  onDeleteReply={handleDeleteReply}
-                  currentUserId={currentUserId}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-});
-
-// Main Post component
-const Post = memo(({ post, onLike, onComment, onDelete, onUpdate }) => {
-  const { user } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedContent, setEditedContent] = useState('');
-  const [showMenu, setShowMenu] = useState(false);
-  const [commentContent, setCommentContent] = useState('');
-  const [visibleComments, setVisibleComments] = useState(2);
-  const [showComments, setShowComments] = useState(true);
-  
-  // Store comment visibility state in ref to persist across re-renders
-  const commentStateRef = useRef({
-    visibleComments: 2,
-    showComments: true
-  });
-
-  // Update ref when state changes
-  useEffect(() => {
-    commentStateRef.current.visibleComments = visibleComments;
-    commentStateRef.current.showComments = showComments;
-  }, [visibleComments, showComments]);
-
-  // Restore comment state when post updates, but NOT on like changes
-  useEffect(() => {
-    if (post._id) {
-      setVisibleComments(commentStateRef.current.visibleComments);
-      setShowComments(commentStateRef.current.showComments);
-    }
-  }, [post._id]); // Only run when post ID changes, indicating a new post
-
-  // Initialize edited content when the post changes
-  useEffect(() => {
-    if (post) {
-      setEditedContent(post.content || '');
-    }
-  }, [post]);
-
-  // Check if the current user is the author
-  const isAuthor = user?._id === post?.author?._id;
-
-  // Format the creation time
-  const formattedTime = useMemo(() => 
-    formatDistanceToNow(new Date(post.createdAt), { addSuffix: true }),
-    [post.createdAt]
-  );
-
-  // Get safe comments array
-  const safeComments = useMemo(() => {
-    return Array.isArray(post.comments) ? post.comments : [];
-  }, [post.comments]);
-
-  // Validate post data
-  if (!post || !post._id || !post.author) {
-    return null;
-  }
-
-  // Handle adding a comment
-  const handleComment = useCallback(async () => {
-    if (!user?._id) {
-      toast.error("Please login to comment");
-      return;
-    }
-
-    if (!commentContent.trim()) {
-      toast.error("Comment cannot be empty");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      const updatedPost = await onComment(post._id, commentContent.trim());
-      setCommentContent("");
-    } catch (error) {
-      console.error("Error adding comment:", error);
-      toast.error(error.message || "Failed to add comment");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [user, commentContent, post._id, onComment]);
-
-  // Handle liking a post
-  const handleLike = useCallback(async () => {
-    if (!user?._id) {
-      toast.error("Please login to like posts");
-      return;
-    }
-    
-    try {
-      setIsLiking(true);
-      await onLike(post._id);
-    } catch (error) {
-      console.error("Error liking post:", error);
-      if (error.message === 'Post not found' || error.response?.status === 404) {
-        toast.error("This post no longer exists");
-      } else {
-        toast.error(error.message || "Failed to update like");
-      }
-    } finally {
-      setIsLiking(false);
-    }
-  }, [user, post._id, onLike]);
-
-  // Handle post updates from comments and replies
-  const handlePostUpdate = useCallback((updatedPost) => {
-    if (updatedPost && onUpdate) {
-      onUpdate(post._id, updatedPost);
-    }
-  }, [post._id, onUpdate]);
-
-  // Handle post deletion
-  const handleDelete = useCallback(async () => {
-    try {
-      await onDelete(post._id);
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      toast.error(error.message || "Failed to delete post");
-    }
-  }, [post._id, onDelete]);
-
-  // Confirmation dialog for deleting a post
-  const confirmDelete = useCallback(() => {
-    toast.custom((t) => (
-      <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex flex-col`}>
-        <div className="p-4 border-b">
-          <h3 className="text-lg font-medium">Delete Post</h3>
-        </div>
-        <div className="p-4">
-          <p className="text-gray-600">Are you sure you want to delete this post? This action cannot be undone.</p>
-        </div>
-        <div className="p-4 border-t flex justify-end space-x-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => {
-              handleDelete();
-              toast.dismiss(t.id);
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Delete
-          </button>
-        </div>
-      </div>
-    ), {
-      duration: Infinity,
-      position: 'top-center',
-    });
-  }, [handleDelete]);
-
-  // Handle post update
-  const handleUpdate = useCallback(async () => {
-    if (!editedContent.trim()) {
-      toast.error("Post content cannot be empty");
-      return;
-    }
-
-    try {
-      await onUpdate(post._id, editedContent.trim());
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Error updating post:", error);
-      toast.error(error.message || "Failed to update post");
-    }
-  }, [post._id, editedContent, onUpdate]);
-
-  // Handle post sharing
-  const handleShare = useCallback(() => {
-    const url = `${window.location.origin}/post/${post._id}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Post link copied to clipboard!");
-  }, [post._id]);
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div className="p-4">
-        {/* Post header with author info */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <Link to={`/profile/${post.author.username}`} className="flex items-center">
-              <img
-                src={post.author.profilePicture || "/avatar.png"}
-                alt={post.author.name}
-                className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-              />
-              <div className="ml-3">
-                <h3 className="font-semibold text-gray-900 hover:underline">
-                  {post.author.name}
-                </h3>
-                <p className="text-gray-500 text-sm">{post.author.headline}</p>
-                <p className="text-gray-400 text-xs">{formattedTime}</p>
-              </div>
-            </Link>
-          </div>
-          {isAuthor && (
-            <div className="relative">
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <MoreVertical size={20} className="text-gray-500" />
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
-                  <button
-                    onClick={() => {
-                      setIsEditing(true);
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <Edit size={16} />
-                    Edit Post
-                  </button>
-                  <button
-                    onClick={() => {
-                      confirmDelete();
-                      setShowMenu(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500 flex items-center gap-2"
-                  >
-                    <Trash2 size={16} />
-                    Delete Post
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Post content - either display or edit mode */}
-        {isEditing ? (
-          <div className="mb-4">
-            <textarea
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full border rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              rows="3"
-              placeholder="What's on your mind?"
-            />
-            <div className="flex justify-end gap-2 mt-2">
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdate}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-gray-800 whitespace-pre-wrap mb-4">{post.content || 'No content available'}</p>
-        )}
-
-        {/* Post image if available */}
-        {post.image && (
-          <div className="mb-4 rounded-lg overflow-hidden">
-            <img
-              src={post.image}
-              alt="Post content"
-              className="w-full h-auto"
-              loading="lazy"
-            />
-          </div>
-        )}
-
-        {/* Post actions (like, comment, share) */}
-        <div className="flex items-center justify-between border-t border-b border-gray-200 py-3">
-          <div className="flex items-center gap-6">
-            <LikeButton
-              initialLikes={post.likes || 0}
-              initialLiked={post.liked}
-              size={18}
-              onLike={handleLike}
-            />
-            <button
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-gray-500 hover:text-blue-500 hover:bg-gray-50 transition-colors"
-              onClick={() => {
-                if (showComments) {
-                  document.getElementById(`comment-input-${post._id}`).focus();
-                } else {
-                  setShowComments(true);
-                }
-              }}
-            >
-              <MessageCircle size={18} />
-              <span className="font-medium">{post.comments?.length || 0}</span>
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-gray-500 hover:text-blue-500 hover:bg-gray-50 transition-colors"
-            >
-              <Share2 size={18} />
-              <span className="font-medium">Share</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Comments section */}
-        {safeComments.length > 0 && (
-          <div className="mt-4 space-y-4 px-4">
-            <button
-              onClick={() => setShowComments(!showComments)}
-              className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 text-sm"
-            >
-              <span>{showComments ? "Hide" : "Show"} {safeComments.length === 1 ? "comment" : "comments"}</span>
-            </button>
+    const handleUpdate = async () => {
+        try {
+            const formData = new FormData();
+            formData.append('content', editedContent);
             
-            {showComments && (
-              <div className="space-y-4">
-                {safeComments.slice(0, visibleComments).map((comment) => (
-                  <Comment
-                    key={comment._id}
-                    comment={comment}
-                    postId={post._id}
-                    onUpdatePost={handlePostUpdate}
-                    currentUserId={user?._id}
-                  />
-                ))}
-                
-                {safeComments.length > visibleComments && (
-                  <button
-                    onClick={() => setVisibleComments(prev => 
-                      prev === safeComments.length ? 2 : safeComments.length
-                    )}
-                    className="text-gray-500 hover:text-blue-500 text-sm"
-                  >
-                    {visibleComments === safeComments.length 
-                      ? "Show less comments" 
-                      : `View ${safeComments.length - visibleComments} more comments`}
-                  </button>
+            // Optimistically update the UI
+            onUpdate({
+                ...post,
+                content: editedContent
+            });
+            
+            // Make the API call
+            const updatedPost = await postService.updatePost(post._id, formData);
+            
+            // Update with the server response
+            onUpdate(updatedPost);
+            setIsEditing(false);
+            toast.success('Post updated successfully');
+        } catch (error) {
+            console.error('Error updating post:', error);
+            // Revert the optimistic update
+            onUpdate(post);
+            toast.error('Failed to update post');
+        }
+    };
+
+    const handleDelete = async () => {
+        const confirmDelete = () => {
+            return new Promise((resolve) => {
+                toast.custom((t) => (
+                    <div className="bg-white p-4 rounded-lg shadow-lg">
+                        <p className="text-gray-800 mb-4">Are you sure you want to delete this post?</p>
+                        <div className="flex justify-end space-x-2">
+                            <button
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(false);
+                                }}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(true);
+                                }}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ));
+            });
+        };
+
+        const shouldDelete = await confirmDelete();
+        if (!shouldDelete) return;
+
+        try {
+            // Optimistically remove the post from the UI
+            onDelete(post._id);
+            
+            // Make the API call
+            await postService.deletePost(post._id);
+            
+            toast.success('Post deleted successfully');
+        } catch (error) {
+            console.error('Error deleting post:', error);
+            // Revert the optimistic update by fetching the posts again
+            try {
+                const posts = await postService.getAllPosts();
+                onUpdate(posts);
+            } catch (fetchError) {
+                console.error('Error fetching posts after delete failure:', fetchError);
+            }
+            toast.error('Failed to delete post');
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!newComment.trim()) return;
+        try {
+            setIsSubmittingComment(true);
+            const response = await commentService.addComment(post._id, newComment);
+            
+            // Update the post with the new comment
+            const updatedPost = await postService.getPost(post._id);
+            onUpdate(updatedPost);
+            
+            setNewComment('');
+            toast.success('Comment added successfully');
+        } catch (error) {
+            console.error('Error adding comment:', error);
+            toast.error('Failed to add comment');
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
+
+    const handleLikeComment = async (commentId) => {
+        try {
+            await commentService.likeComment(commentId);
+            const updatedPost = await postService.getPost(post._id);
+            onUpdate({
+                ...post,
+                ...updatedPost,
+                comments: updatedPost.comments.map(comment => ({
+                    ...comment,
+                    author: comment.author || post.comments.find(c => c._id === comment._id)?.author
+                }))
+            });
+        } catch (error) {
+            console.error('Error liking comment:', error);
+            toast.error('Failed to like comment');
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        if (window.confirm('Are you sure you want to delete this comment?')) {
+            try {
+                await commentService.deleteComment(commentId);
+                const updatedPost = await postService.getPost(post._id);
+                onUpdate(updatedPost);
+            } catch (error) {
+                console.error('Error deleting comment:', error);
+            }
+        }
+    };
+
+    const handleReply = async (commentId) => {
+        if (!replyContent.trim()) return;
+        try {
+            const response = await commentService.createReply(commentId, { content: replyContent });
+            
+            // Update the post with the new reply
+            const updatedPost = await postService.getPost(post._id);
+            onUpdate(updatedPost);
+            
+            setReplyContent('');
+            setReplyingTo(null);
+            toast.success('Reply added successfully');
+        } catch (error) {
+            console.error('Error adding reply:', error);
+            toast.error('Failed to add reply');
+        }
+    };
+
+    const handleDeleteReply = async (replyId) => {
+        if (window.confirm('Are you sure you want to delete this reply?')) {
+            try {
+                await commentService.deleteReply(replyId);
+                const updatedPost = await postService.getPost(post._id);
+                onUpdate({
+                    ...post,
+                    ...updatedPost,
+                    comments: updatedPost.comments.map(comment => ({
+                        ...comment,
+                        author: comment.author || post.comments.find(c => c._id === comment._id)?.author
+                    }))
+                });
+                toast.success('Reply deleted successfully');
+            } catch (error) {
+                console.error('Error deleting reply:', error);
+                toast.error('Failed to delete reply');
+            }
+        }
+    };
+
+    const isLiked = Array.isArray(post.likes) && post.likes.includes(user._id);
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                    <img
+                        src={post.author.profilePicture || '/default-avatar.png'}
+                        alt={post.author.username}
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-200"
+                    />
+                    <div>
+                        <h3 className="font-semibold text-gray-800">{post.author.username}</h3>
+                        <p className="text-gray-500 text-sm">
+                            {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                        </p>
+                    </div>
+                </div>
+                {post.author._id === user._id && (
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => setIsEditing(!isEditing)}
+                            className="text-gray-500 hover:text-blue-500 transition-colors duration-200"
+                        >
+                            <FaEdit />
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            className="text-gray-500 hover:text-red-500 transition-colors duration-200"
+                        >
+                            <FaTrash />
+                        </button>
+                    </div>
                 )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Add comment section */}
-        {showComments && (
-          <div className="mt-4 px-4 pb-4">
-            <div className="flex items-center gap-2">
-              <img
-                src={user?.profilePicture || "/avatar.png"}
-                alt={user?.name}
-                className="w-8 h-8 rounded-full object-cover"
-              />
-              <div className="flex flex-1 items-center">
-                <input
-                  id={`comment-input-${post._id}`}
-                  type="text"
-                  placeholder="Write a comment..."
-                  className="flex-1 bg-gray-100 rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={commentContent}
-                  onChange={(e) => setCommentContent(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !isSubmitting && commentContent.trim() && handleComment()}
-                />
-                <button
-                  onClick={handleComment}
-                  disabled={isSubmitting || !commentContent.trim()}
-                  className={`ml-2 p-2 rounded-full ${
-                    isSubmitting || !commentContent.trim()
-                      ? "text-gray-400 cursor-not-allowed"
-                      : "text-blue-500 hover:bg-blue-50"
-                  }`}
-                >
-                  <Send size={16} />
-                </button>
-              </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison function for memo
-  const prevPost = prevProps.post;
-  const nextPost = nextProps.post;
-  
-  if (prevPost._id !== nextPost._id) return false;
-  if (prevPost.content !== nextPost.content) return false;
-  if (prevPost.comments?.length !== nextPost.comments?.length) return false;
-  if (JSON.stringify(prevPost.author) !== JSON.stringify(nextPost.author)) return false;
-  if (prevPost.image !== nextPost.image) return false;
-  
-  // For comments, compare their content, structure, and replies
-  const areCommentsEqual = prevPost.comments?.every((prevComment, index) => {
-    const nextComment = nextPost.comments[index];
-    if (!nextComment) return false;
 
-    // Compare basic comment properties
-    if (prevComment._id !== nextComment._id ||
-        prevComment.content !== nextComment.content ||
-        JSON.stringify(prevComment.author) !== JSON.stringify(nextComment.author)) {
-      return false;
-    }
+            {isEditing ? (
+                <div className="mb-4">
+                    <textarea
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        rows="3"
+                    />
+                    <div className="flex justify-end mt-2 space-x-2">
+                        <button
+                            onClick={() => setIsEditing(false)}
+                            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleUpdate}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200"
+                        >
+                            Save
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <p className="mb-4 text-gray-700">{post.content}</p>
+            )}
 
-    // Compare replies
-    const prevReplies = prevComment.replies || [];
-    const nextReplies = nextComment.replies || [];
-    
-    if (prevReplies.length !== nextReplies.length) return false;
+            {post.image && (
+                <img
+                    src={post.image}
+                    alt="Post content"
+                    className="w-full rounded-lg mb-4 object-cover max-h-96"
+                />
+            )}
 
-    return prevReplies.every((prevReply, replyIndex) => {
-      const nextReply = nextReplies[replyIndex];
-      return prevReply._id === nextReply._id &&
-             prevReply.content === nextReply.content &&
-             JSON.stringify(prevReply.author) === JSON.stringify(nextReply.author);
-    });
-  });
-  
-  if (!areCommentsEqual) return false;
-  
-  // If we got here, only likes might have changed, so preserve the component's state
-  return true;
-});
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex space-x-6">
+                    <button
+                        onClick={handleLike}
+                        disabled={isLiking}
+                        className={`flex items-center space-x-1 transition-colors duration-200 ${
+                            isLiked ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+                        }`}
+                    >
+                        {isLiked ? <FaHeart /> : <FaRegHeart />}
+                        <span>{post.likes.length}</span>
+                    </button>
+                    <button
+                        onClick={() => setShowComments(!showComments)}
+                        className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors duration-200"
+                    >
+                        <FaComment />
+                        <span>{post.comments.length}</span>
+                    </button>
+                </div>
+                <button
+                    onClick={handleShare}
+                    disabled={isSharing}
+                    className="text-gray-500 hover:text-blue-500 transition-colors duration-200"
+                >
+                    <FaShare />
+                </button>
+            </div>
 
-Comment.propTypes = {
-  comment: PropTypes.object.isRequired,
-  postId: PropTypes.string.isRequired,
-  onUpdatePost: PropTypes.func.isRequired,
-  currentUserId: PropTypes.string
-};
+            {showComments && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                    <div className="mb-4">
+                        <div className="flex items-start space-x-3">
+                            <img
+                                src={user.profilePicture || '/default-avatar.png'}
+                                alt={user.username}
+                                className="w-10 h-10 rounded-full object-cover"
+                            />
+                            <div className="flex-1">
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                    <textarea
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        placeholder="Write a comment..."
+                                        className="w-full bg-transparent border-none resize-none focus:ring-0 text-sm min-h-[60px]"
+                                    />
+                                </div>
+                                <div className="flex justify-end mt-2">
+                                    <button
+                                        onClick={handleAddComment}
+                                        disabled={isSubmittingComment || !newComment.trim()}
+                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+                                            isSubmittingComment || !newComment.trim()
+                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        }`}
+                                    >
+                                        {isSubmittingComment ? 'Posting...' : 'Post'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-Reply.propTypes = {
-  reply: PropTypes.object.isRequired,
-  postId: PropTypes.string.isRequired,
-  commentId: PropTypes.string.isRequired,
-  onLikeReply: PropTypes.func.isRequired,
-  onDeleteReply: PropTypes.func.isRequired,
-  currentUserId: PropTypes.string
+                    <div className="space-y-4">
+                        {post.comments.map((comment) => (
+                            <div key={comment._id} className="flex items-start space-x-3">
+                                <img
+                                    src={comment.author.profilePicture || '/default-avatar.png'}
+                                    alt={comment.author.username}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                />
+                                <div className="flex-1">
+                                    <div className="bg-gray-50 rounded-lg p-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h4 className="font-semibold text-sm text-gray-800">
+                                                    {comment.author.username}
+                                                </h4>
+                                                <p className="text-sm mt-1 text-gray-700">{comment.content}</p>
+                                            </div>
+                                            {(comment.author._id === user._id ||
+                                                post.author._id === user._id) && (
+                                                <button
+                                                    onClick={() => handleDeleteComment(comment._id)}
+                                                    className="text-gray-400 hover:text-red-500 transition-colors duration-200"
+                                                >
+                                                    <FaTrash size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center mt-2 space-x-4">
+                                            <button
+                                                onClick={() => handleLikeComment(comment._id)}
+                                                className={`flex items-center space-x-1 text-sm transition-colors duration-200 ${
+                                                    comment.likes.includes(user._id)
+                                                        ? 'text-red-500'
+                                                        : 'text-gray-500 hover:text-red-500'
+                                                }`}
+                                            >
+                                                {comment.likes.includes(user._id) ? (
+                                                    <FaHeart size={12} />
+                                                ) : (
+                                                    <FaRegHeart size={12} />
+                                                )}
+                                                <span>{comment.likes.length}</span>
+                                            </button>
+                                            <button
+                                                onClick={() => setReplyingTo(comment._id)}
+                                                className="text-sm text-gray-500 hover:text-blue-500 transition-colors duration-200"
+                                            >
+                                                Reply
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {replyingTo === comment._id && (
+                                        <div className="mt-2 ml-4">
+                                            <div className="flex items-center space-x-2">
+                                                <img
+                                                    src={user.profilePicture || '/default-avatar.png'}
+                                                    alt={user.username}
+                                                    className="w-8 h-8 rounded-full object-cover"
+                                                />
+                                                <div className="flex-1">
+                                                    <input
+                                                        type="text"
+                                                        value={replyContent}
+                                                        onChange={(e) => setReplyContent(e.target.value)}
+                                                        placeholder="Write a reply..."
+                                                        className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => handleReply(comment._id)}
+                                                    className="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors duration-200"
+                                                >
+                                                    Reply
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {comment.replies && comment.replies.length > 0 && (
+                                        <div className="ml-4 mt-2 space-y-2">
+                                            {comment.replies.map((reply) => (
+                                                <div key={reply._id} className="flex items-start space-x-2">
+                                                    <img
+                                                        src={reply.author.profilePicture || '/default-avatar.png'}
+                                                        alt={reply.author.username}
+                                                        className="w-8 h-8 rounded-full object-cover"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="bg-gray-50 rounded-lg p-2">
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <h5 className="font-semibold text-sm text-gray-800">
+                                                                        {reply.author.username}
+                                                                    </h5>
+                                                                    <p className="text-sm text-gray-700">{reply.content}</p>
+                                                                </div>
+                                                                {reply.author._id === user._id && (
+                                                                    <button
+                                                                        onClick={() => handleDeleteReply(reply._id)}
+                                                                        className="text-gray-400 hover:text-red-500 transition-colors duration-200"
+                                                                    >
+                                                                        <FaTrash size={12} />
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 Post.propTypes = {
-  post: PropTypes.object.isRequired,
-  onLike: PropTypes.func.isRequired,
-  onComment: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
-  onUpdate: PropTypes.func.isRequired,
-};
-
-LikeButton.propTypes = {
-  initialLikes: PropTypes.number,
-  initialLiked: PropTypes.bool,
-  size: PropTypes.number,
-  onLike: PropTypes.func
-};
-
-export default Post; 
+    post: PropTypes.shape({
+        _id: PropTypes.string.isRequired,
+        content: PropTypes.string.isRequired,
+        author: PropTypes.shape({
+            _id: PropTypes.string.isRequired,
+            username: PropTypes.string.isRequired,
+            profilePicture: PropTypes.string
+        }).isRequired,
+        likes: PropTypes.arrayOf(PropTypes.string).isRequired,
+        comments: PropTypes.arrayOf(
+            PropTypes.shape({
+                _id: PropTypes.string.isRequired,
+                content: PropTypes.string.isRequired,
+                author: PropTypes.shape({
+                    _id: PropTypes.string.isRequired,
+                    username: PropTypes.string.isRequired,
+                    profilePicture: PropTypes.string
+                }).isRequired,
+                likes: PropTypes.arrayOf(PropTypes.string).isRequired
+            })
+        ).isRequired,
+        createdAt: PropTypes.string.isRequired
+    }).isRequired,
+    onUpdate: PropTypes.func.isRequired,
+    onDelete: PropTypes.func.isRequired
+}; 

@@ -39,12 +39,11 @@ commentSchema.index({ post: 1, createdAt: -1 });
 commentSchema.index({ author: 1 });
 commentSchema.index({ parentComment: 1 });
 
-// Virtual for replies - return actual reply documents instead of just a count
+// Virtual for replies - return actual reply documents
 commentSchema.virtual('replies', {
     ref: 'Comment',
     localField: '_id',
     foreignField: 'parentComment',
-    // Remove the count option to return the actual documents
     options: { sort: { createdAt: 1 } }
 });
 

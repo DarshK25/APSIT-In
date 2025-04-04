@@ -3,10 +3,11 @@ import mongoose from "mongoose";
 const postSchema = new mongoose.Schema({
     content: {
         type: String,
-        trim: true
+        required: true
     },
     image: {
-        type: String
+        type: String,
+        default: null
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
@@ -20,7 +21,12 @@ const postSchema = new mongoose.Schema({
     comments: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Comment"
-    }]
+    }],
+    sharedFrom: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post",
+        default: null
+    }
 }, {
     timestamps: true
 });

@@ -1,12 +1,13 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import {
-    createComment,
+    addComment,
     updateComment,
     deleteComment,
     likeComment,
-    getCommentReplies,
-    createReply
+    createReply,
+    deleteReply,
+    likeReply
 } from "../controllers/comment.controller.js";
 
 const router = express.Router();
@@ -14,21 +15,15 @@ const router = express.Router();
 // Protect all routes
 router.use(protectRoute);
 
-// Comment CRUD routes
-router.route("/")
-    .post(createComment);
-
-router.route("/:commentId")
-    .put(updateComment)
-    .delete(deleteComment);
-
-// Comment interaction routes
-router.route("/:commentId/like")
-    .post(likeComment);
+// Comment routes
+router.post('/posts/:postId/comments', addComment);
+router.put('/:id', updateComment);
+router.delete('/:id', deleteComment);
+router.post('/:id/like', likeComment);
 
 // Reply routes
-router.route("/:commentId/replies")
-    .get(getCommentReplies)
-    .post(createReply);
+router.post('/:commentId/replies', createReply);
+router.delete('/replies/:id', deleteReply);
+router.post('/replies/:id/like', likeReply);
 
 export default router; 

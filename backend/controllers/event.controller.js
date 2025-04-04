@@ -280,3 +280,45 @@ export const getOrganizedEvents = async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error" });
     }
 };
+
+// Update event status and delete expired events
+export const updateEventStatus = async () => {
+    try {
+        const now = new Date();
+        
+        // Update ongoing events
+        await Event.updateMany(
+            {
+                date: { $lte: now },
+                status: 'upcoming'
+            },
+            { $set: { status: 'ongoing' } }
+        );
+
+        // Update completed events
+        await Event.updateMany(
+            {
+                date: { $lt: new Date(now.getTime() - 24 * 60 * 60 * 1000) }, // 24 hours after event
+                status: 'ongoing'
+            },
+            { $set: { status: 'completed' } }
+        );
+
+        // Delete expired events (30 days after completion)
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        await Event.deleteMany({
+            status: 'completed',
+            date: { $lt: thirtyDaysAgo }
+        });
+
+        console.log('Event statuses updated successfully');
+    } catch (error) {
+        console.error('Error updating event statuses:', error);
+    }
+};
+
+// Schedule the status update to run every hour
+setInterval(updateEventStatus, 60 * 60 * 1000);
+
+// Run immediately on server start
+updateEventStatus();
