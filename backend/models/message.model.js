@@ -13,15 +13,23 @@ const messageSchema = new mongoose.Schema({
     },
     content: {
         type: String,
-        required: true
+        default: ""  // Changed from required to default empty string
     },
     isRead: {
         type: Boolean,
         default: false
     },
-    image: {
-        type: String,
-        default: " ",
+    fileUrl: {
+        type: String
+    },
+    fileName: {
+        type: String
+    },
+    fileSize: {
+        type: Number
+    },
+    fileType: {
+        type: String
     }
 }, { timestamps: true });
 

@@ -8,6 +8,7 @@ import ProjectsSection from "../components/ProjectsSection";
 import ProfileHeader from "../components/ProfileHeader";
 import Recommendations from "../components/Recommendations";
 import { getUserProfile, getPublicProfile, updateUserProfile } from "../api/userService";
+import { toast } from "react-hot-toast";
 
 const ProfilePage = () => {
   const { username } = useParams(); // Get username from URL
@@ -47,12 +48,17 @@ const ProfilePage = () => {
 
   const handleProfileUpdate = async (updatedData) => {
     try {
-      const updatedUser = await updateUserProfile(updatedData);
-      if (updatedUser) {
-        setUserData(updatedUser);
+      const response = await updateUserProfile(updatedData);
+      if (response) {
+        setUserData(prevData => ({
+          ...prevData,
+          ...response
+        }));
+        toast.success('Profile updated successfully');
       }
     } catch (error) {
       console.error("Failed to update profile:", error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     }
   };
 

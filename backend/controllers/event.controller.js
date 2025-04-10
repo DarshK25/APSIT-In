@@ -36,6 +36,10 @@ export const getEvents = async (req, res) => {
             };
         }
 
+        // Only show upcoming and ongoing events
+        const now = new Date();
+        query.date = { $gte: now };
+
         const skip = (page - 1) * limit;
 
         const events = await Event.find(query)
@@ -322,3 +326,38 @@ setInterval(updateEventStatus, 60 * 60 * 1000);
 
 // Run immediately on server start
 updateEventStatus();
+
+// Add a new function to clean up expired events
+export const cleanupExpiredEvents = async () => {
+    try {
+        const now = new Date();
+        
+        // Find events that have passed their date
+        const expiredEvents = await Event.find({
+            date: { $lt: now },
+            status: { $in: ['upcoming', 'ongoing'] }
+        });
+
+        // Update their status to completed
+        for (const event of expiredEvents) {
+            event.status = 'completed';
+            await event.save();
+        }
+
+        // Delete events that are more than 30 days old
+        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        await Event.deleteMany({
+            date: { $lt: thirtyDaysAgo }
+        });
+
+        console.log('Event cleanup completed successfully');
+    } catch (error) {
+        console.error('Error in cleanupExpiredEvents:', error);
+    }
+};
+
+// Schedule the cleanup to run every hour
+setInterval(cleanupExpiredEvents, 60 * 60 * 1000);
+
+// Run immediately on server start
+cleanupExpiredEvents();

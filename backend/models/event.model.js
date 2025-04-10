@@ -77,6 +77,10 @@ const eventSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    registrationFormLink: {
+        type: String,
+        default: ""
+    },
     isPublished: {
         type: Boolean,
         default: false

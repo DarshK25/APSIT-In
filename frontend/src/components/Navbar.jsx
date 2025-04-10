@@ -101,7 +101,7 @@ const Navbar = ({ children }) => {
                 <div className='flex justify-between items-center py-3'>
                     <div className='flex items-center space-x-4 flex-grow'>
                         <Link to='/'>
-                            <img className='h-8 rounded' src='ApsitINlogo.avif' alt='Apsit-In' />
+                            <img className='h-8 rounded' src='/ApsitINlogo.avif' alt='Apsit-In' />
                         </Link>
                         {user && (
                             <div className="relative flex-grow max-w-2xl">

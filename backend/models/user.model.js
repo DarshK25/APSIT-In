@@ -16,8 +16,16 @@ const userSchema = new mongoose.Schema({
         }
     },
     password: { type: String, required: true },
-    profilePicture: { type: String, default: " " },
-    bannerImg: { type: String, default: " " },
+    profilePicture: { 
+        type: String, 
+        default: function() {
+            return `https://api.dicebear.com/7.x/avatars/svg?seed=${this._id}`;
+        }
+    },
+    bannerImg: { 
+        type: String, 
+        default: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" 
+    },
     isAlumni: { type: Boolean, default: false },
     role: { type: String, enum: ['student', 'teacher', 'hod', 'staff'], default: 'student' },
     headline: { type: String, default: "APSIT Student" },

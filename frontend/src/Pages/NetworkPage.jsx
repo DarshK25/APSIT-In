@@ -20,7 +20,9 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 				<h3 className='font-semibold text-lg text-center'>{user.name}</h3>
 			</Link>
 			<p className='text-gray-600 text-center line-clamp-2'>{user.headline}</p>
-			<p className='text-sm text-gray-500 mt-2'>{user.connections?.length || 0} connections</p>
+			<p className='text-sm text-gray-500 mt-2'>
+				{user.connectionsCount || user.connections?.length || 0} connections
+			</p>
 			
 			{connectionStatus === 'not_connected' && (
 				<button 
@@ -55,22 +57,46 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 
 // FriendRequest component
 const FriendRequest = ({ request, onAccept, onReject }) => {
+	// If request or sender is null/undefined, don't render anything
+	if (!request?.sender) {
+		return null;
+	}
+
 	return (
 		<div className='bg-white rounded-lg shadow p-4 flex items-center justify-between transition-all hover:shadow-md'>
 			<div className='flex items-center gap-4'>
 				<Link to={`/profile/${request.sender.username}`}>
-					<img
-						src={request.sender.profilePicture || "/avatar.png"}
-						alt={request.sender.name}
-						className='w-16 h-16 rounded-full object-cover'
-					/>
+					{request.sender.profilePicture ? (
+						<img
+							src={request.sender.profilePicture}
+							alt={request.sender.name}
+							className='w-16 h-16 rounded-full object-cover ring-2 ring-gray-100'
+							onError={(e) => {
+								e.target.style.display = 'none';
+								e.target.parentElement.innerHTML = `
+									<div class="w-16 h-16 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+										<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+											<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+											<circle cx="12" cy="7" r="4" />
+										</svg>
+									</div>`;
+							}}
+						/>
+					) : (
+						<div className="w-16 h-16 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+								<circle cx="12" cy="7" r="4" />
+							</svg>
+						</div>
+					)}
 				</Link>
 
 				<div>
 					<Link to={`/profile/${request.sender.username}`} className='font-semibold text-lg hover:underline'>
-						{request.sender.name}
+						{request.sender.name || 'Unknown User'}
 					</Link>
-					<p className='text-gray-600 line-clamp-1'>{request.sender.headline}</p>
+					<p className='text-gray-600 line-clamp-1'>{request.sender.headline || 'APSIT Student'}</p>
 					<p className='text-sm text-gray-500'>{request.sender.connections?.length || 0} connections</p>
 				</div>
 			</div>

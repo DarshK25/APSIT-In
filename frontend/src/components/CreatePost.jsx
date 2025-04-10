@@ -25,19 +25,33 @@ export const CreatePost = ({ onPost }) => {
       }
 
       const newPost = await postService.createPost(formData);
+      console.log('New post created:', newPost); // Debug log
       onPost(newPost);
       setContent('');
       setImage(null);
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+        setImagePreview(null);
+      }
+      toast.success('Post created successfully');
     } catch (error) {
       console.error('Error creating post:', error);
+      toast.error(error.response?.data?.message || 'Failed to create post');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleImageChange = (e) => {
-    if (e.target.files[0]) {
-      setImage(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      setImage(file);
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     }
   };
 
@@ -66,6 +80,22 @@ export const CreatePost = ({ onPost }) => {
               className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               rows="3"
             />
+            {imagePreview && (
+              <div className="mt-2 relative">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
             <div className="flex justify-between items-center mt-2">
               <div>
                 <label className="cursor-pointer text-gray-500 hover:text-blue-500">
@@ -75,13 +105,11 @@ export const CreatePost = ({ onPost }) => {
                     onChange={handleImageChange}
                     className="hidden"
                   />
-                  <span>Add Photo</span>
-                </label>
-                {image && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    {image.name}
+                  <span className="flex items-center">
+                    <Image className="w-4 h-4 mr-1" />
+                    Add Photo
                   </span>
-                )}
+                </label>
               </div>
               <button
                 type="submit"

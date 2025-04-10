@@ -25,20 +25,24 @@ const eventService = {
     // Create a new event (protected route)
     createEvent: async (eventData) => {
         try {
-            const formData = new FormData();
-            Object.entries(eventData).forEach(([key, value]) => {
-                formData.append(key, value);
-            });
-
-            const response = await axios.post(`${API_URL}/events`, formData, {
+            console.log('Sending event data to server:', Object.fromEntries(eventData));
+            
+            const response = await axios.post(`${API_URL}/events`, eventData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }
             });
+            
+            console.log('Server response:', response.data);
             return response.data;
         } catch (error) {
             console.error('Error creating event:', error);
+            if (error.response) {
+                console.error('Error response data:', error.response.data);
+                console.error('Error response status:', error.response.status);
+                console.error('Error response headers:', error.response.headers);
+            }
             throw error;
         }
     },
@@ -46,20 +50,30 @@ const eventService = {
     // Update an event (protected route)
     updateEvent: async (eventId, eventData) => {
         try {
-            const formData = new FormData();
-            Object.entries(eventData).forEach(([key, value]) => {
-                formData.append(key, value);
-            });
+            console.log('Updating event with ID:', eventId);
+            console.log('Update data being sent:', Object.fromEntries(eventData));
 
-            const response = await axios.put(`${API_URL}/events/${eventId}`, formData, {
+            const response = await axios.put(`${API_URL}/events/${eventId}`, eventData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }
             });
+
+            console.log('Update response from server:', response.data);
+
+            if (!response.data.success) {
+                throw new Error(response.data.message || 'Failed to update event');
+            }
+
             return response.data;
         } catch (error) {
-            console.error('Error updating event:', error);
+            console.error('Error in updateEvent:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status
+            });
             throw error;
         }
     },

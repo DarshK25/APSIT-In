@@ -15,12 +15,14 @@ import EventsPage from './Pages/EventsPage';
 import EventDetailsPage from './Pages/EventDetailsPage';
 import CreateEventPage from './Pages/CreateEventPage';
 import EditEventPage from './Pages/EditEventPage';
+import OnboardingToast from './components/OnboardingToast';
 
 const App = () => {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Layout>
+          <OnboardingToast />
           <Toaster 
             position="top-center" 
             reverseOrder={false} 

@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }) => {
                 });
                 setUser(userResponse.data.data);
                 toast.success('Logged in successfully');
+                navigate('/home');
                 return true;
             }
             return false;
@@ -90,7 +91,7 @@ export const AuthProvider = ({ children }) => {
                 });
                 setUser(userResponse.data.data);
                 toast.success('Account created successfully');
-                navigate('/home');
+                navigate('/profile');
                 return true;
             }
         } catch (error) {

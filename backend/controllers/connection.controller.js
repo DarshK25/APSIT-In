@@ -150,14 +150,24 @@ export const getUserConnections = async (req, res) => {
 
 		const user = await User.findById(userId).populate({
 			path: 'connections',
-			select: 'name username profilePicture headline department yearOfStudy'
+			select: 'name username profilePicture headline department yearOfStudy connections',
+			populate: {
+				path: 'connections',
+				select: '_id'
+			}
 		});
 
 		if (!user) {
 			return res.status(404).json({ success: false, message: "User not found" });
 		}
 
-		res.json(user.connections);
+		// Transform the data to include connection count
+		const connectionsWithCount = user.connections.map(connection => ({
+			...connection.toObject(),
+			connectionsCount: connection.connections?.length || 0
+		}));
+
+		res.json(connectionsWithCount);
 	} catch (error) {
 		console.error("Error in getUserConnections controller:", error);
 		res.status(500).json({ success: false, message: "Server Error" });
@@ -201,7 +211,10 @@ export const getConnectionStatus = async (req, res) => {
 			if (pendingRequest.sender.toString() === currentUserId.toString()) {
 				return res.json({ status: "pending" });
 			} else {
-				return res.json({ status: "received", requestId: pendingRequest._id });
+				return res.json({ 
+					status: "received", 
+					requestId: pendingRequest._id 
+				});
 			}
 		}
 

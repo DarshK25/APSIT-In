@@ -8,11 +8,27 @@ import axios from 'axios';
 
 const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
     const [showMenu, setShowMenu] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleRegister = () => {
+        if (event.registrationFormLink) {
+            window.open(event.registrationFormLink, '_blank');
+        }
+    };
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
             <div className="relative">
-                <div className="h-48 bg-gradient-to-r from-blue-500 to-blue-600" />
+                {event.image ? (
+                    <img 
+                        src={event.image} 
+                        alt={event.title}
+                        className="w-full h-48 object-cover"
+                    />
+                ) : (
+                    <div className="h-48 bg-gradient-to-r from-blue-500 to-blue-600" />
+                )}
                 <div className="absolute top-4 right-4">
                     {isAdmin && (
                         <div className="relative">
@@ -79,29 +95,177 @@ const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
                         </div>
                     )}
                 </div>
+                <div className="mt-4 flex justify-between items-center">
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                        {isExpanded ? 'Show Less' : 'Show More'}
+                    </button>
+
+                    <div className="flex space-x-2">
+                        {event.registrationFormLink && (
+                            <button
+                                onClick={handleRegister}
+                                disabled={isLoading}
+                                className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {isLoading ? 'Loading...' : 'Register'}
+                            </button>
+                        )}
+                        {isAdmin && onEdit && (
+                            <button
+                                onClick={() => onEdit(event)}
+                                className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                            >
+                                Edit
+                            </button>
+                        )}
+                        {isAdmin && onDelete && (
+                            <button
+                                onClick={() => onDelete(event._id)}
+                                className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200"
+                            >
+                                Delete
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
 };
 
-const EventForm = ({ event, onSubmit, onCancel }) => {
-    const [formData, setFormData] = useState(event || {
-        title: '',
-        description: '',
-        date: '',
-        time: '',
-        location: '',
-        category: '',
-        department: '',
-        maxAttendees: '',
-        registrationDeadline: '',
-        requirements: '',
-        isPublished: true
-    });
+// Time conversion utility functions
+const convertTo24Hour = (time12h) => {
+    if (!time12h) return '00:00';
+    try {
+        const [time, modifier] = time12h.split(' ');
+        if (!time || !modifier) return time; // If no AM/PM, assume it's already 24h format
+        
+        let [hours, minutes] = time.split(':');
+        hours = parseInt(hours);
+        
+        if (hours === 12) {
+            hours = modifier === 'PM' ? 12 : 0;
+        } else if (modifier === 'PM') {
+            hours = hours + 12;
+        }
+        
+        return `${hours.toString().padStart(2, '0')}:${minutes}`;
+    } catch (error) {
+        console.error('Error converting to 24 hour:', error);
+        return '00:00';
+    }
+};
 
-    const handleSubmit = (e) => {
+const convertTo12Hour = (time24) => {
+    if (!time24) return '12:00 PM';
+    try {
+        const [hours, minutes] = time24.split(':');
+        const hour = parseInt(hours);
+        if (isNaN(hour)) return '12:00 PM';
+        
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        return `${hour12.toString().padStart(2, '0')}:${minutes} ${period}`;
+    } catch (error) {
+        console.error('Error converting to 12 hour:', error);
+        return '12:00 PM';
+    }
+};
+
+const formatDateForInput = (dateString) => {
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0];
+    } catch (error) {
+        console.error('Error formatting date:', error);
+        return '';
+    }
+};
+
+const EventForm = ({ event, onSubmit, onCancel }) => {
+    const [formData, setFormData] = useState(() => {
+        if (event) {
+            return {
+                ...event,
+                date: formatDateForInput(event.date),
+                time: event.time || '12:00 PM'
+            };
+        }
+        return {
+            title: '',
+            description: '',
+            date: formatDateForInput(new Date()),
+            time: '12:00 PM',
+            location: '',
+            category: '',
+            department: '',
+            maxAttendees: '',
+            registrationDeadline: '',
+            requirements: '',
+            registrationFormLink: '',
+            isPublished: true
+        };
+    });
+    const [image, setImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(event?.image || '');
+
+    const handleTimeChange = (e) => {
+        const time24 = e.target.value;
+        const time12 = convertTo12Hour(time24);
+        setFormData(prev => ({ ...prev, time: time12 }));
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImage(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        
+        // Create a new FormData instance
+        const formDataToSubmit = new FormData();
+        
+        // Validate required fields
+        const requiredFields = [
+            'title',
+            'description',
+            'date',
+            'time',
+            'location',
+            'category',
+            'department',
+            'registrationDeadline'
+        ];
+
+        // Check if any required field is missing or empty
+        const missingFields = requiredFields.filter(field => !formData[field]);
+        if (missingFields.length > 0) {
+            toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+            return;
+        }
+
+        // Add all form fields to FormData
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== '') {
+                formDataToSubmit.append(key, value);
+            }
+        });
+
+        // Append image if it exists
+        if (image instanceof File) {
+            formDataToSubmit.append('image', image);
+        }
+
+        console.log('Form data being submitted:', Object.fromEntries(formDataToSubmit));
+        onSubmit(formDataToSubmit);
     };
 
     return (
@@ -141,8 +305,8 @@ const EventForm = ({ event, onSubmit, onCancel }) => {
                     <label className="block text-sm font-medium text-gray-700">Time</label>
                     <input
                         type="time"
-                        value={formData.time}
-                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                        value={convertTo24Hour(formData.time)}
+                        onChange={handleTimeChange}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                     />
@@ -180,6 +344,7 @@ const EventForm = ({ event, onSubmit, onCancel }) => {
                         <option value="NSS Unit">NSS Unit</option>
                         <option value="IEEE">IEEE</option>
                         <option value="Antarang">Antarang</option>
+                        <option value="None">None</option>
                     </select>
                 </div>
                 <div>
@@ -192,9 +357,12 @@ const EventForm = ({ event, onSubmit, onCancel }) => {
                     >
                         <option value="">Select Department</option>
                         <option value="Computer Engineering">Computer Engineering</option>
-                        <option value="IT Engineering">IT Engineering</option>
-                        <option value="AI&DS Engineering">AI&DS Engineering</option>
-                        <option value="EXTC Engineering">EXTC Engineering</option>
+                        <option value="Information Technology">Information Technology</option>
+                        <option value="CSE (AI & ML)">CSE (AI & ML)</option>
+                        <option value="CSE (DS)">CSE (DS)</option>
+                        <option value="Civil Engineering">Civil Engineering</option>
+                        <option value="Mechanical Engineering">Mechanical Engineering</option>
+                        <option value="Inter-Department">Inter-Department</option>
                     </select>
                 </div>
             </div>
@@ -231,7 +399,47 @@ const EventForm = ({ event, onSubmit, onCancel }) => {
                     placeholder="Any specific requirements for attendees..."
                 />
             </div>
-            <div className="flex justify-end gap-2">
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Event Cover Image</label>
+                <div className="mt-1 flex items-center">
+                    <div className="relative">
+                        <img
+                            src={imagePreview || '/placeholder-event.jpg'}
+                            alt="Event cover preview"
+                            className="h-32 w-32 object-cover rounded-lg"
+                        />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                    </div>
+                    <div className="ml-4">
+                        <button
+                            type="button"
+                            onClick={() => document.querySelector('input[type="file"]').click()}
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                        >
+                            Choose Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Registration Form Link</label>
+                <input
+                    type="url"
+                    value={formData.registrationFormLink}
+                    onChange={(e) => setFormData({ ...formData, registrationFormLink: e.target.value })}
+                    placeholder="https://forms.gle/..."
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                    Add a Google Forms link for event registration
+                </p>
+            </div>
+            <div className="flex justify-end space-x-3">
                 <button
                     type="button"
                     onClick={onCancel}
@@ -310,57 +518,163 @@ const EventsPage = () => {
         }
     };
 
-    const handleCreateEvent = async (eventData) => {
+    const handleCreateEvent = async (formData) => {
         try {
-            const eventWithDefaults = {
-                ...eventData,
-                isPublished: true,
-                status: 'upcoming'
-            };
-            await eventService.createEvent(eventWithDefaults);
+            // Convert FormData to a regular object for validation
+            const eventData = {};
+            for (let [key, value] of formData.entries()) {
+                eventData[key] = value;
+            }
+
+            // Log the data being sent
+            console.log('Creating event with data:', eventData);
+
+            // Ensure all required fields are present
+            const requiredFields = [
+                'title',
+                'description',
+                'date',
+                'time',
+                'location',
+                'category',
+                'department',
+                'registrationDeadline'
+            ];
+
+            // Check if any required field is missing
+            const missingFields = requiredFields.filter(field => !eventData[field]);
+            if (missingFields.length > 0) {
+                toast.error(`Missing required fields: ${missingFields.join(', ')}`);
+                return;
+            }
+
+            // Create a new FormData instance for the final submission
+            const finalFormData = new FormData();
+            
+            // Add all required fields
+            requiredFields.forEach(field => {
+                finalFormData.append(field, eventData[field]);
+            });
+
+            // Add optional fields if they exist
+            if (eventData.maxAttendees) finalFormData.append('maxAttendees', eventData.maxAttendees);
+            if (eventData.requirements) finalFormData.append('requirements', eventData.requirements);
+            if (eventData.registrationFormLink) finalFormData.append('registrationFormLink', eventData.registrationFormLink);
+            if (eventData.image) finalFormData.append('image', eventData.image);
+
+            // Add default values
+            finalFormData.append('isPublished', 'true');
+            finalFormData.append('status', 'upcoming');
+
+            // Log the final FormData being sent
+            console.log('Final FormData being sent:', Object.fromEntries(finalFormData));
+
+            await eventService.createEvent(finalFormData);
             toast.success('Event created successfully');
             setShowForm(false);
             fetchEvents();
         } catch (error) {
-            toast.error('Failed to create event');
+            console.error('Error creating event:', error);
+            // Log the full error response if available
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+                toast.error(error.response.data.message || 'Failed to create event');
+            } else {
+                toast.error('Failed to create event. Please try again.');
+            }
         }
     };
 
     const handleUpdateEvent = async (eventData) => {
         try {
-            console.log('Updating event with data:', eventData);
+            console.log('Starting event update with raw data:', eventData);
             
-            // Format dates properly and clean up the data
-            const formattedData = {
-                title: eventData.title,
-                description: eventData.description,
-                date: new Date(eventData.date).toISOString(),
-                time: eventData.time,
-                location: eventData.location,
-                category: eventData.category,
-                department: eventData.department,
-                maxAttendees: parseInt(eventData.maxAttendees) || null,
-                registrationDeadline: new Date(eventData.registrationDeadline).toISOString(),
-                requirements: eventData.requirements,
-                isPublished: eventData.isPublished
-            };
+            // Create FormData for the update
+            const formData = new FormData();
 
-            // Remove any undefined or null values
-            Object.keys(formattedData).forEach(key => {
-                if (formattedData[key] === undefined || formattedData[key] === null) {
-                    delete formattedData[key];
+            // Handle basic fields first
+            formData.append('title', eventData.get('title') || '');
+            formData.append('description', eventData.get('description') || '');
+            formData.append('location', eventData.get('location') || '');
+            formData.append('category', eventData.get('category') || '');
+            formData.append('department', eventData.get('department') || '');
+            formData.append('requirements', eventData.get('requirements') || '');
+            formData.append('registrationFormLink', eventData.get('registrationFormLink') || '');
+            formData.append('maxAttendees', eventData.get('maxAttendees') || '0');
+            formData.append('isPublished', true);
+
+            // Get the date and time values
+            const dateValue = eventData.get('date');
+            const timeValue = eventData.get('time');
+
+            console.log('Date value:', dateValue);
+            console.log('Time value:', timeValue);
+
+            if (!dateValue || !timeValue) {
+                toast.error('Date and time are required');
+                return;
+            }
+
+            try {
+                // Convert time to 24-hour format if needed
+                const time24 = timeValue.includes('M') ? convertTo24Hour(timeValue) : timeValue;
+                
+                // Format the date string
+                const dateStr = formatDateForInput(dateValue);
+                if (!dateStr) throw new Error('Invalid date format');
+                
+                // Combine date and time
+                const dateTimeString = `${dateStr}T${time24}`;
+                console.log('Constructed datetime:', dateTimeString);
+                
+                formData.append('date', dateTimeString);
+                formData.append('time', timeValue);
+            } catch (error) {
+                console.error('Error formatting date/time:', error);
+                toast.error('Invalid date or time format');
+                return;
+            }
+
+            // Handle registration deadline
+            const deadlineValue = eventData.get('registrationDeadline');
+            if (deadlineValue) {
+                try {
+                    const deadlineStr = formatDateForInput(deadlineValue);
+                    if (!deadlineStr) throw new Error('Invalid deadline format');
+                    formData.append('registrationDeadline', deadlineStr);
+                } catch (error) {
+                    console.error('Error formatting registration deadline:', error);
+                    toast.error('Invalid registration deadline format');
+                    return;
                 }
-            });
+            }
 
-            console.log('Formatted event data:', formattedData);
+            // Handle image if present
+            const imageFile = eventData.get('image');
+            if (imageFile instanceof File) {
+                formData.append('image', imageFile);
+            }
+
+            console.log('Sending formatted data to server:', Object.fromEntries(formData));
             
-            await eventService.updateEvent(editingEvent._id, formattedData);
-            toast.success('Event updated successfully');
-            setEditingEvent(null);
-            fetchEvents();
+            const response = await eventService.updateEvent(editingEvent._id, formData);
+            console.log('Update response:', response);
+
+            if (response.success) {
+                toast.success('Event updated successfully');
+                setEditingEvent(null);
+                await fetchEvents(); // Re-fetch events to update the display
+            } else {
+                throw new Error(response.message || 'Failed to update event');
+            }
         } catch (error) {
-            console.error('Error updating event:', error.response?.data || error);
-            toast.error(error.response?.data?.message || 'Failed to update event');
+            console.error('Error updating event:', error);
+            if (error.response) {
+                console.error('Error response:', error.response.data);
+                toast.error(error.response.data.message || 'Failed to update event');
+            } else {
+                toast.error(error.message || 'Failed to update event. Please try again.');
+            }
         }
     };
 
@@ -480,18 +794,22 @@ const EventsPage = () => {
                 {/* Event Form Modal */}
                 {(showForm || editingEvent) && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-                            <h2 className="text-2xl font-semibold mb-4">
-                                {editingEvent ? 'Edit Event' : 'Create New Event'}
-                            </h2>
-                            <EventForm
-                                event={editingEvent}
-                                onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
-                                onCancel={() => {
-                                    setShowForm(false);
-                                    setEditingEvent(null);
-                                }}
-                            />
+                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+                            <div className="p-6 border-b">
+                                <h2 className="text-2xl font-semibold">
+                                    {editingEvent ? 'Edit Event' : 'Create New Event'}
+                                </h2>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-6">
+                                <EventForm
+                                    event={editingEvent}
+                                    onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
+                                    onCancel={() => {
+                                        setShowForm(false);
+                                        setEditingEvent(null);
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 )}

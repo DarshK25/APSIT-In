@@ -181,7 +181,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                     <div className="flex gap-4 mt-3">
                         {project.projectUrl && (
                             <a
-                                href={project.projectUrl}
+                                href={project.projectUrl.startsWith('http') ? project.projectUrl : `https://${project.projectUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center text-primary hover:text-primary-dark"
@@ -192,7 +192,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                         )}
                         {project.repoUrl && (
                             <a
-                                href={project.repoUrl}
+                                href={project.repoUrl.startsWith('http') ? project.repoUrl : `https://${project.repoUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center text-primary hover:text-primary-dark"

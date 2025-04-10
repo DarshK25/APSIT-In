@@ -49,7 +49,7 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/connections", connectionRoutes);
 app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/events", eventRoutes);
-
+app.use("/api/v1/comments", commentRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);

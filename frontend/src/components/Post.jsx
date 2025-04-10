@@ -6,6 +6,7 @@ import * as commentService from '../api/commentService';
 import { FaHeart, FaRegHeart, FaComment, FaShare, FaTrash, FaEdit } from 'react-icons/fa';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 export const Post = ({ post, onUpdate, onDelete }) => {
     const { user } = useAuth();
@@ -23,7 +24,10 @@ export const Post = ({ post, onUpdate, onDelete }) => {
         try {
             setIsLiking(true);
             const updatedPost = await postService.likePost(post._id);
-            onUpdate(updatedPost);
+            onUpdate({
+                ...updatedPost,
+                author: post.author
+            });
             toast.success('Post liked successfully');
         } catch (error) {
             console.error('Error liking post:', error);
@@ -167,14 +171,64 @@ export const Post = ({ post, onUpdate, onDelete }) => {
     };
 
     const handleDeleteComment = async (commentId) => {
-        if (window.confirm('Are you sure you want to delete this comment?')) {
+        const confirmDelete = () => {
+            return new Promise((resolve) => {
+                toast.custom((t) => (
+                    <div className="bg-white p-4 rounded-lg shadow-lg">
+                        <p className="text-gray-800 mb-4">Are you sure you want to delete this comment?</p>
+                        <div className="flex justify-end space-x-2">
+                            <button
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(false);
+                                }}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(true);
+                                }}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ), {
+                    duration: 5000 // 5 seconds timeout for the confirmation toast
+                });
+            });
+        };
+
+        const shouldDelete = await confirmDelete();
+        if (!shouldDelete) return;
+
             try {
                 await commentService.deleteComment(commentId);
                 const updatedPost = await postService.getPost(post._id);
-                onUpdate(updatedPost);
+            onUpdate({
+                ...updatedPost,
+                author: post.author,
+                comments: updatedPost.comments.map(comment => ({
+                    ...comment,
+                    author: comment.author || post.comments.find(c => c._id === comment._id)?.author,
+                    replies: comment.replies ? comment.replies.map(reply => ({
+                        ...reply,
+                        author: reply.author || comment.replies?.find(r => r._id === reply._id)?.author
+                    })) : []
+                }))
+            });
+            toast.success('Comment deleted successfully', {
+                duration: 3000 // 3 seconds timeout for success toast
+            });
             } catch (error) {
                 console.error('Error deleting comment:', error);
-            }
+            toast.error('Failed to delete comment', {
+                duration: 3000 // 3 seconds timeout for error toast
+            });
         }
     };
 
@@ -197,23 +251,79 @@ export const Post = ({ post, onUpdate, onDelete }) => {
     };
 
     const handleDeleteReply = async (replyId) => {
-        if (window.confirm('Are you sure you want to delete this reply?')) {
-            try {
-                await commentService.deleteReply(replyId);
-                const updatedPost = await postService.getPost(post._id);
+        const confirmDelete = () => {
+            return new Promise((resolve) => {
+                toast.custom((t) => (
+                    <div className="bg-white p-4 rounded-lg shadow-lg">
+                        <p className="text-gray-800 mb-4">Are you sure you want to delete this reply?</p>
+                        <div className="flex justify-end space-x-2">
+                            <button
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(false);
+                                }}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    toast.dismiss(t.id);
+                                    resolve(true);
+                                }}
+                                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ), {
+                    duration: 5000 // 5 seconds timeout for the confirmation toast
+                });
+            });
+        };
+
+        const shouldDelete = await confirmDelete();
+        if (!shouldDelete) return;
+
+        try {
+            const response = await commentService.deleteReply(replyId);
+            
+            // If we got back the updated parent comment, use it to update the state
+            if (response && response._id) {
                 onUpdate({
                     ...post,
+                    comments: post.comments.map(comment => 
+                        comment._id === response._id 
+                            ? response 
+                            : comment
+                    )
+                });
+            } else {
+                // Fallback to fetching the updated post
+                const updatedPost = await postService.getPost(post._id);
+                onUpdate({
                     ...updatedPost,
+                    author: post.author,
                     comments: updatedPost.comments.map(comment => ({
                         ...comment,
-                        author: comment.author || post.comments.find(c => c._id === comment._id)?.author
+                        author: comment.author || post.comments.find(c => c._id === comment._id)?.author,
+                        replies: comment.replies ? comment.replies.map(reply => ({
+                            ...reply,
+                            author: reply.author || comment.replies?.find(r => r._id === reply._id)?.author
+                        })) : []
                     }))
                 });
-                toast.success('Reply deleted successfully');
-            } catch (error) {
-                console.error('Error deleting reply:', error);
-                toast.error('Failed to delete reply');
             }
+            
+            toast.success('Reply deleted successfully', {
+                duration: 3000 // 3 seconds timeout for success toast
+            });
+        } catch (error) {
+            console.error('Error deleting reply:', error);
+            toast.error('Failed to delete reply', {
+                duration: 3000 // 3 seconds timeout for error toast
+            });
         }
     };
 
@@ -223,13 +333,20 @@ export const Post = ({ post, onUpdate, onDelete }) => {
         <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                    <img
-                        src={post.author.profilePicture || '/default-avatar.png'}
-                        alt={post.author.username}
-                        className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-200"
-                    />
+                    <Link to={`/profile/${post.author.username}`}>
+                        <img
+                            src={post.author.profilePicture || '/default-avatar.png'}
+                            alt={post.author.username}
+                            className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-200"
+                        />
+                    </Link>
                     <div>
-                        <h3 className="font-semibold text-gray-800">{post.author.username}</h3>
+                        <Link 
+                            to={`/profile/${post.author.username}`}
+                            className="hover:text-blue-600 transition-colors duration-200"
+                        >
+                            <h3 className="font-semibold text-gray-800">{post.author.name}</h3>
+                        </Link>
                         <p className="text-gray-500 text-sm">
                             {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                         </p>
@@ -281,11 +398,24 @@ export const Post = ({ post, onUpdate, onDelete }) => {
             )}
 
             {post.image && (
-                <img
-                    src={post.image}
-                    alt="Post content"
-                    className="w-full rounded-lg mb-4 object-cover max-h-96"
-                />
+                <div className="relative w-full mb-4">
+                    <img
+                        src={post.image}
+                        alt="Post content"
+                        className="w-full rounded-lg object-cover max-h-96"
+                        onError={(e) => {
+                            console.error('Image load error:', e);
+                            console.log('Failed image URL:', post.image);
+                            e.target.onerror = null; // Prevent infinite loop
+                            e.target.src = '/placeholder-image.png'; // Fallback image
+                            toast.error('Failed to load image');
+                        }}
+                        onLoad={(e) => {
+                            console.log('Image loaded successfully:', post.image);
+                        }}
+                        loading="lazy"
+                    />
+                </div>
             )}
 
             <div className="flex justify-between items-center mb-4">

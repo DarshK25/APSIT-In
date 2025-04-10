@@ -1,19 +1,69 @@
 import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
 import { handleError } from '../utils/errorHandler.js';
-import Connection from '../models/connection.model.js';
+import User from '../models/user.model.js';
+import Notification from '../models/notification.model.js';
+import cloudinary from '../lib/cloudinary.js';
+
+// Helper function to upload to Cloudinary
+const uploadToCloudinary = async (file) => {
+    try {
+        // Convert buffer to base64
+        const b64 = Buffer.from(file.buffer).toString('base64');
+        const dataURI = "data:" + file.mimetype + ";base64," + b64;
+        
+        const result = await cloudinary.uploader.upload(dataURI, {
+            folder: 'posts',
+            resource_type: 'auto'
+        });
+        
+        return result.secure_url;
+    } catch (error) {
+        console.error('Error uploading to Cloudinary:', error);
+        throw new Error('Failed to upload image');
+    }
+};
 
 export const createPost = async (req, res) => {
     try {
-        const { content, image } = req.body;
+        const { content } = req.body;
+        let imageUrl = null;
+
+        // If there's an uploaded file, upload to Cloudinary
+        if (req.file) {
+            try {
+                imageUrl = await uploadToCloudinary(req.file);
+                console.log('Uploaded image URL:', imageUrl); // Debug log
+            } catch (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                return res.status(500).json({ message: 'Failed to upload image' });
+            }
+        }
+
         const newPost = new Post({
             content,
-            image,
+            image: imageUrl,
             author: req.user._id
         });
+
         await newPost.save();
-        res.status(201).json(newPost);
+        console.log('Saved post:', newPost); // Debug log
+
+        // Populate the author details before sending response
+        const populatedPost = await Post.findById(newPost._id)
+            .populate('author', 'name username profilePicture')
+            .populate({
+                path: 'comments',
+                populate: {
+                    path: 'author',
+                    select: 'name username profilePicture'
+                }
+            });
+
+        console.log('Populated post:', populatedPost); // Debug log
+        res.status(201).json(populatedPost);
     } catch (error) {
+        console.error('Error in createPost:', error);
         handleError(res, error);
     }
 };
@@ -49,46 +99,28 @@ export const getPostById = async (req, res) => {
 
 export const getFeedPosts = async (req, res) => {
     try {
-        // Get all accepted connections for the current user
-        const connections = await Connection.find({
-            $or: [
-                { sender: req.user._id, status: 'accepted' },
-                { recipient: req.user._id, status: 'accepted' }
-            ]
-        });
+        const userId = req.user._id;
+        
+        // Get the user's connections from the User model
+        const user = await User.findById(userId);
+        const connections = user.connections || [];
 
-        // Extract all connected user IDs
-        const connectedUserIds = connections.map(conn => 
-            conn.sender.toString() === req.user._id.toString() 
-                ? conn.recipient.toString() 
-                : conn.sender.toString()
-        );
-
-        // Add current user's ID to see their own posts
-        connectedUserIds.push(req.user._id.toString());
-
-        // Get posts from connected users
+        // Get posts from the user and their connections
         const posts = await Post.find({
-            author: { $in: connectedUserIds }
+            $or: [
+                { author: userId },
+                { author: { $in: connections } }
+            ]
         })
-        .sort({ createdAt: -1 })
-        .populate('author', 'username profilePicture')
+        .populate('author', 'name username profilePicture')
         .populate({
             path: 'comments',
-            populate: [
-                {
-                    path: 'author',
-                    select: 'username profilePicture'
-                },
-                {
-                    path: 'replies',
-                    populate: {
-                        path: 'author',
-                        select: 'username profilePicture'
-                    }
-                }
-            ]
-        });
+            populate: {
+                path: 'author',
+                select: 'name username profilePicture'
+            }
+        })
+        .sort({ createdAt: -1 });
 
         res.json(posts);
     } catch (error) {
@@ -98,20 +130,52 @@ export const getFeedPosts = async (req, res) => {
 
 export const updatePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.id);
+        const { content } = req.body;
+        const postId = req.params.id;
+        
+        // Get the existing post
+        const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
+
+        // Check if user is authorized to update the post
         if (post.author.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to update this post' });
         }
+
+        // Update the post data
+        const updateData = { content };
+
+        // If there's a new image uploaded
+        if (req.file) {
+            try {
+                const imageUrl = await uploadToCloudinary(req.file);
+                updateData.image = imageUrl;
+            } catch (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                return res.status(500).json({ message: 'Failed to upload image' });
+            }
+        }
+
+        // Update the post
         const updatedPost = await Post.findByIdAndUpdate(
-            req.params.id,
-            { $set: req.body },
+            postId,
+            updateData,
             { new: true }
-        );
+        ).populate('author', 'name username profilePicture')
+         .populate({
+             path: 'comments',
+             populate: {
+                 path: 'author',
+                 select: 'name username profilePicture'
+             }
+         });
+
+        console.log('Updated post:', updatedPost); // Debug log
         res.json(updatedPost);
     } catch (error) {
+        console.error('Error in updatePost:', error);
         handleError(res, error);
     }
 };
@@ -135,7 +199,7 @@ export const deletePost = async (req, res) => {
 
 export const likePost = async (req, res) => {
     try {
-        const post = await Post.findById(req.params.id);
+        const post = await Post.findById(req.params.id).populate('author');
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
@@ -144,9 +208,34 @@ export const likePost = async (req, res) => {
             post.likes = post.likes.filter(id => id.toString() !== req.user._id.toString());
         } else {
             post.likes.push(req.user._id);
+            
+            // Create notification for post like if the author is not the same as the liker
+            if (post.author._id.toString() !== req.user._id.toString()) {
+                const notification = new Notification({
+                    recipient: post.author._id,
+                    sender: req.user._id,
+                    type: 'like',
+                    message: 'liked your post',
+                    post: post._id,
+                    read: false
+                });
+                await notification.save();
+            }
         }
         await post.save();
-        res.json(post);
+        
+        // Populate the post with author details before sending response
+        const populatedPost = await Post.findById(post._id)
+            .populate('author', 'name username profilePicture')
+            .populate({
+                path: 'comments',
+                populate: {
+                    path: 'author',
+                    select: 'name username profilePicture'
+                }
+            });
+            
+        res.json(populatedPost);
     } catch (error) {
         handleError(res, error);
     }
