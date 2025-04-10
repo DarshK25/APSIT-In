@@ -100,6 +100,17 @@ const Sidebar = () => {
                         <p className="text-lg font-semibold text-gray-900">{user.connections?.length || 0}</p>
                         <p className="text-xs text-gray-500">Connections</p>
                     </div>
+                    {user.yearOfStudy && (
+                        <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-lg font-semibold text-gray-900">
+                                {user.yearOfStudy === 'First Year' ? 'FE' : 
+                                 user.yearOfStudy === 'Second Year' ? 'SE' : 
+                                 user.yearOfStudy === 'Third Year' ? 'TE' : 
+                                 user.yearOfStudy === 'Fourth Year' ? 'BE' : user.yearOfStudy}
+                            </p>
+                            <p className="text-xs text-gray-500">Year</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-4 space-y-2">

@@ -54,7 +54,7 @@ const ProfilePage = () => {
           ...prevData,
           ...response
         }));
-        toast.success('Profile updated successfully');
+        // Toast notification is now handled in the individual components
       }
     } catch (error) {
       console.error("Failed to update profile:", error);

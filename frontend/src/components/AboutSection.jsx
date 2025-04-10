@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const AboutSection = ({ userData, isOwnProfile, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -7,6 +8,7 @@ const AboutSection = ({ userData, isOwnProfile, onSave }) => {
   const handleSave = () => {
     onSave({ about });
     setIsEditing(false);
+    toast.success('About section updated successfully');
   };
 
   return (

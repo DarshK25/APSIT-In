@@ -1,5 +1,6 @@
 import { Briefcase, X, Edit, Plus } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const ExperienceSection = ({ userData, isOwnProfile, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -60,6 +61,9 @@ const ExperienceSection = ({ userData, isOwnProfile, onSave }) => {
         description: "",
         currentlyWorking: false,
       });
+      toast.success(editingIndex !== null ? 'Experience updated successfully' : 'Experience added successfully');
+    } else {
+      toast.error('Title, company, and start date are required');
     }
   };
 

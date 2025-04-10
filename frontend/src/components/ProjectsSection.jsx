@@ -128,6 +128,9 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                 isOngoing: false,
                 collaborators: []
             });
+            toast.success(editingIndex !== null ? 'Project updated successfully' : 'Project added successfully');
+        } else {
+            toast.error('Title and description are required');
         }
     };
 
