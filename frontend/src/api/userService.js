@@ -26,7 +26,7 @@ class UserService {
   }
 
   async updateProfile(userData) {
-    const response = await axiosInstance.put('/users/me', userData);
+    const response = await axiosInstance.put('/users/profile', userData);
     return response.data;
   }
 
@@ -84,7 +84,11 @@ export const getUserProfile = async () => {
 export const updateUserProfile = async (updatedData) => {
     try {
         const response = await axiosInstance.put('/users/profile', updatedData);
-        return response.data.user;
+        if (response.data.success) {
+            return response.data.user;
+        } else {
+            throw new Error(response.data.message || 'Failed to update profile');
+        }
     } catch (error) {
         console.error("Error updating profile:", error);
         throw error;
@@ -112,7 +116,10 @@ export const uploadToCloudinary = async (file) => {
 export const getUserRecommendations = async () => {
     try {
         const response = await axiosInstance.get('/users/recommendations');
-        return response.data.data;
+        if (!response.data.success) {
+            throw new Error(response.data.message || "Failed to fetch recommendations");
+        }
+        return response.data;
     } catch (error) {
         console.error("Error fetching recommendations:", error);
         throw error;
@@ -155,6 +162,16 @@ export const getUnreadCounts = async () => {
         return response.data.data;
     } catch (error) {
         console.error("Error fetching unread counts:", error);
+        throw error;
+    }
+};
+
+export const updateProfile = async (profileData) => {
+    try {
+        const response = await axiosInstance.put('/users/profile', profileData);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating profile:", error);
         throw error;
     }
 };

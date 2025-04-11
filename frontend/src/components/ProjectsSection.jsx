@@ -128,6 +128,9 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                 isOngoing: false,
                 collaborators: []
             });
+            toast.success(editingIndex !== null ? 'Project updated successfully' : 'Project added successfully');
+        } else {
+            toast.error('Title and description are required');
         }
     };
 
@@ -181,7 +184,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                     <div className="flex gap-4 mt-3">
                         {project.projectUrl && (
                             <a
-                                href={project.projectUrl}
+                                href={project.projectUrl.startsWith('http') ? project.projectUrl : `https://${project.projectUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center text-primary hover:text-primary-dark"
@@ -192,7 +195,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                         )}
                         {project.repoUrl && (
                             <a
-                                href={project.repoUrl}
+                                href={project.repoUrl.startsWith('http') ? project.repoUrl : `https://${project.repoUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center text-primary hover:text-primary-dark"

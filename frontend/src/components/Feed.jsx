@@ -53,13 +53,24 @@ export const Feed = () => {
                 formData.append('image', selectedImage);
             }
 
+            // Log the FormData contents for debugging
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
             const newPost = await postService.createPost(formData);
+            console.log('New post response:', newPost); // Debug log
+
+            // Ensure we have all the required data populated
             const formattedPost = {
                 ...newPost,
                 author: typeof newPost.author === 'string'
                     ? { _id: newPost.author, username: user.username, profilePicture: user.profilePicture }
-                    : newPost.author
+                    : newPost.author,
+                likes: newPost.likes || [],
+                comments: newPost.comments || []
             };
+
             setPosts([formattedPost, ...posts]);
             setNewPostContent('');
             setSelectedImage(null);
@@ -67,7 +78,7 @@ export const Feed = () => {
             toast.success('Post created successfully');
         } catch (error) {
             console.error('Error creating post:', error);
-            toast.error('Failed to create post');
+            toast.error(error.response?.data?.message || 'Failed to create post');
         } finally {
             setIsSubmitting(false);
         }
@@ -96,6 +107,14 @@ export const Feed = () => {
                 toast.error('Image size should be less than 5MB');
                 return;
             }
+
+            // Log file details for debugging
+            console.log('Selected file:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+
             setSelectedImage(file);
             setImagePreview(URL.createObjectURL(file));
         }

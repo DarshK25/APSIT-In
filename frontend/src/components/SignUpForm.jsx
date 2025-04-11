@@ -53,7 +53,7 @@ const SignUpForm = () => {
 			
 			if (success) {
 				toast.success('Account created successfully!');
-				navigate('/profile/edit');
+				navigate('/profile');
 			}
 		} catch (error) {
 			console.error("Signup error:", error);

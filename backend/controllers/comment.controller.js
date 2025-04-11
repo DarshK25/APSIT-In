@@ -1,23 +1,49 @@
 import Comment from '../models/comment.model.js';
 import Post from '../models/post.model.js';
 import { handleError } from '../utils/errorHandler.js';
+import Notification from '../models/notification.model.js';
 
 export const addComment = async (req, res) => {
     try {
         const { content } = req.body;
-        const post = await Post.findById(req.params.postId);
+        const postId = req.params.postId;
+
+        // Find the post and populate author
+        const post = await Post.findById(postId).populate('author');
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
+
         const newComment = new Comment({
             content,
             author: req.user._id,
-            post: req.params.postId
+            post: postId
         });
+
         await newComment.save();
+
+        // Add comment to post's comments array
         post.comments.push(newComment._id);
         await post.save();
-        res.status(201).json(newComment);
+
+        // Create notification for comment if the author is not the same as the commenter
+        if (post.author._id.toString() !== req.user._id.toString()) {
+            const notification = new Notification({
+                recipient: post.author._id,
+                sender: req.user._id,
+                type: 'comment',
+                message: 'commented on your post',
+                post: post._id,
+                read: false
+            });
+            await notification.save();
+        }
+
+        // Populate the comment with author details before sending response
+        const populatedComment = await Comment.findById(newComment._id)
+            .populate('author', 'name username profilePicture');
+
+        res.status(201).json(populatedComment);
     } catch (error) {
         handleError(res, error);
     }
@@ -68,18 +94,41 @@ export const deleteComment = async (req, res) => {
 
 export const likeComment = async (req, res) => {
     try {
-        const comment = await Comment.findById(req.params.id);
+        const comment = await Comment.findById(req.params.id)
+            .populate('author')
+            .populate('post');
+            
         if (!comment) {
             return res.status(404).json({ message: 'Comment not found' });
         }
+
         const isLiked = comment.likes.includes(req.user._id);
         if (isLiked) {
             comment.likes = comment.likes.filter(id => id.toString() !== req.user._id.toString());
         } else {
             comment.likes.push(req.user._id);
+
+            // Create notification for comment like if the author is not the same as the liker
+            if (comment.author._id.toString() !== req.user._id.toString()) {
+                const notification = new Notification({
+                    recipient: comment.author._id,
+                    sender: req.user._id,
+                    type: 'like',
+                    message: 'liked your comment',
+                    post: comment.post._id,
+                    read: false
+                });
+                await notification.save();
+            }
         }
+
         await comment.save();
-        res.json(comment);
+
+        // Populate the comment with author details before sending response
+        const populatedComment = await Comment.findById(comment._id)
+            .populate('author', 'name username profilePicture');
+
+        res.json(populatedComment);
     } catch (error) {
         handleError(res, error);
     }
@@ -132,12 +181,33 @@ export const deleteReply = async (req, res) => {
         if (reply.author.toString() !== req.user._id.toString()) {
             return res.status(403).json({ message: 'Not authorized to delete this reply' });
         }
+        
+        // Find the parent comment
         const parentComment = await Comment.findById(reply.parentComment);
         if (parentComment) {
-            parentComment.replies = parentComment.replies.filter(id => id.toString() !== reply._id.toString());
+            // Safely handle the case where replies might be undefined
+            parentComment.replies = (parentComment.replies || []).filter(id => id.toString() !== reply._id.toString());
+            parentComment.replyCount = Math.max(0, (parentComment.replyCount || 0) - 1);
             await parentComment.save();
         }
+        
+        // Delete the reply
         await Comment.findByIdAndDelete(req.params.id);
+        
+        // Return the updated parent comment if it exists
+        if (parentComment) {
+            const updatedParent = await Comment.findById(parentComment._id)
+                .populate('author', 'username profilePicture')
+                .populate({
+                    path: 'replies',
+                    populate: {
+                        path: 'author',
+                        select: 'username profilePicture'
+                    }
+                });
+            return res.json(updatedParent);
+        }
+        
         res.json({ message: 'Reply deleted successfully' });
     } catch (error) {
         handleError(res, error);

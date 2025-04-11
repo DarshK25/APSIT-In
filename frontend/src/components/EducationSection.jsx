@@ -1,5 +1,6 @@
 import { School, X, Edit, Plus } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const EducationSection = ({ userData, isOwnProfile, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -51,6 +52,9 @@ const EducationSection = ({ userData, isOwnProfile, onSave }) => {
         startYear: "",
         endYear: "",
       });
+      toast.success(editingIndex !== null ? 'Education updated successfully' : 'Education added successfully');
+    } else {
+      toast.error('School, field of study, and start year are required');
     }
   };
 

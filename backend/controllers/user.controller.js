@@ -2,54 +2,99 @@ import cloudinary from "../lib/cloudinary.js";
 import User from "../models/user.model.js"
 import Notification from "../models/notification.model.js";
 import Message from "../models/message.model.js";
-import Connection from "../models/connection.model.js";
+import Post from "../models/post.model.js";
+import Comment from "../models/comment.model.js";
 import ConnectionRequest from "../models/connectionRequest.model.js";
 
 // Only get the users that are not in my connection, not myself, and don't have pending requests
 export const getSuggestedConnections = async (req, res) => {
     try {
-        const currentUser = await User.findById(req.user._id).select("connections");
-        
-        // Get all pending connection requests involving the current user
+        const userId = req.user._id;
+        const currentUser = await User.findById(userId);
+
+        if (!currentUser) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Current user not found" 
+            });
+        }
+
+        // Get pending connection requests to exclude those users
         const pendingRequests = await ConnectionRequest.find({
             $or: [
-                { sender: req.user._id, status: "pending" },
-                { recipient: req.user._id, status: "pending" }
+                { sender: userId, status: 'pending' },
+                { recipient: userId, status: 'pending' }
             ]
         });
 
-        // Extract user IDs from pending requests
-        const usersWithPendingRequests = pendingRequests.reduce((acc, request) => {
-            acc.push(request.sender.toString(), request.recipient.toString());
-            return acc;
-        }, []);
+        // Get users to exclude (current connections and users with pending requests)
+        const pendingUserIds = pendingRequests.map(request => 
+            request.sender.toString() === userId.toString() ? request.recipient : request.sender
+        );
+        const usersToExclude = [...currentUser.connections, ...pendingUserIds, userId];
 
-        const suggestedUsers = await User.find({
-            _id: {
-                $ne: req.user._id, // Not the current user
-                $nin: [...currentUser.connections, ...usersWithPendingRequests] // Not in connections and not in pending requests
-            }
+        console.log('Users to exclude:', usersToExclude.length);
+        console.log('Current user department:', currentUser.department);
+
+        // First, try to find users with mutual connections
+        const mutualConnections = await User.find({
+            _id: { $nin: usersToExclude },
+            connections: { $in: currentUser.connections }
         })
-        .select("name username profilePicture headline department yearOfStudy")
-        .limit(10);
+        .select('name username profilePicture headline department yearOfStudy connections')
+        .limit(5);
+
+        console.log('Found mutual connections:', mutualConnections.length);
+
+        let recommendedUsers = mutualConnections;
+
+        // If we don't have enough mutual connections, add users from the same department
+        if (recommendedUsers.length < 5 && currentUser.department) {
+            const departmentUsers = await User.find({
+                _id: { $nin: [...usersToExclude, ...recommendedUsers.map(u => u._id)] },
+                department: currentUser.department
+            })
+            .select('name username profilePicture headline department yearOfStudy connections')
+            .limit(5 - recommendedUsers.length);
+
+            console.log('Found department users:', departmentUsers.length);
+            recommendedUsers = [...recommendedUsers, ...departmentUsers];
+        }
+
+        // If we still don't have enough recommendations, add random users
+        if (recommendedUsers.length < 5) {
+            const randomUsers = await User.find({
+                _id: { $nin: [...usersToExclude, ...recommendedUsers.map(u => u._id)] }
+            })
+            .select('name username profilePicture headline department yearOfStudy connections')
+            .limit(5 - recommendedUsers.length);
+
+            console.log('Found random users:', randomUsers.length);
+            recommendedUsers = [...recommendedUsers, ...randomUsers];
+        }
+
+        // Sort users by number of mutual connections
+        recommendedUsers = recommendedUsers.map(user => {
+            const mutualCount = user.connections.filter(connId => 
+                currentUser.connections.includes(connId)
+            ).length;
+            return { ...user.toObject(), mutualConnections: mutualCount };
+        }).sort((a, b) => b.mutualConnections - a.mutualConnections);
+
+        console.log('Total recommended users:', recommendedUsers.length);
 
         res.json({
             success: true,
-            data: suggestedUsers.map(user => ({
-                _id: user._id,
-                name: user.name,
-                username: user.username,
-                headline: user.headline,
-                profilePicture: user.profilePicture,
-                department: user.department,
-                yearOfStudy: user.yearOfStudy
-            }))
+            data: recommendedUsers
         });
     } catch (error) {
-        console.error("Error in getSuggestedConnections: ", error);
-        res.status(500).json({ success: false, message: "Server Error" });
-    }   
-}
+        console.error('Error in getSuggestedConnections:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error getting suggested connections' 
+        });
+    }
+};
 
 export const getPublicProfile = async (req, res) => {
     try{
