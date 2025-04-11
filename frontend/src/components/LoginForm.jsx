@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Loader } from "lucide-react";
+import { Loader, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const { login, user } = useAuth();
 	const navigate = useNavigate();
@@ -38,14 +39,24 @@ const LoginForm = () => {
 				className="input input-bordered w-full"
 				required
 			/>
-			<input
-				type="password"
-				placeholder="Password"
-				value={password}
-				onChange={(e) => setPassword(e.target.value)}
-				className="input input-bordered w-full"
-				required
-			/>
+			<div className="relative">	
+				<input
+					type={showPassword ? "text" : "password"}
+					placeholder="Password"
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
+					className="input input-bordered w-full pr-10"
+					required
+				/>
+				<button
+					type="button"
+					className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+					onClick={() => setShowPassword(prev => !prev)}
+					tabIndex={-1}
+				>
+					{showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+				</button>
+			</div>
 
 			<button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
 				{isLoading ? <Loader className="size-5 animate-spin" /> : "Login"}

@@ -3,6 +3,20 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
+// Configure axios to suppress 401 errors in the console
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    // Suppress 401 errors in the console
+    if (error.response && error.response.status === 401) {
+      // Do nothing, just return the error
+      return Promise.reject(error);
+    }
+    // For other errors, let them propagate
+    return Promise.reject(error);
+  }
+);
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -29,7 +43,11 @@ export const AuthProvider = ({ children }) => {
                     setUser(response.data.data);
                 }
             } catch (error) {
-                console.error('Auth check failed:', error);
+                // Silently handle 401 errors as they are expected when not logged in
+                if (error.response?.status !== 401) {
+                    console.error('Auth check failed:', error);
+                }
+                setUser(null);
             } finally {
                 setLoading(false);
             }

@@ -3,6 +3,7 @@ import { Loader } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 const SignUpForm = () => {
 	const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const SignUpForm = () => {
 		password: ""
 	});
 	const [isLoading, setIsLoading] = useState(false);
+	const [showPassword, setShowPassword] = useState(true);
 	const { signup } = useAuth();
 	const navigate = useNavigate();
 
@@ -96,17 +98,28 @@ const SignUpForm = () => {
 				className="input input-bordered w-full"
 				required
 			/>
-			<input
-				type="password"
-				name="password"
-				placeholder="Password (6+ characters)"
-				value={formData.password}
-				onChange={handleChange}
-				className="input input-bordered w-full"
-				required
-				minLength={6}
-				maxLength={50}
-			/>
+			<div className="relative">
+				<input
+					type={showPassword ? "text" : "password"}
+					name="password"
+					placeholder="Password (6+ characters)"
+					value={formData.password}
+					onChange={handleChange}
+					className="input input-bordered w-full pr-10"
+					required
+					minLength={6}
+					maxLength={50}
+				/>
+				<button
+					type="button"
+					className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+					onClick={() => setShowPassword(prev => !prev)}
+					tabIndex={-1}
+				>
+					{showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+				</button>
+			</div>
+
 
 			<button 
 				type="submit" 
