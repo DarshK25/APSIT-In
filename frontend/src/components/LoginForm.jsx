@@ -37,11 +37,12 @@ const LoginForm = () => {
 				navigate("/home");
 			}
 			if(!user) {
-				sessionStorage.setItem('loginError', "Invalid username or password");
 				toast.error("Invalid username or password");
 			}
 		} catch (error) {
 			console.error("Login error:", error);
+			sessionStorage.setItem('loginError', "Invalid username or password");
+			toast.error("Invalid username or password");
 		} finally {
 			setIsLoading(false);
 		}
