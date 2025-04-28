@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Loader, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+import toast from "react-hot-toast";
 const LoginForm = () => {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
@@ -10,6 +10,15 @@ const LoginForm = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const { login, user } = useAuth();
 	const navigate = useNavigate();
+
+	useEffect(() => {
+        const loginError = sessionStorage.getItem('loginError');
+        if (loginError) {
+            toast.error(loginError);
+            sessionStorage.removeItem('loginError');
+        }
+    }, []);
+
 
 	useEffect(() => {
 		if (user) {
@@ -22,9 +31,14 @@ const LoginForm = () => {
 		setIsLoading(true);
 		try {
 			await login(username, password);
+			sessionStorage.removeItem('loginError');
 			window.location.reload();
 			if(user) {
 				navigate("/home");
+			}
+			if(!user) {
+				sessionStorage.setItem('loginError', "Invalid username or password");
+				toast.error("Invalid username or password");
 			}
 		} catch (error) {
 			console.error("Login error:", error);
