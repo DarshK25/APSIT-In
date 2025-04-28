@@ -62,3 +62,12 @@ export const likeReply = async (replyId) => {
         throw error.response?.data || error;
     }
 }; 
+
+export const getCommentsByPostId = async (postId) => {
+    try {
+        const response = await axiosInstance.get(`/comments/posts/${postId}/comments`);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};

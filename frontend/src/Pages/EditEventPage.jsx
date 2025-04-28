@@ -4,20 +4,21 @@ import axios from 'axios';
 import { Calendar, Clock, MapPin, Upload } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import ClubSearch from '../components/ClubSearch';
 
-const EditEventPage = () => {
+const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [imagePreview, setImagePreview] = useState(null);
+    const [selectedClub, setSelectedClub] = useState(null);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         date: '',
         time: '',
         location: '',
-        category: '',
         department: '',
         maxAttendees: '',
         registrationDeadline: '',
@@ -25,12 +26,66 @@ const EditEventPage = () => {
         image: null
     });
 
-    const categories = ['academic', 'cultural', 'sports', 'technical', 'other'];
-    const departments = ['Computer', 'IT', 'EXTC', 'Chemical', 'Mechanical'];
+    const departments = [
+        'Computer Engineering',
+        'Information Technology',
+        'Computer Science & Engineering: Data Science', 
+        'Computer Science & Engineering: Artificial Intelligence & Machine Learning', 
+        'Civil Engineering',
+        'Mechanical Engineering'
+    ];
 
     useEffect(() => {
-        fetchEvent();
-    }, [id]);
+        if (initialEvent) {
+            setupFormData(initialEvent);
+        } else {
+            fetchEvent();
+        }
+    }, [id, initialEvent]);
+
+    const setupFormData = (event) => {
+        try {
+            // Format date for input field
+            const eventDate = new Date(event.date);
+            const formattedDate = eventDate.toISOString().split('T')[0];
+            
+            // Format registration deadline for input field
+            const deadlineDate = event.registrationDeadline ? new Date(event.registrationDeadline) : null;
+            const formattedDeadline = deadlineDate ? deadlineDate.toISOString().split('T')[0] : '';
+
+            setFormData({
+                title: event.title,
+                description: event.description,
+                date: formattedDate,
+                time: event.time,
+                location: event.location,
+                department: event.department,
+                maxAttendees: event.maxAttendees || '',
+                registrationDeadline: formattedDeadline,
+                requirements: event.requirements || '',
+            });
+
+            if (event.image) {
+                setImagePreview(`${import.meta.env.VITE_API_URL}/${event.image}`);
+            }
+
+            // Set the organizer club
+            if (event.organizer) {
+                setSelectedClub({
+                    _id: event.organizer._id,
+                    name: event.organizer.name,
+                    profilePicture: event.organizer.profilePicture,
+                    headline: event.organizer.headline
+                });
+            }
+            
+            setLoading(false);
+        } catch (error) {
+            console.error('Error setting up form data:', error);
+            toast.error('Error loading event data');
+            setLoading(false);
+        }
+    };
 
     const fetchEvent = async () => {
         try {
@@ -49,30 +104,7 @@ const EditEventPage = () => {
                     return;
                 }
 
-                // Format date for input field
-                const eventDate = new Date(event.date);
-                const formattedDate = eventDate.toISOString().split('T')[0];
-                
-                // Format registration deadline for input field
-                const deadlineDate = new Date(event.registrationDeadline);
-                const formattedDeadline = deadlineDate.toISOString().split('T')[0];
-
-                setFormData({
-                    title: event.title,
-                    description: event.description,
-                    date: formattedDate,
-                    time: event.time,
-                    location: event.location,
-                    category: event.category,
-                    department: event.department,
-                    maxAttendees: event.maxAttendees || '',
-                    registrationDeadline: formattedDeadline,
-                    requirements: event.requirements || '',
-                });
-
-                if (event.image) {
-                    setImagePreview(`${import.meta.env.VITE_API_URL}/${event.image}`);
-                }
+                setupFormData(event);
             } else {
                 throw new Error(response.data.message || 'Failed to load event');
             }
@@ -80,8 +112,6 @@ const EditEventPage = () => {
             console.error('Failed to fetch event:', error);
             toast.error(error.response?.data?.message || 'Failed to load event details');
             navigate('/events');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -105,14 +135,21 @@ const EditEventPage = () => {
 
         try {
             const data = new FormData();
+            
+            // Add all form data fields
             Object.entries(formData).forEach(([key, value]) => {
                 if (value !== null && value !== '') {
                     data.append(key, value);
                 }
             });
 
+            // Add the organizer field from selectedClub
+            if (selectedClub) {
+                data.append('organizer', selectedClub._id);
+            }
+
             const response = await axios.put(
-                `${import.meta.env.VITE_API_URL}/api/v1/events/${id}`,
+                `${import.meta.env.VITE_API_URL}/api/v1/events/${initialEvent?._id || id}`,
                 data,
                 {
                     withCredentials: true,
@@ -124,7 +161,11 @@ const EditEventPage = () => {
 
             if (response.data.success) {
                 toast.success('Event updated successfully');
-                navigate(`/events/${id}`);
+                if (isModal && onSuccess) {
+                    onSuccess();
+                } else {
+                    navigate(`/events/${initialEvent?._id || id}`);
+                }
             } else {
                 throw new Error(response.data.message || 'Failed to update event');
             }
@@ -138,17 +179,26 @@ const EditEventPage = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className={`flex items-center justify-center ${isModal ? 'h-64' : 'min-h-screen'}`}>
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto p-4 max-w-2xl">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Event</h1>
+        <div className={isModal ? '' : 'container mx-auto p-4 max-w-2xl'}>
+            {!isModal && <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Event</h1>}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Club Selection */}
+                {user?.accountType !== 'club' && (
+                    <ClubSearch
+                        onSelectClub={setSelectedClub}
+                        selectedClub={selectedClub}
+                        disabled={user?.accountType === 'club'}
+                    />
+                )}
+
                 {/* Image Upload */}
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
@@ -220,7 +270,7 @@ const EditEventPage = () => {
                         <label htmlFor="date" className="block text-sm font-medium text-gray-700">
                             Date
                         </label>
-                        <div className="mt-1 relative">
+                        <div className="mt-1 relative rounded-md shadow-sm">
                             <input
                                 type="date"
                                 id="date"
@@ -228,16 +278,15 @@ const EditEventPage = () => {
                                 value={formData.date}
                                 onChange={handleChange}
                                 required
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="block w-full pr-10 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             />
-                            <Calendar className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                         </div>
                     </div>
                     <div>
                         <label htmlFor="time" className="block text-sm font-medium text-gray-700">
                             Time
                         </label>
-                        <div className="mt-1 relative">
+                        <div className="mt-1 relative rounded-md shadow-sm">
                             <input
                                 type="time"
                                 id="time"
@@ -245,9 +294,8 @@ const EditEventPage = () => {
                                 value={formData.time}
                                 onChange={handleChange}
                                 required
-                                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                className="block w-full pr-10 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                             />
-                            <Clock className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
                         </div>
                     </div>
                 </div>
@@ -271,46 +319,24 @@ const EditEventPage = () => {
                     </div>
                 </div>
 
-                {/* Category and Department */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                            Category
-                        </label>
-                        <select
-                            id="category"
-                            name="category"
-                            value={formData.category}
-                            onChange={handleChange}
-                            required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        >
-                            <option value="">Select a category</option>
-                            {categories.map(category => (
-                                <option key={category} value={category}>
-                                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                            Department
-                        </label>
-                        <select
-                            id="department"
-                            name="department"
-                            value={formData.department}
-                            onChange={handleChange}
-                            required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        >
-                            <option value="">Select a department</option>
-                            {departments.map(dept => (
-                                <option key={dept} value={dept}>{dept}</option>
-                            ))}
-                        </select>
-                    </div>
+                {/* Department */}
+                <div>
+                    <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                        Department
+                    </label>
+                    <select
+                        id="department"
+                        name="department"
+                        value={formData.department}
+                        onChange={handleChange}
+                        required
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        <option value="">Select a department</option>
+                        {departments.map(dept => (
+                            <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Max Attendees and Registration Deadline */}
@@ -361,21 +387,20 @@ const EditEventPage = () => {
                     />
                 </div>
 
-                {/* Submit Button */}
-                <div className="flex justify-end space-x-4">
+                <div className="flex justify-end space-x-3">
                     <button
                         type="button"
-                        onClick={() => navigate(`/events/${id}`)}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        onClick={() => isModal ? onSuccess() : navigate('/events')}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-500 border border-transparent rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-300"
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
                     >
-                        {loading ? 'Saving...' : 'Save Changes'}
+                        {loading ? 'Updating...' : 'Update Event'}
                     </button>
                 </div>
             </form>

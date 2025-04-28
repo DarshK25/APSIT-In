@@ -43,7 +43,7 @@ export const getEvents = async (req, res) => {
         const skip = (page - 1) * limit;
 
         const events = await Event.find(query)
-            .populate('organizer', 'name username profilePicture')
+            .populate('organizer', 'name username profilePicture accountType members')
             .sort({ date: 1 })
             .skip(skip)
             .limit(parseInt(limit));
@@ -70,7 +70,7 @@ export const getEvents = async (req, res) => {
 export const getEvent = async (req, res) => {
     try {
         const event = await Event.findById(req.params.id)
-            .populate('organizer', 'name username profilePicture')
+            .populate('organizer', 'name username profilePicture accountType members')
             .populate('attendees', 'name username profilePicture');
 
         if (!event) {
@@ -114,8 +114,13 @@ export const updateEvent = async (req, res) => {
             return res.status(404).json({ success: false, message: "Event not found" });
         }
 
-        // Check if user is the organizer
-        if (event.organizer.toString() !== req.user._id.toString()) {
+        // Check if user has permission to update the event
+        const hasPermission = 
+            event.organizer.toString() === req.user._id.toString() || // Current organizer
+            req.body.organizer === req.user._id.toString() || // New organizer is the user
+            req.user.accountType === 'club'; // User is a club account
+
+        if (!hasPermission) {
             return res.status(403).json({ success: false, message: "Not authorized to update this event" });
         }
 
@@ -156,7 +161,7 @@ export const updateEvent = async (req, res) => {
             req.params.id,
             updateData,
             { new: true, runValidators: true }
-        ).populate('organizer', 'name username profilePicture');
+        ).populate('organizer', 'name username profilePicture accountType members headline');
 
         console.log('Updated Event:', updatedEvent);
         res.json({ success: true, data: updatedEvent });
@@ -257,12 +262,9 @@ export const unregisterFromEvent = async (req, res) => {
 // Get user's registered events
 export const getMyEvents = async (req, res) => {
     try {
-        const events = await Event.find({
-            attendees: req.user._id,
-            date: { $gte: new Date() }
-        })
-        .populate('organizer', 'name username profilePicture')
-        .sort({ date: 1 });
+        const events = await Event.find({ attendees: req.user._id })
+            .populate('organizer', 'name username profilePicture')
+            .sort({ date: 1 });
 
         res.json({ success: true, data: events });
     } catch (error) {
@@ -271,12 +273,12 @@ export const getMyEvents = async (req, res) => {
     }
 };
 
-// Get events organized by user
+// Get events organized by the user
 export const getOrganizedEvents = async (req, res) => {
     try {
         const events = await Event.find({ organizer: req.user._id })
             .populate('organizer', 'name username profilePicture')
-            .sort({ date: -1 });
+            .sort({ date: 1 });
 
         res.json({ success: true, data: events });
     } catch (error) {
@@ -285,79 +287,48 @@ export const getOrganizedEvents = async (req, res) => {
     }
 };
 
-// Update event status and delete expired events
+// Update event status based on date
 export const updateEventStatus = async () => {
     try {
         const now = new Date();
         
         // Update ongoing events
         await Event.updateMany(
-            {
+            { 
                 date: { $lte: now },
                 status: 'upcoming'
             },
-            { $set: { status: 'ongoing' } }
+            { status: 'ongoing' }
         );
-
+        
         // Update completed events
         await Event.updateMany(
-            {
-                date: { $lt: new Date(now.getTime() - 24 * 60 * 60 * 1000) }, // 24 hours after event
+            { 
+                date: { $lt: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
                 status: 'ongoing'
             },
-            { $set: { status: 'completed' } }
+            { status: 'completed' }
         );
-
-        // Delete expired events (30 days after completion)
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        await Event.deleteMany({
-            status: 'completed',
-            date: { $lt: thirtyDaysAgo }
-        });
-
+        
         console.log('Event statuses updated successfully');
     } catch (error) {
         console.error('Error updating event statuses:', error);
     }
 };
 
-// Schedule the status update to run every hour
-setInterval(updateEventStatus, 60 * 60 * 1000);
-
-// Run immediately on server start
-updateEventStatus();
-
-// Add a new function to clean up expired events
+// Cleanup expired events (optional)
 export const cleanupExpiredEvents = async () => {
     try {
-        const now = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         
-        // Find events that have passed their date
-        const expiredEvents = await Event.find({
-            date: { $lt: now },
-            status: { $in: ['upcoming', 'ongoing'] }
+        const result = await Event.deleteMany({
+            date: { $lt: thirtyDaysAgo },
+            status: 'completed'
         });
-
-        // Update their status to completed
-        for (const event of expiredEvents) {
-            event.status = 'completed';
-            await event.save();
-        }
-
-        // Delete events that are more than 30 days old
-        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-        await Event.deleteMany({
-            date: { $lt: thirtyDaysAgo }
-        });
-
-        console.log('Event cleanup completed successfully');
+        
+        console.log(`Cleaned up ${result.deletedCount} expired events`);
     } catch (error) {
-        console.error('Error in cleanupExpiredEvents:', error);
+        console.error('Error cleaning up expired events:', error);
     }
 };
-
-// Schedule the cleanup to run every hour
-setInterval(cleanupExpiredEvents, 60 * 60 * 1000);
-
-// Run immediately on server start
-cleanupExpiredEvents();

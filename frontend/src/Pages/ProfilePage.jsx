@@ -7,8 +7,39 @@ import ExperienceSection from "../components/ExperienceSection";
 import ProjectsSection from "../components/ProjectsSection";
 import ProfileHeader from "../components/ProfileHeader";
 import Recommendations from "../components/Recommendations";
+import UserPostSection from "../components/UserPostSection";
+import ClubEventsSection from "../components/ClubEventsSection";
+import ClubMemberSection from "../components/ClubMemberSection";
+import SubjectsSection from "../components/SubjectsSection";
+import FacultyInfoSection from "../components/FacultyInfoSection";
 import { getUserProfile, getPublicProfile, updateUserProfile } from "../api/userService";
 import { toast } from "react-hot-toast";
+import Feed from "../components/Feed";
+import { useAuth } from "../context/AuthContext";
+
+const showUserPosts = (userData) => {
+  if (!userData?.posts?.length) return null;
+  return userData.posts.map(post => (
+    <Feed key={post._id} post={post} />
+  ));
+}
+
+// Determine account type based on email pattern and accountType field
+const getAccountType = (userData) => {
+  if (!userData) return 'student'; // Default fallback
+  
+  // First check if accountType is explicitly set
+  if (userData.accountType) {
+    return userData.accountType.toLowerCase();
+  }
+  
+  // Fallback to email pattern matching
+  const email = userData.email;
+  if (!email) return 'student';
+  if (/^\d{8}@apsit\.edu\.in$/.test(email)) return 'student';
+  if (/club@apsit\.edu\.in$/.test(email)) return 'club';
+  return 'faculty';
+};
 
 const ProfilePage = () => {
   const { username } = useParams(); // Get username from URL
@@ -16,7 +47,10 @@ const ProfilePage = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [posts, setPosts] = useState([]); 
+  const { user, setUser } = useAuth();
+  const [accountType, setAccountType] = useState(null);
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -29,15 +63,28 @@ const ProfilePage = () => {
 
         // If username is provided in URL, fetch that user's profile
         // Otherwise, use current user's data
+        let profileData;
         if (username) {
-          const profileData = await getPublicProfile(username);
+          const response = await getPublicProfile(username);
+          profileData = response.user || response.data;
+          if (!profileData) {
+            throw new Error('Profile not found');
+          }
           setUserData(profileData);
         } else {
-          setUserData(currentUserData);
+          profileData = currentUserData;
+          setUserData(profileData);
         }
+        
+        // Set account type based on user data
+        const type = getAccountType(profileData);
+        setAccountType(type);
+        
+        console.log('Profile Data:', profileData);
+        console.log('Account Type:', type);
       } catch (error) {
         console.error("Failed to fetch profile:", error);
-        setError("Failed to load profile. Please try again later.");
+        setError(error.message || "Failed to load profile. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -50,11 +97,19 @@ const ProfilePage = () => {
     try {
       const response = await updateUserProfile(updatedData);
       if (response) {
+        // Update local state
         setUserData(prevData => ({
           ...prevData,
           ...response
         }));
-        // Toast notification is now handled in the individual components
+        
+        // Update AuthContext user state if this is the current user's profile
+        if (isOwnProfile && setUser) {
+          setUser(prevUser => ({
+            ...prevUser,
+            ...response
+          }));
+        }
       }
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -92,6 +147,9 @@ const ProfilePage = () => {
   }
 
   const isOwnProfile = !username || (currentUser?._id === userData?._id);
+  const isStudent = accountType === 'student';
+  const isFaculty = accountType === 'faculty';
+  const isClub = accountType === 'club';
 
   return (
     <div className="bg-gray-50 min-h-screen pb-12">
@@ -103,6 +161,7 @@ const ProfilePage = () => {
               userData={userData}
               isOwnProfile={isOwnProfile}
               onSave={handleProfileUpdate}
+              accountType={accountType}
             />
             
             <div className="space-y-6">
@@ -111,24 +170,72 @@ const ProfilePage = () => {
                 isOwnProfile={isOwnProfile}
                 onSave={handleProfileUpdate}
               />
+              
+              {/* User Posts - for all account types */}
+              {userData.username && (
+                <UserPostSection
+                  username={userData.username}
+                  accountType={accountType}
+                />
+              )}
+              
+              {/* Faculty specific sections */}
+              {isFaculty && (
+                <>
+                  <FacultyInfoSection
+                    userData={userData}
+                    isOwnProfile={isOwnProfile}
+                    onSave={handleProfileUpdate}
+                  />
+                  <SubjectsSection
+                    userData={userData}
+                    isOwnProfile={isOwnProfile}
+                    onSave={handleProfileUpdate}
+                  />
+                </>
+              )}
+              
+              {/* Club specific sections */}
+              {isClub && (
+                <>
+                  <ClubEventsSection
+                    userData={userData}
+                    isOwnProfile={isOwnProfile}
+                    onSave={handleProfileUpdate}
+                  />
+                  <ClubMemberSection
+                    userData={userData}
+                    isOwnProfile={isOwnProfile}
+                    onSave={handleProfileUpdate}
+                  />
+                </>
+              )}
+              
+              {/* Experience - for students and faculty only */}
+              {!isClub && (
+                <ExperienceSection
+                  userData={userData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              )}
 
-              <ExperienceSection
-                userData={userData}
-                isOwnProfile={isOwnProfile}
-                onSave={handleProfileUpdate}
-              />
-
+              {/* Projects - for all account types */}
               <ProjectsSection
                 userData={userData}
                 isOwnProfile={isOwnProfile}
                 onSave={handleProfileUpdate}
               />
 
-              <EducationSection
-                userData={userData}
-                isOwnProfile={isOwnProfile}
-                onSave={handleProfileUpdate}
-              />
+              {/* Education - for students and faculty only */}
+              {!isClub && (
+                <EducationSection
+                  userData={userData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              )}
+              
             </div>
           </div>
 
@@ -141,16 +248,17 @@ const ProfilePage = () => {
                   <div 
                     className="bg-primary h-2.5 rounded-full transition-all duration-500"
                     style={{ 
-                      width: `${calculateProfileCompletion(userData)}%` 
+                      width: `${calculateProfileCompletion(userData, accountType)}%` 
                     }}
                   ></div>
                 </div>
                 <p className="text-sm text-gray-600 mt-2">
-                  {calculateProfileCompletion(userData)}% Complete
+                  {calculateProfileCompletion(userData, accountType)}% Complete
                 </p>
               </div>
             )}
 
+            {/* Skills section - for all account types */}
             <SkillsSection
               userData={userData}
               isOwnProfile={isOwnProfile}
@@ -165,9 +273,9 @@ const ProfilePage = () => {
   );
 };
 
-// Helper function to calculate profile completion percentage
-const calculateProfileCompletion = (userData) => {
-  const requiredFields = [
+// Helper function to calculate profile completion percentage based on account type
+const calculateProfileCompletion = (userData, accountType) => {
+  let requiredFields = [
     'name',
     'headline',
     'location',
@@ -175,10 +283,21 @@ const calculateProfileCompletion = (userData) => {
     'profilePicture',
     'bannerImg',
     'skills',
-    'education',
-    'experience',
     'projects'
   ];
+  
+  // Add account-type specific fields
+  if (accountType === 'student' || accountType === 'faculty') {
+    requiredFields = [...requiredFields, 'education', 'experience'];
+  }
+  
+  if (accountType === 'faculty') {
+    requiredFields = [...requiredFields, 'designation', 'subjects'];
+  }
+  
+  if (accountType === 'club') {
+    requiredFields = [...requiredFields, 'clubType', 'foundedDate'];
+  }
 
   const completedFields = requiredFields.filter(field => {
     if (Array.isArray(userData[field])) {

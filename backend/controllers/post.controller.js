@@ -81,16 +81,26 @@ export const getPostById = async (req, res) => {
                     },
                     {
                         path: 'replies',
+                        model: 'Comment',
                         populate: {
                             path: 'author',
                             select: 'username profilePicture'
                         }
                     }
                 ]
-            });
+            })
+            .lean();
+
         if (!post) {
             return res.status(404).json({ message: 'Post not found' });
         }
+
+        // Ensure each comment has a replies array
+        post.comments = post.comments.map(comment => ({
+            ...comment,
+            replies: comment.replies || []
+        }));
+
         res.json(post);
     } catch (error) {
         handleError(res, error);

@@ -52,8 +52,7 @@ export const AuthProvider = ({ children }) => {
                 });
                 setUser(userResponse.data.data);
                 toast.success('Logged in successfully');
-                navigate('/home');
-                return true;
+                return true;  // Return success status
             }
             return false;
         } catch (error) {
@@ -103,6 +102,7 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
+        setUser,
         loading,
         login,
         logout,

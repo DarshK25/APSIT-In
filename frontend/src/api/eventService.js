@@ -22,12 +22,49 @@ const eventService = {
         }
     },
 
+    // Get a single event by ID
+    getEventById: async (eventId) => {
+        try {
+            const response = await axios.get(`${API_URL}/events/${eventId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching event:', error);
+            throw error;
+        }
+    },
+
+    // Get events organized by the current user/club
+    getOrganizedEvents: async () => {
+        try {
+            const response = await axios.get(`${API_URL}/events/user/organized`, {
+                withCredentials: true
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching organized events:', error);
+            throw error;
+        }
+    },
+
+    // Get events the user is registered for
+    getMyEvents: async () => {
+        try {
+            const response = await axios.get(`${API_URL}/events/user/registered`, {
+                withCredentials: true
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching registered events:', error);
+            throw error;
+        }
+    },
+
     // Create a new event (protected route)
     createEvent: async (eventData) => {
         try {
             console.log('Sending event data to server:', Object.fromEntries(eventData));
             
-            const response = await axios.post(`${API_URL}/events`, eventData, {
+            const response = await axios.post(`${API_URL}/events/create`, eventData, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'multipart/form-data',
@@ -87,6 +124,32 @@ const eventService = {
             return response.data;
         } catch (error) {
             console.error('Error deleting event:', error);
+            throw error;
+        }
+    },
+
+    // Register for an event
+    registerForEvent: async (eventId) => {
+        try {
+            const response = await axios.post(`${API_URL}/events/${eventId}/register`, {}, {
+                withCredentials: true
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error registering for event:', error);
+            throw error;
+        }
+    },
+
+    // Unregister from an event
+    unregisterFromEvent: async (eventId) => {
+        try {
+            const response = await axios.post(`${API_URL}/events/${eventId}/unregister`, {}, {
+                withCredentials: true
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error unregistering from event:', error);
             throw error;
         }
     }

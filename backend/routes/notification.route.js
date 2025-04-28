@@ -5,7 +5,10 @@ import {
 	getUserNotifications,
 	markNotificationAsRead,
 	markAllAsRead,
-	deleteAllNotifications
+	deleteAllNotifications,
+	createNotification,
+	markAsRead,
+	getUnreadCount
 } from "../controllers/notification.controller.js";
 
 const router = express.Router();
@@ -17,5 +20,10 @@ router.patch("/mark-all-read", protectRoute, markAllAsRead);
 
 router.delete("/:id", protectRoute, deleteNotification);
 router.delete("/clear-all", protectRoute, deleteAllNotifications);
+
+// New endpoints for club membership notifications
+router.post("/create", protectRoute, createNotification);
+router.put("/:notificationId/mark-read", protectRoute, markAsRead);
+router.get("/unread-count", protectRoute, getUnreadCount);
 
 export default router;

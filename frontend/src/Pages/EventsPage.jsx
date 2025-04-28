@@ -1,24 +1,159 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MapPin, Clock, Users, Plus, Edit2, Trash2, MoreVertical } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Plus, Edit2, Trash2, MoreVertical, Search, Filter, Edit, Trash, Loader, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import eventService from '../api/eventService';
-import axios from 'axios';
+import clubService from '../api/clubService';
+import { useNavigate } from 'react-router-dom';
+import { canManageEvent, canRegisterForEvent } from '../utils/eventAuth';
+import EditEventPage from './EditEventPage';
 
-const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
+// Modal Component
+const Modal = ({ isOpen, onClose, children }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+            <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative">
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full"
+                >
+                    <X size={20} />
+                </button>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+// Event Card Component
+const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+    const menuRef = useRef(null);
 
-    const handleRegister = () => {
-        if (event.registrationFormLink) {
-            window.open(event.registrationFormLink, '_blank');
+    const canManage = useMemo(() => {
+        if (!user || !event?.organizer) return false;
+
+        // Check if user is the organizer (club account)
+        if (user._id === event.organizer._id) return true;
+
+        // Check if user is a member of the organizing club with any role
+        if (event.organizer.members?.some(member => member.userId === user._id)) return true;
+
+        // Check if user is an admin
+        if (adminEmails.includes(user.email)) return true;
+
+        return false;
+    }, [user, event, adminEmails]);
+
+    const registrationStatus = useMemo(() => {
+        return canRegisterForEvent(user, event);
+    }, [user, event]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setShowMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleDelete = async () => {
+        if (!canManage) {
+            toast.error('You do not have permission to delete this event');
+            return;
+        }
+        
+        // Custom toast confirmation
+        toast((t) => (
+            <div className="flex flex-col gap-4 p-2">
+                <p className="font-medium">Are you sure you want to delete this event?</p>
+                <div className="flex justify-end gap-2">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            onDelete(event._id);
+                        }}
+                        className="px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600"
+                    >
+                        Delete
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        ), {
+            duration: 6000,
+            position: 'top-center',
+        });
+    };
+
+    const handleEdit = () => {
+        if (!canManage) {
+            toast.error('You do not have permission to edit this event');
+            return;
+        }
+        onEdit(event);
+    };
+
+    const handleNavigateToClub = (e) => {
+        e.stopPropagation();
+        navigate(`/profile/${event.organizer.username}`);
+    };
+
+    const handleRegister = async () => {
+        if (!registrationStatus.allowed) {
+            toast.error(registrationStatus.reason);
+            return;
+        }
+        setIsLoading(true);
+        try {
+            // Registration logic here
+            toast.success('Successfully registered for event!');
+        } catch (error) {
+            toast.error(error.message || 'Failed to register for event');
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+        <div className="relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+            {/* Club Profile Header */}
+            {event.organizer && (
+                <div 
+                    onClick={handleNavigateToClub}
+                    className="p-4 border-b border-gray-200 flex items-center space-x-3 cursor-pointer hover:bg-gray-50"
+                >
+                    <img
+                        src={event.organizer.profilePicture}
+                        alt={event.organizer.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="flex-grow">
+                        <h4 className="font-medium text-gray-900">{event.organizer.name}</h4>
+                        <p className="text-sm text-gray-500">{event.organizer.headline || 'Club at APSIT'}</p>
+                    </div>
+                    {event.organizer.members?.length > 0 && (
+                        <div className="text-sm text-gray-500">
+                            {event.organizer.members.length} members
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="relative">
                 {event.image ? (
                     <img 
@@ -29,810 +164,385 @@ const EventCard = ({ event, onEdit, onDelete, isAdmin }) => {
                 ) : (
                     <div className="h-48 bg-gradient-to-r from-blue-500 to-blue-600" />
                 )}
-                <div className="absolute top-4 right-4">
-                    {isAdmin && (
-                        <div className="relative">
+                {canManage && (
+                    <div className="absolute top-2 right-2">
+                        <div className="relative" ref={menuRef}>
                             <button
-                                onClick={() => setShowMenu(!showMenu)}
-                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowMenu(!showMenu);
+                                }}
+                                className="p-1 rounded-full bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900"
                             >
-                                <MoreVertical className="w-5 h-5 text-white" />
+                                <MoreVertical size={20} />
                             </button>
+                            
                             {showMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-10">
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
                                     <button
-                                        onClick={() => {
-                                            onEdit(event);
-                                            setShowMenu(false);
-                                        }}
-                                        className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                                        onClick={handleEdit}
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
                                     >
-                                        <Edit2 className="w-4 h-4" />
+                                        <Edit size={16} />
                                         Edit Event
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            onDelete(event._id);
-                                            setShowMenu(false);
-                                        }}
-                                        className="w-full px-4 py-2 text-left hover:bg-gray-100 text-red-600 flex items-center gap-2"
+                                        onClick={handleDelete}
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center gap-2"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash size={16} />
                                         Delete Event
                                     </button>
                                 </div>
                             )}
                         </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="p-4 flex flex-col flex-grow">
+                <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
+                
+                <div className="mb-4">
+                    <p className={`text-gray-600 ${isExpanded ? '' : 'line-clamp-2'}`}>
+                        {event.description}
+                    </p>
+                    {event.description && event.description.length > 100 && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsExpanded(!isExpanded);
+                            }}
+                            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                        >
+                            {isExpanded ? 'Show Less' : 'Show More'}
+                        </button>
                     )}
                 </div>
-            </div>
-            <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
-                <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
-                <div className="space-y-2">
+                
+                <div className="space-y-2 mt-auto">
                     <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4" />
-                        <span>{format(new Date(event.date), 'MMMM d, yyyy')}</span>
+                        <Calendar className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">{event.date ? format(new Date(event.date), 'MMM d, yyyy') : 'Date not specified'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>{event.time}</span>
+                        <Clock className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">{event.time || 'Time not specified'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>{event.location}</span>
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">{event.location || 'Location not specified'}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600">
-                        <Users className="w-4 h-4" />
-                        <span>
-                            {event.category} - {event.department}
-                            {event.maxAttendees && ` (${event.attendees?.length || 0}/${event.maxAttendees})`}
+                        <Users className="w-4 h-4 text-gray-500" />
+                        <span className="text-sm">
+                            {event.category || ''} - {event.department || ''}
+                            {event.maxAttendees && ` (${(event.attendees && event.attendees.length) || 0}/${event.maxAttendees})`}
                         </span>
                     </div>
                     {event.registrationDeadline && (
-                        <div className="text-sm text-gray-500">
+                        <div className="pl-6 text-xs text-red-500 font-medium">
                             Registration closes: {format(new Date(event.registrationDeadline), 'MMM d, yyyy HH:mm')}
                         </div>
                     )}
                 </div>
-                <div className="mt-4 flex justify-between items-center">
+                
+                <div className="mt-4">
                     <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleRegister();
+                        }}
+                        disabled={!registrationStatus.allowed || isLoading}
+                        className={`w-full px-4 py-2 rounded-md ${
+                            registrationStatus.allowed
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                        }`}
                     >
-                        {isExpanded ? 'Show Less' : 'Show More'}
+                        {isLoading ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <Loader size={16} className="animate-spin" />
+                                Registering...
+                            </span>
+                        ) : (
+                            registrationStatus.allowed ? 'Register' : registrationStatus.reason
+                        )}
                     </button>
-
-                    <div className="flex space-x-2">
-                        {event.registrationFormLink && (
-                            <button
-                                onClick={handleRegister}
-                                disabled={isLoading}
-                                className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {isLoading ? 'Loading...' : 'Register'}
-                            </button>
-                        )}
-                        {isAdmin && onEdit && (
-                            <button
-                                onClick={() => onEdit(event)}
-                                className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                            >
-                                Edit
-                            </button>
-                        )}
-                        {isAdmin && onDelete && (
-                            <button
-                                onClick={() => onDelete(event._id)}
-                                className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200"
-                            >
-                                Delete
-                            </button>
-                        )}
-                    </div>
                 </div>
             </div>
         </div>
     );
 };
 
-// Time conversion utility functions
-const convertTo24Hour = (time12h) => {
-    if (!time12h) return '00:00';
-    try {
-        const [time, modifier] = time12h.split(' ');
-        if (!time || !modifier) return time; // If no AM/PM, assume it's already 24h format
-        
-        let [hours, minutes] = time.split(':');
-        hours = parseInt(hours);
-        
-        if (hours === 12) {
-            hours = modifier === 'PM' ? 12 : 0;
-        } else if (modifier === 'PM') {
-            hours = hours + 12;
-        }
-        
-        return `${hours.toString().padStart(2, '0')}:${minutes}`;
-    } catch (error) {
-        console.error('Error converting to 24 hour:', error);
-        return '00:00';
-    }
-};
-
-const convertTo12Hour = (time24) => {
-    if (!time24) return '12:00 PM';
-    try {
-        const [hours, minutes] = time24.split(':');
-        const hour = parseInt(hours);
-        if (isNaN(hour)) return '12:00 PM';
-        
-        const period = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-        return `${hour12.toString().padStart(2, '0')}:${minutes} ${period}`;
-    } catch (error) {
-        console.error('Error converting to 12 hour:', error);
-        return '12:00 PM';
-    }
-};
-
-const formatDateForInput = (dateString) => {
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return '';
-        return date.toISOString().split('T')[0];
-    } catch (error) {
-        console.error('Error formatting date:', error);
-        return '';
-    }
-};
-
-const EventForm = ({ event, onSubmit, onCancel }) => {
-    const [formData, setFormData] = useState(() => {
-        if (event) {
-            return {
-                ...event,
-                date: formatDateForInput(event.date),
-                time: event.time || '12:00 PM'
-            };
-        }
-        return {
-            title: '',
-            description: '',
-            date: formatDateForInput(new Date()),
-            time: '12:00 PM',
-            location: '',
-            category: '',
-            department: '',
-            maxAttendees: '',
-            registrationDeadline: '',
-            requirements: '',
-            registrationFormLink: '',
-            isPublished: true
-        };
-    });
-    const [image, setImage] = useState(null);
-    const [imagePreview, setImagePreview] = useState(event?.image || '');
-
-    const handleTimeChange = (e) => {
-        const time24 = e.target.value;
-        const time12 = convertTo12Hour(time24);
-        setFormData(prev => ({ ...prev, time: time12 }));
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImage(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        // Create a new FormData instance
-        const formDataToSubmit = new FormData();
-        
-        // Validate required fields
-        const requiredFields = [
-            'title',
-            'description',
-            'date',
-            'time',
-            'location',
-            'category',
-            'department',
-            'registrationDeadline'
-        ];
-
-        // Check if any required field is missing or empty
-        const missingFields = requiredFields.filter(field => !formData[field]);
-        if (missingFields.length > 0) {
-            toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
-            return;
-        }
-
-        // Add all form fields to FormData
-        Object.entries(formData).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-                formDataToSubmit.append(key, value);
-            }
-        });
-
-        // Append image if it exists
-        if (image instanceof File) {
-            formDataToSubmit.append('image', image);
-        }
-
-        console.log('Form data being submitted:', Object.fromEntries(formDataToSubmit));
-        onSubmit(formDataToSubmit);
-    };
-
+// Filter Component
+const FilterSection = ({ filters, setFilters, categories, departments }) => {
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Event Title</label>
-                <input
-                    type="text"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                />
+        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+            <div className="flex items-center gap-2 mb-4">
+                <Filter className="w-5 h-5 text-gray-500" />
+                <h3 className="font-semibold">Filters</h3>
             </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    rows="3"
-                    required
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Date</label>
-                    <input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Time</label>
-                    <input
-                        type="time"
-                        value={convertTo24Hour(formData.time)}
-                        onChange={handleTimeChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        required
-                    />
-                </div>
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    required
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Category</label>
-                    <select
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        required
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.category || ''}
+                        onChange={(e) => setFilters({...filters, category: e.target.value})}
                     >
-                        <option value="">Select Category</option>
-                        <option value="Coder's Club">Coder's Club</option>
-                        <option value="AIML Club">AIML Club</option>
-                        <option value="DevOps Club">DevOps Club</option>
-                        <option value="Cybersecurity Club">Cybersecurity Club</option>
-                        <option value="Data Science Club">Data Science Club</option>
-                        <option value="MAC Club">MAC Club</option>
-                        <option value="Student Council">Student Council</option>
-                        <option value="OJUS Team">OJUS Team</option>
-                        <option value="GDG APSIT">GDG APSIT</option>
-                        <option value="NSS Unit">NSS Unit</option>
-                        <option value="IEEE">IEEE</option>
-                        <option value="Antarang">Antarang</option>
-                        <option value="None">None</option>
+                        <option value="">All Categories</option>
+                        {categories.map(category => (
+                            <option key={category} value={category}>{category}</option>
+                        ))}
                     </select>
                 </div>
+                
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Department</label>
-                    <select
-                        value={formData.department}
-                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        required
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.department || ''}
+                        onChange={(e) => setFilters({...filters, department: e.target.value})}
                     >
-                        <option value="">Select Department</option>
-                        <option value="Computer Engineering">Computer Engineering</option>
-                        <option value="Information Technology">Information Technology</option>
-                        <option value="CSE (AI & ML)">CSE (AI & ML)</option>
-                        <option value="CSE (DS)">CSE (DS)</option>
-                        <option value="Civil Engineering">Civil Engineering</option>
-                        <option value="Mechanical Engineering">Mechanical Engineering</option>
-                        <option value="Inter-Department">Inter-Department</option>
+                        <option value="">All Departments</option>
+                        {departments.map(dept => (
+                            <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                    </select>
+                </div>
+                
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.status || ''}
+                        onChange={(e) => setFilters({...filters, status: e.target.value})}
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
                     </select>
                 </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Maximum Attendees</label>
-                    <input
-                        type="number"
-                        value={formData.maxAttendees}
-                        onChange={(e) => setFormData({ ...formData, maxAttendees: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        min="1"
-                        required
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Registration Deadline</label>
-                    <input
-                        type="datetime-local"
-                        value={formData.registrationDeadline}
-                        onChange={(e) => setFormData({ ...formData, registrationDeadline: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                        required
-                    />
-                </div>
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Requirements</label>
-                <textarea
-                    value={formData.requirements}
-                    onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    rows="2"
-                    placeholder="Any specific requirements for attendees..."
-                />
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Event Cover Image</label>
-                <div className="mt-1 flex items-center">
-                    <div className="relative">
-                        <img
-                            src={imagePreview || '/placeholder-event.jpg'}
-                            alt="Event cover preview"
-                            className="h-32 w-32 object-cover rounded-lg"
-                        />
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                    </div>
-                    <div className="ml-4">
-                        <button
-                            type="button"
-                            onClick={() => document.querySelector('input[type="file"]').click()}
-                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-                        >
-                            Choose Image
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Registration Form Link</label>
-                <input
-                    type="url"
-                    value={formData.registrationFormLink}
-                    onChange={(e) => setFormData({ ...formData, registrationFormLink: e.target.value })}
-                    placeholder="https://forms.gle/..."
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                    Add a Google Forms link for event registration
-                </p>
-            </div>
-            <div className="flex justify-end space-x-3">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            
+            <div className="mt-4 flex justify-end">
+                <button 
+                    className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    onClick={() => setFilters({})}
                 >
-                    Cancel
-                </button>
-                <button
-                    type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                    {event ? 'Update Event' : 'Create Event'}
+                    Clear Filters
                 </button>
             </div>
-        </form>
+        </div>
     );
 };
 
+// Main Events Page Component
 const EventsPage = () => {
     const { user } = useAuth();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [showForm, setShowForm] = useState(false);
-    const [editingEvent, setEditingEvent] = useState(null);
-    const [filter, setFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [filters, setFilters] = useState({});
-    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
+    const [editingEvent, setEditingEvent] = useState(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const navigate = useNavigate();
 
-    const isAdmin = user?.email === 'darshkalathiya25@gmail.com' || user?.email === '23102187@apsit.edu.in' || user?.email === 'devopsclub@apsit.edu.in' 
-    || user?.email === 'codersclub@apsit.edu.in' || user?.email === 'cybersecurityclub@apsit.edu.in' || user?.email === 'datascienceclub@apsit.edu.in';
-
-    console.log('User:', user); // Debug log
+    // Admin check based on email
+    const isAdmin = user && [
+        'darshkalathiya25@gmail.com', 
+        '23102187@apsit.edu.in', 
+        'devopsclub@apsit.edu.in',
+        'codersclub@apsit.edu.in', 
+        'cybersecurityclub@apsit.edu.in', 
+        'datascienceclub@apsit.edu.in'
+    ].includes(user.email);
 
     useEffect(() => {
-        console.log('Effect triggered with filters:', filters, 'page:', pagination.page); // Debug log
         fetchEvents();
-    }, [filters, pagination.page]);
+        extractCategoriesAndDepartments();
+    }, [filters]);
+
+    const extractCategoriesAndDepartments = () => {
+        // These would typically come from your API or a configuration file
+        const allCategories = [
+            "Coder's Club",
+            "AIML Club",
+            "DevOps Club",
+            "Cybersecurity Club",
+            "Data Science Club",
+            "MAC Club",
+            "Student Council",
+            "OJUS Team",
+            "GDG APSIT",
+            "NSS Unit",
+            "IEEE",
+            "Antarang"
+        ];
+        
+        const allDepartments = [
+            'Computer Engineering',
+            'Information Technology',
+            'Computer Science & Engineering: Data Science', 
+            'Computer Science & Engineering: Artificial Intelligence & Machine Learning', 
+            'Civil Engineering',
+            'Mechanical Engineering'
+        ];
+        
+        setCategories(allCategories);
+        setDepartments(allDepartments);
+    };
 
     const fetchEvents = async () => {
         try {
-            console.log('Fetching events...'); // Debug log
             setLoading(true);
-            const queryParams = {
-                page: pagination.page,
-                limit: pagination.limit,
-                ...filters
-            };
             
-            console.log('Query params:', queryParams); // Debug log
+            // Build query parameters from filters
+            const queryParams = {};
+            if (filters.category) queryParams.category = filters.category;
+            if (filters.department) queryParams.department = filters.department;
+            if (filters.status) queryParams.status = filters.status;
+            if (searchQuery) queryParams.search = searchQuery;
+            
             const response = await eventService.getAllEvents(queryParams);
-            console.log('Events response:', response); // Debug log
-
+            
             if (response.success) {
-                setEvents(response.data || []);
-                setPagination(prev => ({
-                    ...prev,
-                    ...response.pagination
-                }));
+                setEvents(response.data);
             } else {
-                console.error('Failed response:', response); // Debug log
-                toast.error(response.message || 'Failed to load events');
-                setEvents([]);
+                toast.error('Failed to fetch events');
             }
         } catch (error) {
-            console.error('Fetch error:', error); // Debug log
-            if (error.response?.status === 404) {
-                setEvents([]);
-                setPagination(prev => ({ ...prev, total: 0, pages: 0 }));
-            } else {
-                toast.error(error.response?.data?.message || 'Failed to load events');
-                setEvents([]);
-            }
+            console.error('Error fetching events:', error);
+            toast.error('Error fetching events');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleCreateEvent = async (formData) => {
-        try {
-            // Convert FormData to a regular object for validation
-            const eventData = {};
-            for (let [key, value] of formData.entries()) {
-                eventData[key] = value;
-            }
-
-            // Log the data being sent
-            console.log('Creating event with data:', eventData);
-
-            // Ensure all required fields are present
-            const requiredFields = [
-                'title',
-                'description',
-                'date',
-                'time',
-                'location',
-                'category',
-                'department',
-                'registrationDeadline'
-            ];
-
-            // Check if any required field is missing
-            const missingFields = requiredFields.filter(field => !eventData[field]);
-            if (missingFields.length > 0) {
-                toast.error(`Missing required fields: ${missingFields.join(', ')}`);
-                return;
-            }
-
-            // Create a new FormData instance for the final submission
-            const finalFormData = new FormData();
-            
-            // Add all required fields
-            requiredFields.forEach(field => {
-                finalFormData.append(field, eventData[field]);
-            });
-
-            // Add optional fields if they exist
-            if (eventData.maxAttendees) finalFormData.append('maxAttendees', eventData.maxAttendees);
-            if (eventData.requirements) finalFormData.append('requirements', eventData.requirements);
-            if (eventData.registrationFormLink) finalFormData.append('registrationFormLink', eventData.registrationFormLink);
-            if (eventData.image) finalFormData.append('image', eventData.image);
-
-            // Add default values
-            finalFormData.append('isPublished', 'true');
-            finalFormData.append('status', 'upcoming');
-
-            // Log the final FormData being sent
-            console.log('Final FormData being sent:', Object.fromEntries(finalFormData));
-
-            await eventService.createEvent(finalFormData);
-            toast.success('Event created successfully');
-            setShowForm(false);
-            fetchEvents();
-        } catch (error) {
-            console.error('Error creating event:', error);
-            // Log the full error response if available
-            if (error.response) {
-                console.error('Error response:', error.response.data);
-                toast.error(error.response.data.message || 'Failed to create event');
-            } else {
-                toast.error('Failed to create event. Please try again.');
-            }
-        }
+    const handleCreateEvent = () => {
+        navigate('/events/create');
     };
 
-    const handleUpdateEvent = async (eventData) => {
-        try {
-            console.log('Starting event update with raw data:', eventData);
-            
-            // Create FormData for the update
-            const formData = new FormData();
+    const handleEditEvent = (event) => {
+        setEditingEvent(event);
+        setIsEditModalOpen(true);
+    };
 
-            // Handle basic fields first
-            formData.append('title', eventData.get('title') || '');
-            formData.append('description', eventData.get('description') || '');
-            formData.append('location', eventData.get('location') || '');
-            formData.append('category', eventData.get('category') || '');
-            formData.append('department', eventData.get('department') || '');
-            formData.append('requirements', eventData.get('requirements') || '');
-            formData.append('registrationFormLink', eventData.get('registrationFormLink') || '');
-            formData.append('maxAttendees', eventData.get('maxAttendees') || '0');
-            formData.append('isPublished', true);
-
-            // Get the date and time values
-            const dateValue = eventData.get('date');
-            const timeValue = eventData.get('time');
-
-            console.log('Date value:', dateValue);
-            console.log('Time value:', timeValue);
-
-            if (!dateValue || !timeValue) {
-                toast.error('Date and time are required');
-                return;
-            }
-
-            try {
-                // Convert time to 24-hour format if needed
-                const time24 = timeValue.includes('M') ? convertTo24Hour(timeValue) : timeValue;
-                
-                // Format the date string
-                const dateStr = formatDateForInput(dateValue);
-                if (!dateStr) throw new Error('Invalid date format');
-                
-                // Combine date and time
-                const dateTimeString = `${dateStr}T${time24}`;
-                console.log('Constructed datetime:', dateTimeString);
-                
-                formData.append('date', dateTimeString);
-                formData.append('time', timeValue);
-            } catch (error) {
-                console.error('Error formatting date/time:', error);
-                toast.error('Invalid date or time format');
-                return;
-            }
-
-            // Handle registration deadline
-            const deadlineValue = eventData.get('registrationDeadline');
-            if (deadlineValue) {
-                try {
-                    const deadlineStr = formatDateForInput(deadlineValue);
-                    if (!deadlineStr) throw new Error('Invalid deadline format');
-                    formData.append('registrationDeadline', deadlineStr);
-                } catch (error) {
-                    console.error('Error formatting registration deadline:', error);
-                    toast.error('Invalid registration deadline format');
-                    return;
-                }
-            }
-
-            // Handle image if present
-            const imageFile = eventData.get('image');
-            if (imageFile instanceof File) {
-                formData.append('image', imageFile);
-            }
-
-            console.log('Sending formatted data to server:', Object.fromEntries(formData));
-            
-            const response = await eventService.updateEvent(editingEvent._id, formData);
-            console.log('Update response:', response);
-
-            if (response.success) {
-                toast.success('Event updated successfully');
-                setEditingEvent(null);
-                await fetchEvents(); // Re-fetch events to update the display
-            } else {
-                throw new Error(response.message || 'Failed to update event');
-            }
-        } catch (error) {
-            console.error('Error updating event:', error);
-            if (error.response) {
-                console.error('Error response:', error.response.data);
-                toast.error(error.response.data.message || 'Failed to update event');
-            } else {
-                toast.error(error.message || 'Failed to update event. Please try again.');
-            }
-        }
+    const handleCloseEditModal = () => {
+        setEditingEvent(null);
+        setIsEditModalOpen(false);
     };
 
     const handleDeleteEvent = async (eventId) => {
-        if (window.confirm('Are you sure you want to delete this event?')) {
-            try {
-                await eventService.deleteEvent(eventId);
-                toast.success('Event deleted successfully');
-                fetchEvents();
-            } catch (error) {
-                toast.error('Failed to delete event');
-            }
-        }
-    };
-
-    const handleRegister = async (eventId) => {
         try {
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL}/api/v1/events/${eventId}/register`,
-                {},
-                { withCredentials: true }
-            );
-
-            if (response.data.success) {
-                toast.success('Successfully registered for event');
-                fetchEvents(); // Refresh events list
+            const response = await eventService.deleteEvent(eventId);
+            
+            if (response.success) {
+                toast.success('Event deleted successfully');
+                fetchEvents(); // Refresh the events list
             } else {
-                throw new Error(response.data.message || 'Failed to register');
+                toast.error(response.message || 'Failed to delete event');
             }
         } catch (error) {
-            console.error('Failed to register:', error);
-            toast.error(error.response?.data?.message || 'Failed to register for event');
+            console.error('Error deleting event:', error);
+            toast.error('Error deleting event');
         }
     };
 
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setFilters(prev => ({ ...prev, [name]: value }));
-        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on filter change
+    const handleSearch = (e) => {
+        e.preventDefault();
+        fetchEvents();
     };
-
-    const clearFilters = () => {
-        setFilters({
-            category: '',
-            department: '',
-            status: '',
-            search: '',
-            startDate: '',
-            endDate: ''
-        });
-        setPagination(prev => ({ ...prev, page: 1 }));
-    };
-
-    const filteredEvents = events.filter(event => {
-        if (filter === 'all') return true;
-        return event.category.toLowerCase() === filter.toLowerCase();
-    });
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center text-red-600">
-                    <p className="text-xl font-semibold mb-2">Error</p>
-                    <p>{error}</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Events</h1>
-                    {isAdmin && (
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                        >
-                            <Plus className="w-5 h-5" />
-                            Create Event
-                        </button>
-                    )}
-                </div>
-
-                {/* Filter Section */}
-                <div className="mb-8">
-                    <select
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="block w-full max-w-xs rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        <div className="container mx-auto px-4 py-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h1 className="text-3xl font-bold mb-4 md:mb-0">Events</h1>
+                
+                {isAdmin && (
+                    <button
+                        onClick={handleCreateEvent}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
                     >
-                        <option value="all">All Events</option>
-                        <option value="Coder's Club">Coder's Club</option>
-                        <option value="AIML Club">AIML Club</option>
-                        <option value="DevOps Club">DevOps Club</option>
-                        <option value="Cybersecurity Club">Cybersecurity Club</option>
-                        <option value="Data Science Club">Data Science Club</option>
-                        <option value="MAC Club">MAC Club</option>
-                        <option value="Student Council">Student Council</option>
-                        <option value="OJUS Team">OJUS Team</option>
-                        <option value="GDG APSIT">GDG APSIT</option>
-                        <option value="NSS Unit">NSS Unit</option>
-                        <option value="IEEE">IEEE</option>
-                        <option value="Antarang">Antarang</option>
-                    </select>
-                </div>
-
-                {/* Event Form Modal */}
-                {(showForm || editingEvent) && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
-                            <div className="p-6 border-b">
-                                <h2 className="text-2xl font-semibold">
-                                    {editingEvent ? 'Edit Event' : 'Create New Event'}
-                                </h2>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-6">
-                                <EventForm
-                                    event={editingEvent}
-                                    onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
-                                    onCancel={() => {
-                                        setShowForm(false);
-                                        setEditingEvent(null);
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                        <Plus size={18} /> Create Event
+                    </button>
                 )}
-
-                {/* Events Grid */}
+            </div>
+            
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="mb-6">
+                <div className="relative">
+                    <input
+                        type="text"
+                        placeholder="Search events..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <button 
+                        type="submit"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                    >
+                        Search
+                    </button>
+                </div>
+            </form>
+            
+            {/* Filters */}
+            <FilterSection 
+                filters={filters} 
+                setFilters={setFilters} 
+                categories={categories}
+                departments={departments}
+            />
+            
+            {/* Events Grid */}
+            {loading ? (
+                <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+            ) : events.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredEvents.map((event) => (
-                        <EventCard
-                            key={event._id}
-                            event={event}
-                            onEdit={setEditingEvent}
+                    {events.map(event => (
+                        <EventCard 
+                            key={event._id} 
+                            event={event} 
+                            onEdit={handleEditEvent}
                             onDelete={handleDeleteEvent}
-                            isAdmin={isAdmin}
+                            user={user}
+                            adminEmails={isAdmin ? ['darshkalathiya25@gmail.com', '23102187@apsit.edu.in', 'devopsclub@apsit.edu.in', 'codersclub@apsit.edu.in', 'cybersecurityclub@apsit.edu.in', 'datascienceclub@apsit.edu.in'] : []}
                         />
                     ))}
                 </div>
-
-                {filteredEvents.length === 0 && (
-                    <div className="text-center py-12">
-                        <p className="text-gray-500 text-lg">No events found</p>
+            ) : (
+                <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No events found</h3>
+                    <p className="text-gray-500">Try adjusting your filters or search query</p>
+                </div>
+            )}
+            
+            {/* Edit Event Modal */}
+            <Modal isOpen={isEditModalOpen} onClose={handleCloseEditModal}>
+                {editingEvent && (
+                    <div className="p-6">
+                        <h2 className="text-2xl font-bold mb-4">Edit Event</h2>
+                        <EditEventPage 
+                            event={editingEvent}
+                            onSuccess={() => {
+                                handleCloseEditModal();
+                                fetchEvents();
+                            }}
+                            isModal={true}
+                        />
                     </div>
                 )}
-            </div>
+            </Modal>
         </div>
     );
 };

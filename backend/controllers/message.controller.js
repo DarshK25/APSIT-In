@@ -25,7 +25,8 @@ export const getConversations = async (req, res) => {
         })
         .sort({ createdAt: -1 })
         .populate('sender', 'name username profilePicture')
-        .populate('recipient', 'name username profilePicture');
+        .populate('recipient', 'name username profilePicture')
+        .select('sender recipient content metaContent createdAt isRead sharedPost');
 
         // Group messages by conversation
         const conversations = messages.reduce((acc, message) => {
@@ -88,7 +89,14 @@ export const getMessages = async (req, res) => {
         })
         .sort({ createdAt: 1 })
         .populate('sender', 'name username profilePicture')
-        .populate('recipient', 'name username profilePicture');
+        .populate('recipient', 'name username profilePicture')
+        .populate({
+            path: 'sharedPost',
+            populate: {
+                path: 'author',
+                select: 'name username profilePicture'
+            }
+        });
 
         res.json({
             success: true,
@@ -503,6 +511,48 @@ export const rejectMessageRequest = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in rejectMessageRequest:", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const sharePostInMessage = async (req, res) => {
+    try {
+        const { recipientId, postId } = req.body;
+        const senderId = req.user._id;
+        
+        // Validate input data
+        if (!recipientId || !postId) {
+            return res.status(400).json({ success: false, message: "Recipient ID and Post ID are required" });
+        }
+        
+        // Create the message with the shared post
+        const message = await Message.create({
+            sender: senderId,
+            recipient: recipientId,
+            content: "", // Empty content for the message itself
+            sharedPost: postId,
+            metaContent: "Shared a post" // This will be used for conversation list display
+        });
+        
+        // Populate message with sender, recipient, and post data
+        const populatedMessage = await message.populate([
+            { path: 'sender', select: 'name username profilePicture' },
+            { path: 'recipient', select: 'name username profilePicture' },
+            { 
+                path: 'sharedPost', 
+                populate: { 
+                    path: 'author',
+                    select: 'name username profilePicture'
+                }
+            }
+        ]);
+        
+        res.json({
+            success: true,
+            data: populatedMessage
+        });
+    } catch (error) {
+        console.error("Error in sharePostInMessage:", error);
         res.status(500).json({ success: false, message: "Server Error" });
     }
 }; 

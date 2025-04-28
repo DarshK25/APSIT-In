@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import * as postService from '../api/postService';
-import { Post } from './Post';
+import Post from './Post';
 import { toast } from 'react-hot-toast';
 import PropTypes from 'prop-types';
-import { ImagePlus, Loader2 } from 'lucide-react';
+import { ImagePlus, Loader2, User, Users } from 'lucide-react';
 
 export const Feed = () => {
     const { user } = useAuth();
@@ -26,8 +26,14 @@ export const Feed = () => {
             const formattedPosts = fetchedPosts.map(post => ({
                 ...post,
                 author: typeof post.author === 'string' 
-                    ? { _id: post.author, username: 'Loading...', profilePicture: null }
-                    : post.author
+                    ? { _id: post.author, username: 'Loading...', profilePicture: null, name: 'User' }
+                    : {
+                        ...post.author,
+                        // Ensure these fields exist
+                        username: post.author?.username || 'Unknown',
+                        name: post.author?.name || post.author?.username || 'Unknown User',
+                        profilePicture: post.author?.profilePicture || null
+                    }
             }));
             setPosts(formattedPosts);
         } catch (error) {
@@ -129,28 +135,46 @@ export const Feed = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto p-4">
-            <form onSubmit={handleCreatePost} className="mb-6 bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-start space-x-3">
-                    <img
-                        src={user.profilePicture || '/default-avatar.png'}
-                        alt={user.username}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
-                    />
-                    <div className="flex-1">
+        <div className="max-w-2xl mx-auto space-y-6">
+            {/* Create Post Form */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0">
+                        {user?.profilePicture ? (
+                            <img
+                                src={user.profilePicture}
+                                alt={user.name || user.username}
+                                className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = `
+                                        <div class="w-12 h-12 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                <circle cx="12" cy="7" r="4" />
+                                            </svg>
+                                        </div>`;
+                                }}
+                            />
+                        ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+                                <User className="w-6 h-6 text-white" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
                         <textarea
                             value={newPostContent}
                             onChange={(e) => setNewPostContent(e.target.value)}
                             placeholder="What's on your mind?"
-                            className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-200"
-                            rows="3"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 min-h-[100px] text-gray-700 placeholder-gray-500"
                         />
                         {imagePreview && (
-                            <div className="mt-2 relative group">
+                            <div className="mt-3 relative rounded-xl overflow-hidden group">
                                 <img
                                     src={imagePreview}
                                     alt="Preview"
-                                    className="w-full h-48 object-cover rounded-lg"
+                                    className="w-full h-48 object-cover rounded-xl"
                                 />
                                 <button
                                     type="button"
@@ -158,7 +182,7 @@ export const Feed = () => {
                                         setSelectedImage(null);
                                         setImagePreview(null);
                                     }}
-                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 shadow-lg"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -166,7 +190,7 @@ export const Feed = () => {
                                 </button>
                             </div>
                         )}
-                        <div className="flex justify-between items-center mt-3">
+                        <div className="flex items-center justify-between mt-4">
                             <label className="cursor-pointer">
                                 <input
                                     type="file"
@@ -174,25 +198,25 @@ export const Feed = () => {
                                     onChange={handleImageChange}
                                     className="hidden"
                                 />
-                                <span className="flex items-center text-blue-500 hover:text-blue-600 transition-colors">
-                                    <ImagePlus className="w-5 h-5 mr-1" />
-                                    <span className="text-sm">Add Photo</span>
-                                </span>
+                                <div className="flex items-center text-blue-600 hover:text-blue-700 transition-colors px-4 py-2 rounded-lg hover:bg-blue-50">
+                                    <ImagePlus className="w-5 h-5 mr-2" />
+                                    <span className="text-sm font-semibold">Add Photo</span>
+                                </div>
                             </label>
                             <button
-                                type="submit"
+                                onClick={handleCreatePost}
                                 disabled={isSubmitting || (!newPostContent.trim() && !selectedImage)}
-                                className={`px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
+                                className={`px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
                                     isSubmitting || (!newPostContent.trim() && !selectedImage)
                                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5'
                                 }`}
                             >
                                 {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 inline animate-spin" />
-                                        Posting...
-                                    </>
+                                    <div className="flex items-center">
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <span>Posting...</span>
+                                    </div>
                                 ) : (
                                     'Post'
                                 )}
@@ -200,17 +224,30 @@ export const Feed = () => {
                         </div>
                     </div>
                 </div>
-            </form>
+            </div>
 
+            {/* Posts Feed */}
             <div className="space-y-6">
-                {posts.map(post => (
-                    <Post
-                        key={post._id}
-                        post={post}
-                        onUpdate={handleUpdatePost}
-                        onDelete={handleDeletePost}
-                    />
-                ))}
+                {posts.length > 0 ? (
+                    posts.map(post => (
+                        <Post
+                            key={post._id}
+                            post={post}
+                            onUpdate={handleUpdatePost}
+                            onDelete={handleDeletePost}
+                        />
+                    ))
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                        <div className="flex justify-center mb-4">
+                            <Users className="w-16 h-16 text-gray-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No Posts Yet</h3>
+                        <p className="text-gray-600 mb-4">
+                            Be the first one to share something with your network or connect with more people to see their posts here.
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

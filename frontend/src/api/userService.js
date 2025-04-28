@@ -21,13 +21,22 @@ class UserService {
   }
 
   async getPublicProfile(username) {
-    const response = await axiosInstance.get(`/users/profile/${username}`);
-    return response.data;
+    try {
+      const response = await axiosInstance.get(`/users/profile/${username}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching public profile:", error);
+      throw error;
+    }
   }
 
   async updateProfile(userData) {
     const response = await axiosInstance.put('/users/profile', userData);
-    return response.data;
+    if (response.data.success) {
+      return response.data;
+    } else {
+      throw new Error(response.data.message || 'Failed to update profile');
+    }
   }
 
   async getSuggestedUsers() {
@@ -85,7 +94,7 @@ export const updateUserProfile = async (updatedData) => {
     try {
         const response = await axiosInstance.put('/users/profile', updatedData);
         if (response.data.success) {
-            return response.data.user;
+            return response.data.data;
         } else {
             throw new Error(response.data.message || 'Failed to update profile');
         }
@@ -149,7 +158,7 @@ export const getConnectionStatus = async (userId) => {
 export const getPublicProfile = async (username) => {
     try {
         const response = await axiosInstance.get(`/users/${username}`);
-        return response.data.user;
+        return response.data;
     } catch (error) {
         console.error("Error fetching public profile:", error);
         throw error;
@@ -166,12 +175,13 @@ export const getUnreadCounts = async () => {
     }
 };
 
-export const updateProfile = async (profileData) => {
+export const getUserPosts = async (username) => {
     try {
-        const response = await axiosInstance.put('/users/profile', profileData);
-        return response.data;
+      const response = await axiosInstance.get(`/users/${username}/posts`);
+      return response.data.posts; // ✅ Make sure this is posts, not just response.data
     } catch (error) {
-        console.error("Error updating profile:", error);
-        throw error;
+      console.error("Error fetching user posts:", error);
+      throw error.response?.data || error.message;
     }
-};
+  };
+  

@@ -14,7 +14,8 @@ import {
     sendMessageRequest,
     getMessageRequestStatus,
     acceptMessageRequest,
-    rejectMessageRequest
+    rejectMessageRequest,
+    sharePostInMessage
 } from "../controllers/message.controller.js";
 
 const router = express.Router();
@@ -31,6 +32,7 @@ const upload = multer({
 router.get("/conversations", protectRoute, getConversations);
 router.get("/:userId", protectRoute, getMessages);
 router.post("/send", protectRoute, sendMessage);
+router.post("/share-post", protectRoute, sharePostInMessage);
 router.post("/send-file", protectRoute, upload.single('file'), sendFile);
 
 // Chat options routes

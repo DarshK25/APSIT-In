@@ -29,21 +29,7 @@ const eventSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: [
-            "Coder's Club",
-            "AIML Club",
-            "DevOps Club",
-            "Cybersecurity Club",
-            "Data Science Club",
-            "MAC Club",
-            "Student Council",
-            "OJUS Team",
-            "GDG APSIT",
-            "NSS Unit",
-            "IEEE",
-            "Antarang"
-        ],
-        required: true
+        required: false
     },
     image: {
         type: String,

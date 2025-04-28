@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, UserPlus, Bell, LogOut, Settings, Calendar, Users, MessageSquare, Briefcase, GraduationCap, MapPin } from "lucide-react";
+import { Home, UserPlus, Bell, LogOut, Settings, Calendar, Users, MessageSquare, Briefcase, GraduationCap, MapPin, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-hot-toast";
 
@@ -47,21 +47,44 @@ const Sidebar = () => {
             <div className="relative">
                 <div 
                     className={`h-32 w-full ${!user.bannerImg ? 'bg-gradient-to-r from-blue-500 to-purple-600' : ''}`}
-                    style={user.bannerImg ? {
-                        backgroundImage: `url("${user.bannerImg}")`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                    } : {}}
-                />
+                >
+                    {user.bannerImg && (
+                        <img
+                            src={user.bannerImg}
+                            alt="Profile Banner"
+                            className="absolute inset-0 w-full h-full object-cover"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.classList.add('bg-gradient-to-r', 'from-blue-500', 'to-purple-600');
+                            }}
+                        />
+                    )}
+                </div>
                 <Link 
                     to={`/profile/${user.username}`}
                     className="absolute -bottom-12 left-1/2 transform -translate-x-1/2"
                 >
-                    <img
-                        src={user.profilePicture || "/default-avatar.png"}
-                        alt={user.username}
-                        className="w-24 h-24 rounded-full border-4 border-white object-cover hover:ring-2 hover:ring-blue-500 transition-all duration-300 shadow-md"
-                    />
+                    {user.profilePicture ? (
+                        <img
+                            src={user.profilePicture}
+                            alt={user.name || user.username}
+                            className="w-24 h-24 rounded-full border-4 border-white object-cover hover:ring-2 hover:ring-blue-500 transition-all duration-300 shadow-md"
+                            onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = `
+                                    <div class="w-24 h-24 rounded-full bg-gray-900 border-4 border-white shadow-md hover:ring-2 hover:ring-blue-500 transition-all duration-300 flex items-center justify-center">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                            <circle cx="12" cy="7" r="4" />
+                                        </svg>
+                                    </div>`;
+                            }}
+                        />
+                    ) : (
+                        <div className="w-24 h-24 rounded-full bg-gray-900 border-4 border-white shadow-md hover:ring-2 hover:ring-blue-500 transition-all duration-300 flex items-center justify-center">
+                            <User className="w-10 h-10 text-white" />
+                        </div>
+                    )}
                 </Link>
             </div>
 
@@ -95,20 +118,27 @@ const Sidebar = () => {
                     )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-4 text-center">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-lg font-semibold text-gray-900">{user.connections?.length || 0}</p>
-                        <p className="text-xs text-gray-500">Connections</p>
-                    </div>
-                    {user.yearOfStudy && (
-                        <div className="bg-gray-50 rounded-lg p-3">
-                            <p className="text-lg font-semibold text-gray-900">
-                                {user.yearOfStudy === 'First Year' ? 'FE' : 
-                                 user.yearOfStudy === 'Second Year' ? 'SE' : 
-                                 user.yearOfStudy === 'Third Year' ? 'TE' : 
-                                 user.yearOfStudy === 'Fourth Year' ? 'BE' : user.yearOfStudy}
-                            </p>
-                            <p className="text-xs text-gray-500">Year</p>
+                <div className={`${user.accountType === 'student' ? 'grid grid-cols-2 gap-4' : 'flex justify-center'} mt-4 text-center`}>
+                    {user.accountType === 'student' ? (
+                        <>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <p className="text-lg font-semibold text-gray-900">{user.connections?.length || 0}</p>
+                                <p className="text-xs text-gray-500">Total Connections</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <p className="text-lg font-semibold text-gray-900">
+                                    {user.yearOfStudy === 'First Year' ? 'FE' : 
+                                     user.yearOfStudy === 'Second Year' ? 'SE' : 
+                                     user.yearOfStudy === 'Third Year' ? 'TE' : 
+                                     user.yearOfStudy === 'Fourth Year' ? 'BE' : user.yearOfStudy}
+                                </p>
+                                <p className="text-xs text-gray-500">Year</p>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="bg-gray-50 rounded-lg p-3 w-full">
+                            <p className="text-lg font-semibold text-gray-900">{user.connections?.length || 0}</p>
+                            <p className="text-xs text-gray-500">Connections</p>
                         </div>
                     )}
                 </div>

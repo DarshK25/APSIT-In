@@ -7,7 +7,8 @@ import {
     likeComment,
     createReply,
     deleteReply,
-    likeReply
+    likeReply, 
+    getCommentsByPostId
 } from "../controllers/comment.controller.js";
 
 const router = express.Router();
@@ -16,6 +17,7 @@ const router = express.Router();
 router.use(protectRoute);
 
 // Comment routes
+router.get('/posts/:postId/comments', getCommentsByPostId);
 router.post('/posts/:postId/comments', addComment);
 router.put('/:id', updateComment);
 router.delete('/:id', deleteComment);

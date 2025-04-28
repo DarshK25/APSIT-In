@@ -30,6 +30,14 @@ const messageSchema = new mongoose.Schema({
     },
     fileType: {
         type: String
+    },
+    sharedPost: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Post"
+    },
+    metaContent: {
+        type: String,
+        default: null
     }
 }, { timestamps: true });
 

@@ -14,7 +14,8 @@ const Navbar = ({ children }) => {
     const [unreadCounts, setUnreadCounts] = useState({
         unreadConnectionRequestsCount: 0,
         unreadNotificationCount: 0,
-        unreadMessagesCount: 0
+        unreadMessagesCount: 0,
+        unreadEventsCount: 0
     });
 
     // Function to fetch unread counts
@@ -25,11 +26,28 @@ const Navbar = ({ children }) => {
             const response = await axios.get('http://localhost:3000/api/v1/users/unread-counts', {
                 withCredentials: true
             });
+            console.log('Unread counts response:', response.data); // Debug log
             if (response.data.success) {
-                setUnreadCounts(response.data.data);
+                // Ensure counts are numbers and not null/undefined, and subtract 1 from connection requests if count is greater than 1
+                const connectionCount = Number(response.data.data.unreadConnectionRequestsCount || 0);
+                const counts = {
+                    unreadConnectionRequestsCount: connectionCount > 1 ? connectionCount - 1 : connectionCount,
+                    unreadNotificationCount: Math.max(0, Number(response.data.data.unreadNotificationCount || 0)),
+                    unreadMessagesCount: Math.max(0, Number(response.data.data.unreadMessagesCount || 0)),
+                    unreadEventsCount: Math.max(0, Number(response.data.data.unreadEventsCount || 0))
+                };
+                console.log('Processed unread counts:', counts); // Debug log
+                setUnreadCounts(counts);
             }
         } catch (error) {
             console.error('Failed to fetch unread counts:', error);
+            // Reset counts on error
+            setUnreadCounts({
+                unreadConnectionRequestsCount: 0,
+                unreadNotificationCount: 0,
+                unreadMessagesCount: 0,
+                unreadEventsCount: 0
+            });
         }
     }, [user]);
 
@@ -54,7 +72,10 @@ const Navbar = ({ children }) => {
     // Listen for unread count updates from other components
     useEffect(() => {
         const handleUnreadCountsUpdate = (event) => {
-            setUnreadCounts(event.detail);
+            setUnreadCounts(prevCounts => ({
+                ...prevCounts,
+                ...event.detail
+            }));
         };
 
         window.addEventListener('unreadCountsUpdated', handleUnreadCountsUpdate);
@@ -201,6 +222,11 @@ const Navbar = ({ children }) => {
                                 <Link to='/events' className='text-neutral flex flex-col items-center relative'>
                                     <Calendar size={20} />
                                     <span className='text-xs hidden md:block'>Events</span>
+                                    {unreadCounts.unreadEventsCount > 0 && (
+                                        <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
+                                            {unreadCounts.unreadEventsCount}
+                                        </span>
+                                    )}
                                 </Link>
                                 <Link to='/notifications' className='text-neutral flex flex-col items-center relative'>
                                     <Bell size={20} />
@@ -211,7 +237,7 @@ const Navbar = ({ children }) => {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to={`/profile`} className='text-neutral flex flex-col items-center'>
+                                <Link to={`/profile/${user.username}`} className='text-neutral flex flex-col items-center'>
                                     <User size={20} />
                                     <span className='text-xs hidden md:block'>Me</span>
                                 </Link>

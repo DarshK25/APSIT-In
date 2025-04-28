@@ -3,10 +3,66 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { Send, Search, MessageSquare, MoreVertical, Paperclip, File } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ChatOptions from '../components/ChatOptions';
 import { getUnreadCounts } from '../api/userService';
 import { useLocation, useNavigate } from 'react-router-dom';
+
+const SharedPostPreview = ({ post }) => {
+    if (!post) return null;
+    
+    return (
+        <div className="border border-gray-200 rounded-xl overflow-hidden mb-2 bg-gray-50">
+            {/* Header with profile pic and username */}
+            <div className="p-3 flex items-center">
+                {post.author?.profilePicture ? (
+                    <img 
+                        src={post.author.profilePicture} 
+                        alt={post.author.name}
+                        className="w-8 h-8 rounded-full object-cover mr-2" 
+                    />
+                ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center mr-2">
+                        <span className="text-xs text-white font-medium">
+                            {post.author?.name?.charAt(0) || "U"}
+                        </span>
+                    </div>
+                )}
+                <Link to={`/profile/${post.author?.username}`}>
+                    <span className="font-medium text-sm text-gray-500">{post.author?.username || post.author?.name || "Unknown"}</span>
+                </Link>
+            </div>
+            
+            {/* Post content - show both image and text if image exists */}
+            {post.image && (
+                <div className="w-full bg-black flex items-center justify-center">
+                    <img 
+                        src={post.image} 
+                        alt="Post" 
+                        className="w-full h-auto max-h-64 object-contain"
+                    />
+                </div>
+            )}
+            
+            {/* Always show text content if it exists */}
+            {post.content && (
+                <div className={`p-4 ${post.image ? 'bg-white' : 'bg-white-500'} text-gray-700 font-medium`}>
+                    <p>{post.content}</p>
+                </div>
+            )}
+            
+            {/* Footer with stats and link */}
+            <div className="p-3 text-xs text-gray-500 flex justify-between items-center">
+                <div className="flex items-center gap-1">
+                    <span>{post.likes?.length || 0} likes</span>
+                    <span>•</span>
+                    <span>{post.comments?.length || 0} comments</span>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const MessagesPage = () => {
     const { user } = useAuth();
@@ -568,7 +624,7 @@ const MessagesPage = () => {
                                                         ? 'text-black font-semibold' 
                                                         : 'text-gray-500'
                                                 }`}>
-                                                    {conversation.lastMessage.content}
+                                                    {conversation.lastMessage.metaContent || conversation.lastMessage.content}
                                                 </p>
                                             )}
                                         </div>
@@ -687,7 +743,10 @@ const MessagesPage = () => {
                                                     </a>
                                                 </div>
                                             )}
-                                            {message.content && (
+                                            {message.sharedPost && (
+                                                <SharedPostPreview post={message.sharedPost} />
+                                            )}
+                                            {message.content && !message.sharedPost && (
                                                 <p className="whitespace-pre-wrap">{message.content}</p>
                                             )}
                                             <p

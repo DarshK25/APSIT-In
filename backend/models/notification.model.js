@@ -14,7 +14,7 @@ const notificationSchema = new mongoose.Schema(
         type: {
             type: String,
             required: true,
-            enum: ["like", "comment", "follow", "event", "post", "connectionRequest", "connectionAccepted", "message"]
+            enum: ["like", "comment", "follow", "event", "post", "connectionRequest", "connectionAccepted", "message", "club_membership", "club_role_changed", "club_removed"]
         },
         message: {
             type: String,
@@ -31,6 +31,10 @@ const notificationSchema = new mongoose.Schema(
         event: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Event"
+        },
+        relatedClub: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User"
         }
     },
     { timestamps: true }

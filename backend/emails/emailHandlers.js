@@ -4,6 +4,7 @@ import {
   createCommentNotificationEmailTemplate,
   createConnectionAcceptedEmailTemplate,
   createWelcomeEmailTemplate,
+  createClubMembershipEmailTemplate
 } from "./emailTemplates.js";
 
 export const sendWelcomeEmail = async (email, name, profileUrl) => {
@@ -64,6 +65,31 @@ export const sendConnectionAcceptedEmail = async (
     console.log("Connection Accepted Email sent successfully");
   } catch (error) {
     console.error("Error sending Connection Accepted Email:", error);
+    throw error;
+  }
+};
+
+export const sendClubMembershipEmail = async (
+  userEmail,
+  userName,
+  clubName,
+  role,
+  clubProfileUrl
+) => {
+  try {
+    const subject = `You've been added to ${clubName}`;
+    const html = createClubMembershipEmailTemplate(
+      userName,
+      clubName,
+      role,
+      clubProfileUrl
+    );
+
+    await sendMail(userEmail, subject, "", html);
+
+    console.log("Club Membership Email sent successfully");
+  } catch (error) {
+    console.error("Error sending Club Membership Email:", error);
     throw error;
   }
 };

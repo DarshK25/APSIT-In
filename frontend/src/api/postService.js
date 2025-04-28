@@ -82,9 +82,9 @@ export const likePost = async (postId) => {
     }
 };
 
-export const sharePost = async (postId) => {
+export const sharePost = async (postId, connectionId) => {
     try {
-        const response = await axiosInstance.post(`/posts/${postId}/share`);
+        const response = await axiosInstance.post(`/posts/${postId}/share`, { connectionId });
         return response.data;
     } catch (error) {
         console.error('Error sharing post:', error.response || error);

@@ -10,6 +10,7 @@ import notificationRoutes from "./routes/notification.route.js";
 import connectionRoutes from "./routes/connection.route.js";
 import messageRoutes from "./routes/message.route.js";
 import eventRoutes from "./routes/event.route.js";
+import clubRoutes from "./routes/club.route.js";
 import { connectDB } from "./lib/db.js";
 import { initSocket } from './socket/socket.js';
 import { createServer } from "http";
@@ -50,6 +51,7 @@ app.use("/api/v1/connections", connectionRoutes);
 app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/comments", commentRoutes);
+app.use("/api/v1/clubs", clubRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);

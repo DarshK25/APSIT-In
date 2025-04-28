@@ -1,43 +1,53 @@
 import { useState, useEffect } from "react";
-import { Camera, MapPin, UserPlus, Mail, Calendar, GraduationCap, User, UserSquare2, MessageCircle, Check, Clock } from "lucide-react";
-import { uploadToCloudinary } from "../api/userService";
+import { Camera, MapPin, UserPlus, Mail, Calendar, GraduationCap, User, UserSquare2, MessageCircle, Check, Clock, Briefcase, Users } from "lucide-react";
+import { uploadToCloudinary, sendConnectionRequest } from "../api/userService";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
-const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
+const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccountType }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('none'); // 'none', 'pending', 'connected', 'received'
   const [pendingRequestId, setPendingRequestId] = useState(null);
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  
+  // Initialize editedData with all possible fields
   const [editedData, setEditedData] = useState({
-    name: userData.name,
-    headline: userData.headline,
-    location: userData.location,
-    department: userData.department,
-    yearOfStudy: userData.yearOfStudy,
-    about: userData.about
+    name: userData.name || "",
+    headline: userData.headline || "",
+    location: userData.location || "",
+    department: userData.department || "",
+    yearOfStudy: userData.yearOfStudy || "",
+    about: userData.about || "",
+    designation: userData.designation || "",
+    subjects: userData.subjects || [],
+    clubType: userData.clubType || "",
+    foundedDate: userData.foundedDate || ""
   });
 
-  const ifClub = userData.email === 'devopsclub@apsit.edu.in' 
-  || userData.email === 'codersclub@apsit.edu.in' 
-  || userData.email === 'cybersecurityclub@apsit.edu.in' 
-  || userData.email === 'datascienceclub@apsit.edu.in';
+  // Use the account type from props if available, otherwise determine from user data
+  const accountType = propAccountType || userData.accountType || (() => {
+    if (/^\d{8}@apsit\.edu\.in$/.test(userData.email)) return 'student';
+    if (/club@apsit\.edu\.in$/.test(userData.email)) return 'club';
+    return 'faculty';
+  })();
+
+  const isStudent = accountType === 'student';
+  const isFaculty = accountType === 'faculty';
+  const isClub = accountType === 'club';
 
   // Function to extract student ID from email
-  const getStudentId = (email) => {
-    const studentIdMatch = email.match(/^(\d{8})@apsit\.edu\.in$/);
+  const getStudentId = () => {
+    if (!isStudent) return null;
+    const studentIdMatch = userData.email.match(/^(\d{8})@apsit\.edu\.in$/);
     return studentIdMatch ? studentIdMatch[1] : null;
   };
 
-  // Determine if the user is a student based on email pattern
-  const isStudent = getStudentId(userData.email) !== null;
+  const studentId = getStudentId();
 
-  // Get the student ID if it's a student account
-  const studentId = getStudentId(userData.email);
-
+  // Department options
   const departments = [
     'Computer Engineering',
     'Information Technology',
@@ -54,8 +64,27 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
     'Fourth Year'
   ];
 
-  // Function to check if user is an alumni
+  const clubTypes = [
+    'Technical',
+    'Cultural',
+    'Sports',
+    'Other'
+  ];
+
+  const facultyDesignations = [
+    'Professor',
+    'Associate Professor',
+    'Assistant Professor',
+    'HOD',
+    'Principal',
+    'Visiting Faculty'
+  ];
+
+  // Function to check if user is an alumni (only for students)
   const isAlumni = () => {
+    if (!isStudent) return false;
+    if (userData.isAlumni) return true;
+    
     if (!userData.education || userData.education.length === 0) return false;
     
     const latestEducation = userData.education.reduce((latest, current) => {
@@ -134,9 +163,8 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
 
   const handleConnect = async () => {
     try {
-      await axios.post(`http://localhost:3000/api/v1/users/connect/${userData._id}`, {}, {
-        withCredentials: true
-      });
+      await sendConnectionRequest(userData._id);
+      setConnectionStatus('pending');
       toast.success('Connection request sent!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send connection request');
@@ -241,7 +269,11 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
         <div 
           className="w-full h-full"
           style={{ 
-            background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #8b5cf6 100%)'
+            background: isClub 
+              ? 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)'
+              : isFaculty
+              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+              : 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)'
           }}
         />
         {userData.bannerImg && (
@@ -279,20 +311,27 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                     src={userData.profilePicture}
                     alt={userData.name}
                     className="profile-img w-full h-full object-cover"
-                    onError={() => {
-                      const imgElement = document.querySelector('.profile-img');
-                      if (imgElement) imgElement.style.display = 'none';
+                    onError={(e) => {
+                      e.target.style.display = 'none';
                       const fallbackElement = document.querySelector('.profile-fallback');
                       if (fallbackElement) fallbackElement.style.display = 'flex';
                     }}
                   />
                   <div className="profile-fallback w-full h-full bg-gray-200 items-center justify-center" style={{ display: 'none' }}>
-                    <User className="h-24 w-24 text-blue-150" strokeWidth={1.5} />
+                    {isClub ? (
+                      <Users className="h-24 w-24 text-blue-150" strokeWidth={1.5} />
+                    ) : (
+                      <User className="h-24 w-24 text-blue-150" strokeWidth={1.5} />
+                    )}
                   </div>
                 </>
               ) : (
                 <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                  <User className="h-24 w-24 text-white" strokeWidth={1.5} />
+                  {isClub ? (
+                    <Users className="h-24 w-24 text-white" strokeWidth={1.5} />
+                  ) : (
+                    <User className="h-24 w-24 text-white" strokeWidth={1.5} />
+                  )}
                 </div>
               )}
             </div>
@@ -348,13 +387,22 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
               ) : (
                 <div className="flex items-center gap-3">
                   <h1 className="text-3xl font-bold text-gray-900">{userData.name}</h1>
-                  {isAlumni() && (
-                    <div 
-                      className="flex items-center bg-primary/10 text-primary px-3 py-1 rounded-full"
-                      title="APSIT Alumni"
-                    >
+                  {isStudent && isAlumni() && (
+                    <div className="flex items-center bg-primary/10 text-primary px-3 py-1 rounded-full">
                       <GraduationCap className="h-5 w-5 mr-1" />
                       <span className="text-sm font-medium">Alumni</span>
+                    </div>
+                  )}
+                  {isClub && (
+                    <div className="flex items-center bg-pink-100 text-pink-600 px-3 py-1 rounded-full">
+                      <Users className="h-5 w-5 mr-1" />
+                      <span className="text-sm font-medium">Club</span>
+                    </div>
+                  )}
+                  {isFaculty && (
+                    <div className="flex items-center bg-green-100 text-green-600 px-3 py-1 rounded-full">
+                      <Briefcase className="h-5 w-5 mr-1" />
+                      <span className="text-sm font-medium">Faculty</span>
                     </div>
                   )}
                 </div>
@@ -363,59 +411,119 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
 
             {isEditing ? (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Headline</label>
                   <input
                     type="text"
                     value={editedData.headline}
                     onChange={(e) => setEditedData({ ...editedData, headline: e.target.value })}
-                    className="text-lg text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Headline"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Add a headline"
                   />
-                  
-                  <div className="flex items-center space-x-2">
-                    <MapPin className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                    <input
-                      type="text"
-                      value={editedData.location}
-                      onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
-                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      placeholder="Location"
-                    />
-                  </div>
-
-                  <select
-                    value={editedData.department}
-                    onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="">Select Department</option>
-                    {departments.map((dept) => (
-                      <option key={dept} value={dept}>{dept}</option>
-                    ))}
-                  </select>
-
-                  {!ifClub && !isAlumni() && (
-                    <select
-                      value={editedData.yearOfStudy}
-                      onChange={(e) => setEditedData({ ...editedData, yearOfStudy: e.target.value })}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    >
-                      <option value="">Select Year of Study</option> 
-                      {yearOfStudyOptions.map((year) => (
-                        <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                  )}
-
-                  {!ifClub && isStudent && (
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                        <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                        <span className="font-medium">ID: {studentId}</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={editedData.location}
+                    onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Add location"
+                  />
+                </div>
+
+                {isStudent && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                      <select
+                        value={editedData.department}
+                        onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Year of Study</label>
+                      <select
+                        value={editedData.yearOfStudy}
+                        onChange={(e) => setEditedData({ ...editedData, yearOfStudy: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Select Year</option>
+                        {yearOfStudyOptions.map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {isFaculty && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                      <select
+                        value={editedData.department}
+                        onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(dept => (
+                          <option key={dept} value={dept}>{dept}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
+                      <select
+                        value={editedData.designation}
+                        onChange={(e) => setEditedData({ ...editedData, designation: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Select Designation</option>
+                        {facultyDesignations.map(designation => (
+                          <option key={designation} value={designation}>{designation}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {isClub && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Club Type</label>
+                      <select
+                        value={editedData.clubType}
+                        onChange={(e) => setEditedData({ ...editedData, clubType: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Select Club Type</option>
+                        {clubTypes.map(type => (
+                          <option key={type} value={type.toLowerCase()}>{type}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Founded Date</label>
+                      <input
+                        type="date"
+                        value={editedData.foundedDate ? new Date(editedData.foundedDate).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setEditedData({ ...editedData, foundedDate: e.target.value })}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -429,29 +537,74 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave }) => {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                      <GraduationCap className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium truncate">{userData.department}</span>
-                    </div>
-                  </div>
-
-                  {!ifClub && !isAlumni() && (
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                        <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                        <span className="font-medium">{userData.yearOfStudy}</span>
+                  {/* Student-specific display */}
+                  {isStudent && (
+                    <>
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                          <GraduationCap className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium truncate">{userData.department}</span>
+                        </div>
                       </div>
-                    </div>
+
+                      {!isAlumni() && (
+                        <div className="flex items-center space-x-3 text-gray-600">
+                          <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                            <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                            <span className="font-medium">{userData.yearOfStudy}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                          <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">ID: {studentId}</span>
+                        </div>
+                      </div>
+                    </>
                   )}
 
-                  {!ifClub && (
-                    <div className="flex items-center space-x-3 text-gray-600">
-                      <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                        <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                        <span className="font-medium">ID: {studentId}</span>
+                  {/* Faculty-specific display */}
+                  {isFaculty && (
+                    <>
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                          <GraduationCap className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium truncate">{userData.department}</span>
+                        </div>
                       </div>
-                    </div>
+
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                          <Briefcase className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium">{userData.designation}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Club-specific display */}
+                  {isClub && (
+                    <>
+                      <div className="flex items-center space-x-3 text-gray-600">
+                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                          <Users className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                          <span className="font-medium capitalize">{userData.clubType} Club</span>
+                        </div>
+                      </div>
+
+                      {userData.foundedDate && (
+                        <div className="flex items-center space-x-3 text-gray-600">
+                          <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
+                            <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
+                            <span className="font-medium">
+                              Founded: {new Date(userData.foundedDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

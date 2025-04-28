@@ -7,10 +7,34 @@ import { generateTokenAndSetCookie } from "../lib/utils/generateToken.js";
 
 export const signup = async (req, res) => {
     try {
-        const { name, username, email, password } = req.body;
+        const { name, username, email, password, accountType = "student" } = req.body;
 
         if (!name || !username || !email || !password) {
             return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // Validate email based on account type
+        const emailPrefix = email.split('@')[0];
+        let emailValid = false;
+        
+        switch(accountType) {
+            case 'student':
+                emailValid = /^\d{8}@apsit\.edu\.in$/i.test(email);
+                break;
+            case 'faculty':
+                emailValid = /^[a-z]+@apsit\.edu\.in$/i.test(email);
+                break;
+            case 'club':
+                emailValid = /^[a-z]+club@apsit\.edu\.in$/i.test(email);
+                break;
+            default:
+                emailValid = false;
+        }
+
+        if (!emailValid) {
+            return res.status(400).json({ 
+                message: `Invalid email format for ${accountType} account` 
+            });
         }
 
         const existingEmail = await User.findOne({ email });
@@ -30,7 +54,19 @@ export const signup = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newUser = new User({ name, username, email, password: hashedPassword });
+        const newUser = new User({ 
+            name, 
+            username, 
+            email, 
+            password: hashedPassword, 
+            accountType 
+        });
+
+        // Set account-specific defaults
+        if (accountType === 'student') {
+            newUser.studentId = emailPrefix.substring(0, 8);
+        }
+
         await newUser.save();
 
         // Generate token and set cookie
@@ -44,11 +80,22 @@ export const signup = async (req, res) => {
             console.error("Error in sending email:", emailError);
         }
 
-        res.status(201).json({ success: true, message: "User registered successfully" });
+        res.status(201).json({ 
+            success: true, 
+            message: "User registered successfully",
+            user: {
+                id: newUser._id,
+                username: newUser.username,
+                accountType: newUser.accountType
+            }
+        });
     } catch (error) {
         if (error.name === "ValidationError") {
-            const messages = Object.values(error.errors).map((err) => err.message); // Collect all validation error messages
-            return res.status(400).json({ success: false, message: messages.join(", ") });
+            const messages = Object.values(error.errors).map((err) => err.message);
+            return res.status(400).json({ 
+                success: false, 
+                message: messages.join(", ") 
+            });
         }
         console.error("Error in signup:", error.message);
         res.status(500).json({ message: "Internal server error" });

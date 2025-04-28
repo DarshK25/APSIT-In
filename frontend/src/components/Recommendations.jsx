@@ -94,85 +94,78 @@ const Recommendations = ({ currentUser }) => {
                             key={user._id} 
                             className="p-4 hover:bg-gray-50 transition-colors duration-200"
                         >
-                            <div className="flex items-start space-x-4">
-                                <Link 
-                                    to={`/profile/${user.username}`}
-                                    className="flex-shrink-0"
-                                >
-                                    {user.profilePicture ? (
-                                        <img
-                                            src={user.profilePicture}
-                                            alt={user.name}
-                                            className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-100"
-                                            onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                e.target.parentElement.innerHTML = `
-                                                    <div class="w-14 h-14 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                            <circle cx="12" cy="7" r="4" />
-                                                        </svg>
-                                                    </div>`;
-                                            }}
-                                        />
-                                    ) : (
-                                        <div className="w-14 h-14 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                <circle cx="12" cy="7" r="4" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                </Link>
-                                <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3 min-w-0">
                                     <Link 
                                         to={`/profile/${user.username}`}
-                                        className="block group"
+                                        className="flex-shrink-0"
                                     >
-                                        <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                            {user.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">
-                                            {user.headline || `${user.department} Student`}
-                                        </p>
-                                        <div className="flex items-center mt-1 text-xs text-gray-500">
-                                            <span>{user.department}</span>
-                                            {user.yearOfStudy && (
-                                                <>
-                                                    <span className="mx-1.5">•</span>
-                                                    <span>{user.yearOfStudy}</span>
-                                                </>
-                                            )}
-                                        </div>
-                                        {user.mutualConnections > 0 && (
-                                            <p className="text-xs text-blue-600 mt-1 flex items-center">
-                                                <svg className="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                        {user.profilePicture ? (
+                                            <img
+                                                src={user.profilePicture}
+                                                alt={user.name}
+                                                className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.parentElement.innerHTML = 
+                                                        `<div class="w-10 h-10 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                                <circle cx="12" cy="7" r="4" />
+                                                            </svg>
+                                                        </div>`;
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="12" cy="7" r="4" />
                                                 </svg>
-                                                {user.mutualConnections} mutual connection{user.mutualConnections > 1 ? 's' : ''}
-                                            </p>
+                                            </div>
                                         )}
                                     </Link>
+                                    <div className="min-w-0">
+                                        <Link 
+                                            to={`/profile/${user.username}`}
+                                            className="block group"
+                                        >
+                                            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                                                {user.name}
+                                            </h3>
+                                        </Link>
+                                        {/* Extra info that shows only on larger screens */}
+                                        <div className="hidden md:block">
+                                            <p className="text-sm text-gray-600 line-clamp-2 mt-0.5">
+                                                {user.headline || `${user.department} Student`}
+                                            </p>
+                                            <div className="flex items-center mt-1 text-xs text-gray-500">
+                                                <span>{user.department}</span>
+                                            </div>
+                                            {user.mutualConnections > 0 && (
+                                                <p className="text-xs text-blue-600 mt-1 flex items-center">
+                                                    <svg className="w-3 h-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                                    </svg>
+                                                    {user.mutualConnections} mutual connection{user.mutualConnections > 1 ? 's' : ''}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => handleConnect(user._id)}
                                     disabled={connecting[user._id]}
-                                    className={`flex-shrink-0 flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    className={`flex-shrink-0 flex items-center justify-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                                         connecting[user._id]
                                             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                             : "bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700"
                                     }`}
                                 >
                                     {connecting[user._id] ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            <span>Connecting...</span>
-                                        </>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
                                     ) : (
-                                        <>
-                                            <UserPlus className="w-4 h-4 mr-2" />
-                                            <span>Connect</span>
-                                        </>
+                                        <span>Connect</span>
                                     )}
                                 </button>
                             </div>
@@ -196,4 +189,4 @@ const Recommendations = ({ currentUser }) => {
     );
 };
 
-export default Recommendations; 
+export default Recommendations;

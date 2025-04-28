@@ -113,7 +113,8 @@ export const updateProfile = async (req, res) => {
     try {
         const allowedFields = [
             "name", "username", "headline", "about", "location", "profilePicture", "bannerImg", 
-            "skills", "studentId", "projects", "experience", "education", "yearOfStudy", "department"
+            "skills", "studentId", "projects", "experience", "education", "yearOfStudy", "department",
+            "designation", "subjects", "clubType", "foundedDate", "onboardingComplete"
         ];
 
         const updatedData = {};
@@ -143,7 +144,7 @@ export const updateProfile = async (req, res) => {
             return res.status(404).json({ success: false, message: "User not found." });
         }
 
-        res.json({ success: true, message: "Profile updated Successfully.", user });
+        res.json({ success: true, data: user });
     } catch (error) {
         console.error("Error in updateProfile: ", error);
         res.status(500).json({ success: false, message: "Server Error" });
@@ -235,3 +236,44 @@ export const searchUsers = async (req, res) => {
     }
 };
 
+export const getUserPosts = async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.params.username });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const posts = await Post.find({ author: user._id })
+            .sort({ createdAt: -1 }) // Newest first
+            .populate('author', 'name profilePicture'); 
+
+        res.json({ success: true, posts });
+    } catch (err) {
+        console.error("Error in getUserPosts: ", err);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const getUsersByBatch = async (req, res) => {
+    try {
+        const { userIds } = req.body;
+        
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Valid array of userIds is required" 
+            });
+        }
+
+        const users = await User.find({ _id: { $in: userIds } })
+            .select("name username profilePicture headline department yearOfStudy");
+
+        return res.json({
+            success: true,
+            users: users
+        });
+    } catch (error) {
+        console.error("Error in getUsersByBatch: ", error);
+        res.status(500).json({ success: false, message: "Server Error" });
+    }
+};

@@ -3,6 +3,16 @@ import Post from '../models/post.model.js';
 import { handleError } from '../utils/errorHandler.js';
 import Notification from '../models/notification.model.js';
 
+export const getCommentsByPostId = async (req, res) => {
+    try{
+        const postId = req.params.postId;
+        const comments = await Comment.find({ post: postId }).populate('author');
+        res.json(comments);
+    } catch (error) {
+        handleError(res, error);
+    }
+};
+
 export const addComment = async (req, res) => {
     try {
         const { content } = req.body;

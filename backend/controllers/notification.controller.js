@@ -1,4 +1,5 @@
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 
 export const getUserNotifications = async (req, res) => {
 	try {
@@ -116,6 +117,144 @@ export const deleteAllNotifications = async (req, res) => {
 			success: false, 
 			message: "Server error",
 			error: error.message 
+		});
+	}
+};
+
+export const createNotification = async (req, res) => {
+	try {
+		const { recipient, type, content, relatedId, relatedModel } = req.body;
+		
+		if (!recipient || !type || !content) {
+			return res.status(400).json({
+				success: false,
+				message: "Missing required fields: recipient, type, content"
+			});
+		}
+		
+		// Check if recipient exists
+		const recipientExists = await User.findById(recipient);
+		if (!recipientExists) {
+			return res.status(404).json({
+				success: false,
+				message: "Recipient user not found"
+			});
+		}
+		
+		const notification = new Notification({
+			recipient,
+			type,
+			content,
+			relatedId,
+			relatedModel,
+			isRead: false,
+			timestamp: new Date()
+		});
+		
+		await notification.save();
+		
+		// Emit socket event for real-time notification if socket IO is available
+		if (req.app.get('io')) {
+			req.app.get('io').to(recipient.toString()).emit('notification', {
+				notification: {
+					_id: notification._id,
+					type: notification.type,
+					content: notification.content,
+					isRead: notification.isRead,
+					timestamp: notification.timestamp
+				}
+			});
+		}
+		
+		res.status(201).json({
+			success: true,
+			data: notification
+		});
+		
+	} catch (error) {
+		console.error("Error creating notification:", error);
+		res.status(500).json({
+			success: false,
+			message: "Server error while creating notification"
+		});
+	}
+};
+
+export const getNotifications = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		
+		const notifications = await Notification.find({ recipient: userId })
+			.sort({ timestamp: -1 }) // Most recent first
+			.limit(30); // Limit to 30 notifications
+		
+		res.json({
+			success: true,
+			data: notifications
+		});
+	} catch (error) {
+		console.error("Error fetching notifications:", error);
+		res.status(500).json({
+			success: false,
+			message: "Server error while fetching notifications"
+		});
+	}
+};
+
+export const markAsRead = async (req, res) => {
+	try {
+		const { notificationId } = req.params;
+		
+		const notification = await Notification.findById(notificationId);
+		if (!notification) {
+			return res.status(404).json({
+				success: false,
+				message: "Notification not found"
+			});
+		}
+		
+		// Check if the notification belongs to the current user
+		if (notification.recipient.toString() !== req.user._id.toString()) {
+			return res.status(403).json({
+				success: false,
+				message: "You don't have permission to update this notification"
+			});
+		}
+		
+		notification.isRead = true;
+		await notification.save();
+		
+		res.json({
+			success: true,
+			data: notification
+		});
+	} catch (error) {
+		console.error("Error marking notification as read:", error);
+		res.status(500).json({
+			success: false,
+			message: "Server error while updating notification"
+		});
+	}
+};
+
+export const getUnreadCount = async (req, res) => {
+	try {
+		const userId = req.user._id;
+		
+		const count = await Notification.countDocuments({
+			recipient: userId,
+			isRead: false
+		});
+		
+		res.json({
+			success: true,
+			data: { count }
+		});
+	} catch (error) {
+		console.error("Error counting unread notifications:", error);
+		res.status(500).json({
+			success: false,
+			message: "Server error while counting notifications"
 		});
 	}
 };

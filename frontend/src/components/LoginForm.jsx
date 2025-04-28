@@ -21,6 +21,10 @@ const LoginForm = () => {
 		setIsLoading(true);
 		try {
 			await login(username, password);
+			window.location.reload();
+			if(user) {
+				navigate("/home");
+			}
 		} catch (error) {
 			console.error("Login error:", error);
 		} finally {

@@ -9,6 +9,7 @@ import NetworkPage from './Pages/NetworkPage.jsx';
 import MessagesPage from './Pages/MessagesPage.jsx';
 import LandingPage from './Pages/LandingPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import EventProtectedRoute from './components/EventProtectedRoute.jsx';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext.jsx';
 import EventsPage from './Pages/EventsPage';
@@ -16,6 +17,7 @@ import EventDetailsPage from './Pages/EventDetailsPage';
 import CreateEventPage from './Pages/CreateEventPage';
 import EditEventPage from './Pages/EditEventPage';
 import OnboardingToast from './components/OnboardingToast';
+import Settings from './Pages/Settings.jsx';
 
 const App = () => {
   return (
@@ -56,8 +58,40 @@ const App = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/events" element={<EventsPage />} />
-            <Route path="/events/:id" element={<EventDetailsPage />} />
+            
+            {/* Events Routes */}
+            <Route
+              path="/events"
+              element={
+                <ProtectedRoute>
+                  <EventsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/create"
+              element={
+                <EventProtectedRoute>
+                  <CreateEventPage />
+                </EventProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/:id"
+              element={
+                <ProtectedRoute>
+                  <EventDetailsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/:id/edit"
+              element={
+                <EventProtectedRoute>
+                  <EditEventPage />
+                </EventProtectedRoute>
+              }
+            />
 
             {/* Protected Routes */}
             <Route
@@ -85,7 +119,7 @@ const App = () => {
               }
             />
             <Route
-              path="/profile"
+              path="/profile/:username"
               element={
                 <ProtectedRoute>
                   <ProfilePage />
@@ -93,7 +127,7 @@ const App = () => {
               }
             />
             <Route
-              path="/profile/:username"
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <ProfilePage />
@@ -109,18 +143,10 @@ const App = () => {
               }
             />
             <Route
-              path="/events/create"
+              path="/settings"
               element={
                 <ProtectedRoute>
-                  <CreateEventPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/events/:id/edit"
-              element={
-                <ProtectedRoute>
-                  <EditEventPage />
+                  <Settings />
                 </ProtectedRoute>
               }
             />
