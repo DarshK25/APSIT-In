@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, MapPin, Clock, Users, Plus, Edit2, Trash2, MoreVertical, Search, Filter, Edit, Trash, Loader, X } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Plus, Edit2, Trash2, MoreVertical, Search, Filter, Edit, Trash, Loader, X, Users as UsersIcon, Trophy } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'react-hot-toast';
 import eventService from '../api/eventService';
@@ -33,6 +33,7 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
     const [showMenu, setShowMenu] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showClubIcon, setShowClubIcon] = useState(false);
     const navigate = useNavigate();
     const menuRef = useRef(null);
 
@@ -137,11 +138,19 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                     onClick={handleNavigateToClub}
                     className="p-4 border-b border-gray-200 flex items-center space-x-3 cursor-pointer hover:bg-gray-50"
                 >
-                    <img
-                        src={event.organizer.profilePicture}
-                        alt={event.organizer.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                    />
+                    {(!event.organizer.profilePicture || showClubIcon) ? (
+                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                            {/* Club icon SVG (Trophy or Users) */}
+                            <Trophy size={24} color="white" />
+                        </div>
+                    ) : (
+                        <img
+                            src={event.organizer.profilePicture}
+                            alt={event.organizer.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                            onError={() => setShowClubIcon(true)}
+                        />
+                    )}
                     <div className="flex-grow">
                         <h4 className="font-medium text-gray-900">{event.organizer.name}</h4>
                         <p className="text-sm text-gray-500">{event.organizer.headline || 'Club at APSIT'}</p>
@@ -237,7 +246,7 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                         <Users className="w-4 h-4 text-gray-500" />
                         <span className="text-sm">
                             {event.category || ''} - {event.department || ''}
-                            {event.maxAttendees && ` (${(event.attendees && event.attendees.length) || 0}/${event.maxAttendees})`}
+                            {!event.registrationFormLink && event.maxAttendees && ` (${(event.attendees && event.attendees.length) || 0}/${event.maxAttendees})`}
                         </span>
                     </div>
                     {event.registrationDeadline && (
@@ -248,27 +257,44 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                 </div>
                 
                 <div className="mt-4">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleRegister();
-                        }}
-                        disabled={!registrationStatus.allowed || isLoading}
-                        className={`w-full px-4 py-2 rounded-md ${
-                            registrationStatus.allowed
-                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                        }`}
-                    >
-                        {isLoading ? (
-                            <span className="flex items-center justify-center gap-2">
-                                <Loader size={16} className="animate-spin" />
-                                Registering...
-                            </span>
-                        ) : (
-                            registrationStatus.allowed ? 'Register' : registrationStatus.reason
-                        )}
-                    </button>
+                    {event.registrationFormLink ? (
+                        <a
+                            href={event.registrationFormLink.startsWith('http') ? event.registrationFormLink : `https://${event.registrationFormLink}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className={`w-full block px-4 py-2 rounded-md text-center ${
+                                registrationStatus.allowed
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            }`}
+                            style={{ pointerEvents: registrationStatus.allowed ? 'auto' : 'none' }}
+                        >
+                            {registrationStatus.allowed ? 'Register' : registrationStatus.reason}
+                        </a>
+                    ) : (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRegister();
+                            }}
+                            disabled={!registrationStatus.allowed || isLoading}
+                            className={`w-full px-4 py-2 rounded-md ${
+                                registrationStatus.allowed
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            }`}
+                        >
+                            {isLoading ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Loader size={16} className="animate-spin" />
+                                    Registering...
+                                </span>
+                            ) : (
+                                registrationStatus.allowed ? 'Register' : registrationStatus.reason
+                            )}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
