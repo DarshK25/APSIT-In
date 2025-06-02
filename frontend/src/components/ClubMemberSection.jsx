@@ -15,6 +15,9 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
     const [membersData, setMembersData] = useState([]);
     const [pendingMembersData, setPendingMembersData] = useState([]); // For storing pending member data
     const [isLoading, setIsLoading] = useState(true);
+    const [failedMemberImages, setFailedMemberImages] = useState({});
+    const [failedSearchImages, setFailedSearchImages] = useState({});
+    const [failedPendingImages, setFailedPendingImages] = useState({});
     
     // Fetch member details when component loads
     useEffect(() => {
@@ -365,6 +368,16 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
         }
     };
 
+    const handleMemberImageError = (userId) => {
+        setFailedMemberImages(prev => ({ ...prev, [userId]: true }));
+    };
+    const handleSearchImageError = (userId) => {
+        setFailedSearchImages(prev => ({ ...prev, [userId]: true }));
+    };
+    const handlePendingImageError = (userId) => {
+        setFailedPendingImages(prev => ({ ...prev, [userId]: true }));
+    };
+
     if (isLoading) {
         return (
             <div className="bg-white shadow rounded-lg p-6 mb-6">
@@ -399,11 +412,21 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
                         membersData.map((member, i) => (
                             <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-200">
                                 <div className="flex items-center">
-                                    <img 
-                                        src={member.profile?.profilePicture || `https://api.dicebear.com/7.x/avatars/svg?seed=${member.userId}`}
-                                        alt={member.profile?.name || "Member"}
-                                        className="w-10 h-10 rounded-full mr-3 object-cover"
-                                    />
+                                    {member.profile?.profilePicture && !failedMemberImages[member.profile?._id] ? (
+                                        <img 
+                                            src={member.profile.profilePicture}
+                                            alt={member.profile?.name || "Member"}
+                                            className="w-10 h-10 rounded-full mr-3 object-cover"
+                                            onError={() => handleMemberImageError(member.profile?._id)}
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                <circle cx="12" cy="7" r="4" />
+                                            </svg>
+                                        </div>
+                                    )}
                                     <div>
                                         <h4 className="font-medium">{member.profile?.name || "Unknown Member"}</h4>
                                         <p className="text-sm text-gray-500">@{member.profile?.username || "unknown"}</p>
@@ -475,11 +498,21 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
                                         className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
                                     >
                                         <div className="flex items-center">
-                                            <img 
-                                                src={user.profilePicture || `https://api.dicebear.com/7.x/avatars/svg?seed=${user._id}`}
-                                                alt={user.name}
-                                                className="w-8 h-8 rounded-full mr-3 object-cover"
-                                            />
+                                            {user.profilePicture && !failedSearchImages[user._id] ? (
+                                                <img 
+                                                    src={user.profilePicture}
+                                                    alt={user.name}
+                                                    className="w-8 h-8 rounded-full mr-3 object-cover"
+                                                    onError={() => handleSearchImageError(user._id)}
+                                                />
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                        <circle cx="12" cy="7" r="4" />
+                                                    </svg>
+                                                </div>
+                                            )}
                                             <div>
                                                 <h4 className="font-medium">{user.name}</h4>
                                                 <p className="text-sm text-gray-500">@{user.username}</p>
@@ -511,11 +544,21 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
                                 {pendingMembersData.map((member, i) => (
                                     <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
                                         <div className="flex items-center">
-                                            <img 
-                                                src={member.profile?.profilePicture || `https://api.dicebear.com/7.x/avatars/svg?seed=${member.userId}`}
-                                                alt={member.profile?.name || "Member"}
-                                                className="w-10 h-10 rounded-full mr-3 object-cover"
-                                            />
+                                            {member.profile?.profilePicture && !failedPendingImages[member.profile?._id] ? (
+                                                <img 
+                                                    src={member.profile.profilePicture}
+                                                    alt={member.profile?.name || "Member"}
+                                                    className="w-10 h-10 rounded-full mr-3 object-cover"
+                                                    onError={() => handlePendingImageError(member.profile?._id)}
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                        <circle cx="12" cy="7" r="4" />
+                                                    </svg>
+                                                </div>
+                                            )}
                                             <div>
                                                 <h4 className="font-medium">{member.profile?.name || "Unknown Member"}</h4>
                                                 <p className="text-sm text-gray-500">@{member.profile?.username || "unknown"}</p>

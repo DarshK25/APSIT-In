@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap } from "lucide-react";
+import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap, Settings } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
@@ -17,6 +17,7 @@ const Navbar = ({ children }) => {
         unreadMessagesCount: 0,
         unreadEventsCount: 0
     });
+    const [failedSearchImages, setFailedSearchImages] = useState({});
 
     // Function to fetch unread counts
     const fetchUnreadCounts = useCallback(async () => {
@@ -116,6 +117,10 @@ const Navbar = ({ children }) => {
         }, 200);
     };
 
+    const handleSearchImageError = (userId) => {
+        setFailedSearchImages(prev => ({ ...prev, [userId]: true }));
+    };
+
     return (
         <nav className='bg-white shadow-md sticky top-0 z-10'>
             <div className='max-w-7xl mx-auto px-4'>
@@ -156,17 +161,19 @@ const Navbar = ({ children }) => {
                                                 >
                                                     <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
                                                         <div className="flex-shrink-0">
-                                                            {result.profilePicture ? (
+                                                            {result.profilePicture && !failedSearchImages[result._id] ? (
                                                                 <img
                                                                     src={result.profilePicture}
                                                                     alt={result.name}
                                                                     className="w-8 h-8 rounded-full object-cover"
+                                                                    onError={() => handleSearchImageError(result._id)}
                                                                 />
                                                             ) : (
-                                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                                                    <span className="text-blue-600 font-medium">
-                                                                        {result.name.charAt(0)}
-                                                                    </span>
+                                                                <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center">
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                                        <circle cx="12" cy="7" r="4" />
+                                                                    </svg>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -240,6 +247,10 @@ const Navbar = ({ children }) => {
                                 <Link to={`/profile/${user.username}`} className='text-neutral flex flex-col items-center'>
                                     <User size={20} />
                                     <span className='text-xs hidden md:block'>Me</span>
+                                </Link>
+                                <Link to={`/settings`} className='text-neutral flex flex-col items-center'>
+                                    <Settings size={20} />
+                                    <span className='text-xs hidden md:block'>Settings</span>
                                 </Link>
                                 <button
                                     className='flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-800'
