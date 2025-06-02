@@ -84,6 +84,7 @@ const MessagesPage = () => {
     const [isMessageRequestPending, setIsMessageRequestPending] = useState(false);
     const [messageRequestStatus, setMessageRequestStatus] = useState(null);
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+    const [showProfileFallback, setShowProfileFallback] = useState(false);
 
     // Get user ID from URL query parameter and fetch user data if needed
     useEffect(() => {
@@ -359,6 +360,10 @@ const MessagesPage = () => {
         checkMessageRequestStatus();
     }, [selectedUser]);
 
+    useEffect(() => {
+        setShowProfileFallback(false);
+    }, [selectedUser]);
+
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -544,304 +549,319 @@ const MessagesPage = () => {
     }
 
     return (
-        <div className="container mx-auto p-4 max-w-8xl">
-            <div className="flex h-[calc(100vh-8rem)] bg-white rounded-lg shadow-lg">
-                {/* Conversations List */}
-                <div className="w-1/3 border-r border-gray-200">
-                    <div className="p-4 border-b border-gray-200">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Search messages..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+        <div className="fixed inset-0 bg-gray-50">
+            <div className="h-full max-w-8xl mx-auto p-4 pt-20">
+                <div className="h-[calc(100vh-5rem)] bg-white rounded-lg shadow-lg flex">
+                    {/* Conversations List */}
+                    <div className="w-1/3 border-r border-gray-200 flex flex-col">
+                        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search messages..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                            </div>
                         </div>
-                    </div>
-                    <div className="overflow-y-auto h-[calc(100%-4rem)]">
-                        {filteredConversations.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500">
-                                {searchQuery ? 'No conversations found' : 'No messages yet'}
-                            </div>
-                        ) : (
-                            filteredConversations.map((conversation) => (
-                                <div
-                                    key={conversation.user._id}
-                                    onClick={() => setSelectedUser(conversation.user)}
-                                    className={`p-4 border-b border-gray-100 cursor-pointer ${
-                                        selectedUser?._id === conversation.user._id 
-                                            ? 'bg-blue-100' 
-                                            : conversation.unreadCount > 0
-                                                ? 'bg-gray-50'
-                                                : 'hover:bg-gray-50'
-                                    }`}
-                                >
-                                    <div className="flex items-center space-x-3">
-                                        <div className="relative">
-                                            {conversation.user.profilePicture ? (
-                                                <img
-                                                    src={conversation.user.profilePicture}
-                                                    alt={conversation.user.name}
-                                                    className="w-10 h-10 rounded-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                    <span className="text-gray-600 font-medium text-lg">
-                                                        {conversation.user.name.charAt(0)}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            {conversation.unreadCount > 0 && (
-                                                <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
-                                                    <span className="text-[11px] text-white font-bold">
-                                                        {conversation.unreadCount}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <h3 className={`${
-                                                    conversation.unreadCount > 0
-                                                        ? 'text-black font-bold' 
-                                                        : 'text-gray-800 font-medium'
-                                                }`}>
-                                                    {conversation.user.name}
-                                                </h3>
-                                                <span className={`text-xs ${
-                                                    conversation.unreadCount > 0
-                                                        ? 'text-black font-semibold' 
-                                                        : 'text-gray-500'
-                                                }`}>
-                                                    {conversation.lastMessage && format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
-                                                </span>
-                                            </div>
-                                            {conversation.lastMessage && (
-                                                <p className={`text-sm truncate ${
-                                                    conversation.unreadCount > 0
-                                                        ? 'text-black font-semibold' 
-                                                        : 'text-gray-500'
-                                                }`}>
-                                                    {conversation.lastMessage.metaContent || conversation.lastMessage.content}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
+                        <div className="overflow-y-auto flex-1">
+                            {filteredConversations.length === 0 ? (
+                                <div className="p-4 text-center text-gray-500">
+                                    {searchQuery ? 'No conversations found' : 'No messages yet'}
                                 </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-
-                {/* Chat Area */}
-                <div className="flex-1 flex flex-col">
-                    {selectedUser ? (
-                        <>
-                            {/* Chat Header */}
-                            <div 
-                                className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-                                onClick={() => handleNavigateToProfile(selectedUser.username)}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-3">
-                                        {selectedUser.profilePicture ? (
-                                            <img
-                                                src={selectedUser.profilePicture}
-                                                alt={selectedUser.name}
-                                                className="w-10 h-10 rounded-full"
-                                            />
-                                        ) : (
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                                <span className="text-blue-600 font-medium">
-                                                    {selectedUser.name.charAt(0)}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div>
-                                            <h3 className="font-medium">{selectedUser.name}</h3>
-                                            <p className="text-sm text-gray-500">
-                                                {selectedUser.headline || 'APSIT Student'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="relative">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setShowOptions(!showOptions);
-                                            }}
-                                            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                        >
-                                            <MoreVertical className="w-5 h-5 text-gray-600" />
-                                        </button>
-                                        {showOptions && (
-                                            <ChatOptions
-                                                selectedUser={selectedUser}
-                                                onClose={handleOptionsClose}
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-4">
-                                {messageRequestStatus?.hasRequest && !messageRequestStatus?.isSender ? (
-                                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                                        <p className="text-blue-700 mb-2">
-                                            {selectedUser.name} wants to start a conversation with you
-                                        </p>
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={() => handleAcceptRequest(messageRequestStatus.requestId)}
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                            >
-                                                Accept
-                                            </button>
-                                            <button
-                                                onClick={() => handleRejectRequest(messageRequestStatus.requestId)}
-                                                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                                            >
-                                                Decline
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : messageRequestStatus?.hasRequest && messageRequestStatus?.isSender ? (
-                                    <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                                        <p className="text-blue-700">
-                                            Waiting for {selectedUser.name} to accept your message request
-                                        </p>
-                                    </div>
-                                ) : null}
-
-                                {messages.map((message) => (
+                            ) : (
+                                filteredConversations.map((conversation) => (
                                     <div
-                                        key={message._id}
-                                        className={`flex mb-4 ${
-                                            message.sender._id === user._id ? 'justify-end' : 'justify-start'
+                                        key={conversation.user._id}
+                                        onClick={() => setSelectedUser(conversation.user)}
+                                        className={`p-4 border-b border-gray-100 cursor-pointer ${
+                                            selectedUser?._id === conversation.user._id 
+                                                ? 'bg-blue-100' 
+                                                : conversation.unreadCount > 0
+                                                    ? 'bg-gray-50'
+                                                    : 'hover:bg-gray-50'
                                         }`}
                                     >
+                                        <div className="flex items-center space-x-3">
+                                            <div className="relative">
+                                                {conversation.user.profilePicture ? (
+                                                    <img
+                                                        src={conversation.user.profilePicture}
+                                                        alt={conversation.user.name}
+                                                        className="w-10 h-10 rounded-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            e.target.parentElement.innerHTML = 
+                                                                `<div class=\"w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center\">\n` +
+                                                                `    <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\">` +
+                                                                `        <path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\" />` +
+                                                                `        <circle cx=\"12\" cy=\"7\" r=\"4\" />` +
+                                                                `    </svg>` +
+                                                                `</div>`;
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                            <circle cx="12" cy="7" r="4" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                {conversation.unreadCount > 0 && (
+                                                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
+                                                        <span className="text-[11px] text-white font-bold">
+                                                            {conversation.unreadCount}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className={`${
+                                                        conversation.unreadCount > 0
+                                                            ? 'text-black font-bold' 
+                                                            : 'text-gray-800 font-medium'
+                                                    }`}>
+                                                        {conversation.user.name}
+                                                    </h3>
+                                                    <span className={`text-xs ${
+                                                        conversation.unreadCount > 0
+                                                            ? 'text-black font-semibold' 
+                                                            : 'text-gray-500'
+                                                    }`}>
+                                                        {conversation.lastMessage && format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
+                                                    </span>
+                                                </div>
+                                                {conversation.lastMessage && (
+                                                    <p className={`text-sm truncate ${
+                                                        conversation.unreadCount > 0
+                                                            ? 'text-black font-semibold' 
+                                                            : 'text-gray-500'
+                                                    }`}>
+                                                        {conversation.lastMessage.metaContent || conversation.lastMessage.content}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Chat Area */}
+                    <div className="flex-1 flex flex-col">
+                        {selectedUser ? (
+                            <>
+                                {/* Chat Header */}
+                                <div 
+                                    className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    onClick={() => handleNavigateToProfile(selectedUser.username)}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-3">
+                                            {(!selectedUser.profilePicture || showProfileFallback) ? (
+                                                <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                        <circle cx="12" cy="7" r="4" />
+                                                    </svg>
+                                                </div>
+                                            ) : (
+                                                <img
+                                                    src={selectedUser.profilePicture}
+                                                    alt={selectedUser.name}
+                                                    className="w-10 h-10 rounded-full"
+                                                    onError={() => setShowProfileFallback(true)}
+                                                />
+                                            )}
+                                            <div>
+                                                <h3 className="font-medium">{selectedUser.name}</h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {selectedUser.headline || 'APSIT Student'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowOptions(!showOptions);
+                                                }}
+                                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                            >
+                                                <MoreVertical className="w-5 h-5 text-gray-600" />
+                                            </button>
+                                            {showOptions && (
+                                                <ChatOptions
+                                                    selectedUser={selectedUser}
+                                                    onClose={handleOptionsClose}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Messages */}
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    {messageRequestStatus?.hasRequest && !messageRequestStatus?.isSender ? (
+                                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                                            <p className="text-blue-700 mb-2">
+                                                {selectedUser.name} wants to start a conversation with you
+                                            </p>
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => handleAcceptRequest(messageRequestStatus.requestId)}
+                                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                                >
+                                                    Accept
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRejectRequest(messageRequestStatus.requestId)}
+                                                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                                                >
+                                                    Decline
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : messageRequestStatus?.hasRequest && messageRequestStatus?.isSender ? (
+                                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                                            <p className="text-blue-700">
+                                                Waiting for {selectedUser.name} to accept your message request
+                                            </p>
+                                        </div>
+                                    ) : null}
+
+                                    {messages.map((message) => (
                                         <div
-                                            className={`max-w-[70%] rounded-lg p-3 ${
-                                                message.sender._id === user._id
-                                                    ? 'bg-blue-500 text-white'
-                                                    : 'bg-gray-100'
+                                            key={message._id}
+                                            className={`flex mb-4 ${
+                                                message.sender._id === user._id ? 'justify-end' : 'justify-start'
                                             }`}
                                         >
-                                            {message.fileUrl && (
-                                                <div className="flex items-center space-x-2 mb-2">
-                                                    <File className="w-5 h-5" />
-                                                    <a 
-                                                        href={message.fileUrl} 
-                                                        target="_blank" 
-                                                        rel="noopener noreferrer"
-                                                        className="underline hover:text-opacity-80"
-                                                    >
-                                                        {message.fileName} ({formatFileSize(message.fileSize)})
-                                                    </a>
-                                                </div>
-                                            )}
-                                            {message.sharedPost && (
-                                                <SharedPostPreview post={message.sharedPost} />
-                                            )}
-                                            {message.content && !message.sharedPost && (
-                                                <p className="whitespace-pre-wrap">{message.content}</p>
-                                            )}
-                                            <p
-                                                className={`text-xs mt-1 ${
+                                            <div
+                                                className={`max-w-[70%] rounded-lg p-3 ${
                                                     message.sender._id === user._id
-                                                        ? 'text-blue-100'
-                                                        : 'text-gray-500'
+                                                        ? 'bg-blue-500 text-white'
+                                                        : 'bg-gray-100'
                                                 }`}
                                             >
-                                                {format(new Date(message.createdAt), 'HH:mm')}
-                                            </p>
+                                                {message.fileUrl && (
+                                                    <div className="flex items-center space-x-2 mb-2">
+                                                        <File className="w-5 h-5" />
+                                                        <a 
+                                                            href={message.fileUrl} 
+                                                            target="_blank" 
+                                                            rel="noopener noreferrer"
+                                                            className="underline hover:text-opacity-80"
+                                                        >
+                                                            {message.fileName} ({formatFileSize(message.fileSize)})
+                                                        </a>
+                                                    </div>
+                                                )}
+                                                {message.sharedPost && (
+                                                    <SharedPostPreview post={message.sharedPost} />
+                                                )}
+                                                {message.content && !message.sharedPost && (
+                                                    <p className="whitespace-pre-wrap">{message.content}</p>
+                                                )}
+                                                <p
+                                                    className={`text-xs mt-1 ${
+                                                        message.sender._id === user._id
+                                                            ? 'text-blue-100'
+                                                            : 'text-gray-500'
+                                                    }`}
+                                                >
+                                                    {format(new Date(message.createdAt), 'HH:mm')}
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
-                                <div ref={messagesEndRef} />
-                            </div>
+                                    ))}
+                                    <div ref={messagesEndRef} />
+                                </div>
 
-                            {/* Message Input */}
-                            <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
-                                {attachedFile && (
-                                    <div className="mb-2 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <File className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-600">
-                                                {attachedFile.name} ({formatFileSize(attachedFile.size)})
-                                            </span>
+                                {/* Message Input */}
+                                <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
+                                    {attachedFile && (
+                                        <div className="mb-2 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
+                                            <div className="flex items-center space-x-2">
+                                                <File className="w-4 h-4 text-gray-500" />
+                                                <span className="text-sm text-gray-600">
+                                                    {attachedFile.name} ({formatFileSize(attachedFile.size)})
+                                                </span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveAttachment}
+                                                className="text-gray-500 hover:text-red-500"
+                                            >
+                                                ×
+                                            </button>
                                         </div>
+                                    )}
+                                    <div className="flex space-x-2">
+                                        <input
+                                            type="text"
+                                            value={newMessage}
+                                            onChange={(e) => setNewMessage(e.target.value)}
+                                            placeholder={
+                                                messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage
+                                                    ? "Waiting for message request response..."
+                                                    : "Type a message..."
+                                            }
+                                            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
+                                        />
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileSelect}
+                                            className="hidden"
+                                            accept="*/*"
+                                            disabled={messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage}
+                                        />
                                         <button
                                             type="button"
-                                            onClick={handleRemoveAttachment}
-                                            className="text-gray-500 hover:text-red-500"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className={`px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ${
+                                                uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage) ? 'opacity-50 cursor-not-allowed' : ''
+                                            }`}
+                                            disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
                                         >
-                                            ×
+                                            <Paperclip size={20} />
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={(!newMessage.trim() && !attachedFile) || uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
+                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                        >
+                                            {uploadingFile ? (
+                                                <>
+                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    <span>Sending...</span>
+                                                </>
+                                            ) : (
+                                                <Send size={20} />
+                                            )}
                                         </button>
                                     </div>
-                                )}
-                                <div className="flex space-x-2">
-                                    <input
-                                        type="text"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder={
-                                            messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage
-                                                ? "Waiting for message request response..."
-                                                : "Type a message..."
-                                        }
-                                        className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                                        disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
-                                    />
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleFileSelect}
-                                        className="hidden"
-                                        accept="*/*"
-                                        disabled={messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className={`px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ${
-                                            uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage) ? 'opacity-50 cursor-not-allowed' : ''
-                                        }`}
-                                        disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
-                                    >
-                                        <Paperclip size={20} />
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={(!newMessage.trim() && !attachedFile) || uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                                    >
-                                        {uploadingFile ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                <span>Sending...</span>
-                                            </>
-                                        ) : (
-                                            <Send size={20} />
-                                        )}
-                                    </button>
+                                </form>
+                            </>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 p-8">
+                                <div className="mb-4">
+                                    <MessageSquare size={48} className="mx-auto text-gray-400" />
                                 </div>
-                            </form>
-                        </>
-                    ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 p-8">
-                            <div className="mb-4">
-                                <MessageSquare size={48} className="mx-auto text-gray-400" />
+                                <h2 className="text-xl font-medium mb-2">Your Messages</h2>
+                                <p className="text-sm max-w-md">
+                                    Send private messages to your connections. Start a conversation by selecting a user from the left or searching for someone specific.
+                                </p>
                             </div>
-                            <h2 className="text-xl font-medium mb-2">Your Messages</h2>
-                            <p className="text-sm max-w-md">
-                                Send private messages to your connections. Start a conversation by selecting a user from the left or searching for someone specific.
-                            </p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
