@@ -1,6 +1,7 @@
-import Settings from '../models/Settings.js';
-import User from '../models/User.js';
-import { sendEmail } from '../utils/email.js';
+import Settings from '../models/settings.model.js';
+import User from '../models/user.model.js';
+import sendMail from '../lib/sendMail.js';
+import bcrypt from 'bcryptjs';
 
 export const getSettings = async (req, res) => {
     try {
@@ -37,27 +38,41 @@ export const updateSettings = async (req, res) => {
 export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
+        
+        // Find user and explicitly select password field
         const user = await User.findById(req.user._id).select('+password');
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
         
         // Verify current password
-        const isMatch = await user.matchPassword(currentPassword);
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.status(401).json({ success: false, error: 'Current password is incorrect' });
         }
         
-        // Update password
-        user.password = newPassword;
-        await user.save();
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update only the password field using findByIdAndUpdate
+        await User.findByIdAndUpdate(
+            req.user._id,
+            { password: hashedPassword },
+            { runValidators: false } // Disable validators for this update
+        );
         
         // Send email notification
-        await sendEmail({
-            email: user.email,
-            subject: 'Password Changed',
-            message: 'Your password has been successfully changed. If you did not make this change, please contact support immediately.'
-        });
+        await sendMail(
+            user.email,
+            'Password Changed',
+            'Your password has been successfully changed. If you did not make this change, please contact support immediately.',
+            '<p>Your password has been successfully changed. If you did not make this change, please contact support immediately.</p>'
+        );
         
         res.status(200).json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
+        console.error('Password change error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };

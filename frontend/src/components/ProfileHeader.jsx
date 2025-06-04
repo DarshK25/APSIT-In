@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { FaEdit } from "react-icons/fa";
 
 const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccountType }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -12,6 +14,7 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
   const [pendingRequestId, setPendingRequestId] = useState(null);
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { theme } = useTheme();
   
   // Initialize editedData with all possible fields
   const [editedData, setEditedData] = useState({
@@ -203,6 +206,10 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
     }
   };
 
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
   const renderConnectionButton = () => {
     switch (connectionStatus) {
       case 'none':
@@ -263,9 +270,9 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden relative">
       {/* Banner */}
-      <div className="relative h-64">
+      <div className="relative h-40 sm:h-64">
         <div 
           className="w-full h-full"
           style={{ 
@@ -287,8 +294,8 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
           />
         )}
         {isOwnProfile && (
-          <label className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition-colors duration-200 z-10">
-            <Camera className="h-5 w-5 text-gray-700" />
+          <label className="absolute bottom-4 right-4 bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm p-2.5 rounded-full shadow-lg cursor-pointer hover:bg-white dark:hover:bg-dark-card transition-colors duration-200 z-10">
+            <Camera className="h-5 w-5 text-gray-700 dark:text-gray-200" />
             <input
               type="file"
               className="hidden"
@@ -299,317 +306,320 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
         )}
       </div>
 
-      {/* Profile Content */}
-      <div className="relative px-6 pb-6">
-        {/* Profile Picture */}
-        <div className="relative -mt-20 mb-4 flex justify-between items-end">
-          <div className="relative">
-            <div className="w-40 h-40 rounded-2xl border-4 border-white shadow-lg overflow-hidden">
-              {userData.profilePicture ? (
-                <>
-                  <img
-                    src={userData.profilePicture}
-                    alt={userData.name}
-                    className="profile-img w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      const fallbackElement = document.querySelector('.profile-fallback');
-                      if (fallbackElement) fallbackElement.style.display = 'flex';
-                    }}
-                  />
-                  <div className="profile-fallback w-full h-full bg-gray-200 items-center justify-center" style={{ display: 'none' }}>
-                    {isClub ? (
-                      <Users className="h-24 w-24 text-blue-150" strokeWidth={1.5} />
-                    ) : (
-                      <User className="h-24 w-24 text-blue-150" strokeWidth={1.5} />
-                    )}
-                  </div>
-                </>
+      {/* Profile Content Area - Adjusted top padding to accommodate the overlap */}
+      <div className="relative px-4 sm:px-6 pt-12 pb-6">
+        {/* Profile Picture - positioned with negative top margin to overlap banner */}
+        <div className="relative -mt-24 sm:-mt-36 w-24 h-24 sm:w-40 sm:h-40 rounded-2xl border-4 border-white dark:border-dark-card shadow-lg overflow-hidden z-10">
+          {userData.profilePicture ? (
+            <>
+              <img
+                src={userData.profilePicture}
+                alt={userData.name}
+                className="profile-img w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  const fallbackElement = document.querySelector('.profile-fallback');
+                  if (fallbackElement) fallbackElement.style.display = 'flex';
+                }}
+              />
+              <div className="profile-fallback w-full h-full bg-gray-200 dark:bg-dark-hover flex items-center justify-center" style={{ display: 'none' }}>
+                {isClub ? (
+                  <Users className="h-12 w-12 sm:h-24 sm:w-24 text-primary dark:text-dark-primary" strokeWidth={1.5} />
+                ) : (
+                  <User className="h-12 w-12 sm:h-24 sm:w-24 text-primary dark:text-dark-primary" strokeWidth={1.5} />
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full bg-gray-900 dark:bg-dark-hover flex items-center justify-center">
+              {isClub ? (
+                <Users className="h-12 w-12 sm:h-24 sm:w-24 text-white dark:text-gray-200" strokeWidth={1.5} />
               ) : (
-                <div className="w-full h-full bg-gray-900 flex items-center justify-center">
-                  {isClub ? (
-                    <Users className="h-24 w-24 text-white" strokeWidth={1.5} />
-                  ) : (
-                    <User className="h-24 w-24 text-white" strokeWidth={1.5} />
-                  )}
-                </div>
+                <User className="h-12 w-12 sm:h-24 sm:w-24 text-white dark:text-gray-200" strokeWidth={1.5} />
               )}
             </div>
+          )}
 
-            {isOwnProfile && (
-              <label className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg cursor-pointer hover:bg-white transition-colors duration-200">
-                <Camera className="h-4 w-4 text-gray-700" />
-                <input
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => handleImageUpload(e, "profilePicture")}
-                  accept="image/*"
-                />
-              </label>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex space-x-3">
-            {isOwnProfile ? (
-              isEditing ? (
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors duration-200 font-medium"
-                >
-                  Save Changes
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-6 py-2.5 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors duration-200 font-medium"
-                >
-                  Edit Profile
-                </button>
-              )
-            ) : (
-              renderConnectionButton()
-            )}
-          </div>
+          {isOwnProfile && (
+            <label className="absolute bottom-1 right-1 bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-white dark:hover:bg-dark-card transition-colors duration-200 z-20">
+              <Camera className="h-4 w-4 text-gray-700 dark:text-gray-200" />
+              <input
+                type="file"
+                className="hidden"
+                onChange={(e) => handleImageUpload(e, "profilePicture")}
+                accept="image/*"
+              />
+            </label>
+          )}
         </div>
 
-        {/* Profile Info */}
-        <div className="space-y-6">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedData.name}
-                  onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
-                  className="text-3xl font-bold text-gray-900 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/20"
-                />
-              ) : (
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold text-gray-900">{userData.name}</h1>
-                  {isStudent && isAlumni() && (
-                    <div className="flex items-center bg-primary/10 text-primary px-3 py-1 rounded-full">
-                      <GraduationCap className="h-5 w-5 mr-1" />
-                      <span className="text-sm font-medium">Alumni</span>
-                    </div>
-                  )}
-                  {isClub && (
-                    <div className="flex items-center bg-pink-100 text-pink-600 px-3 py-1 rounded-full">
-                      <Users className="h-5 w-5 mr-1" />
-                      <span className="text-sm font-medium">Club</span>
-                    </div>
-                  )}
-                  {isFaculty && (
-                    <div className="flex items-center bg-green-100 text-green-600 px-3 py-1 rounded-full">
-                      <Briefcase className="h-5 w-5 mr-1" />
-                      <span className="text-sm font-medium">Faculty</span>
-                    </div>
-                  )}
-                </div>
-              )}
+        {/* Edit Profile Button - Moved here */}
+        {isOwnProfile ? (
+          isEditing ? (
+            <div className="absolute top-2 right-2 flex space-x-2 z-20">
+              <button
+                onClick={handleSave}
+                className="px-4 py-1.5 text-sm bg-primary text-white rounded-full hover:bg-primary-dark transition-colors duration-200 font-medium shadow-lg"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-1.5 text-sm bg-gray-200 dark:bg-dark-hover text-gray-700 dark:text-dark-text-secondary rounded-full shadow-lg hover:bg-gray-300 dark:hover:bg-dark-card transition-colors duration-200"
+              >
+                Cancel
+              </button>
             </div>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="absolute top-2 right-2 p-2.5 bg-white/90 dark:bg-dark-card/90 backdrop-blur-sm text-gray-700 dark:text-gray-200 rounded-full shadow-lg hover:bg-white dark:hover:bg-dark-card transition-colors duration-200 z-20"
+              title="Edit Profile"
+            >
+              <FaEdit className="h-5 w-5" />
+            </button>
+          )
+        ) : (
+          <div className="absolute top-2 right-2 z-20">
+            {renderConnectionButton()}
+          </div>
+        )}
 
+        {/* Profile Info */}
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center gap-3 mb-2 mt-4 sm:mt-0">
             {isEditing ? (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Headline</label>
-                  <input
-                    type="text"
-                    value={editedData.headline}
-                    onChange={(e) => setEditedData({ ...editedData, headline: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Add a headline"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    value={editedData.location}
-                    onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                    placeholder="Add location"
-                  />
-                </div>
-
-                {isStudent && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                      <select
-                        value={editedData.department}
-                        onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        <option value="">Select Department</option>
-                        {departments.map(dept => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Year of Study</label>
-                      <select
-                        value={editedData.yearOfStudy}
-                        onChange={(e) => setEditedData({ ...editedData, yearOfStudy: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        <option value="">Select Year</option>
-                        {yearOfStudyOptions.map(year => (
-                          <option key={year} value={year}>{year}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {isFaculty && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                      <select
-                        value={editedData.department}
-                        onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        <option value="">Select Department</option>
-                        {departments.map(dept => (
-                          <option key={dept} value={dept}>{dept}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Designation</label>
-                      <select
-                        value={editedData.designation}
-                        onChange={(e) => setEditedData({ ...editedData, designation: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        <option value="">Select Designation</option>
-                        {facultyDesignations.map(designation => (
-                          <option key={designation} value={designation}>{designation}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
-                )}
-
-                {isClub && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Club Type</label>
-                      <select
-                        value={editedData.clubType}
-                        onChange={(e) => setEditedData({ ...editedData, clubType: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      >
-                        <option value="">Select Club Type</option>
-                        {clubTypes.map(type => (
-                          <option key={type} value={type.toLowerCase()}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Founded Date</label>
-                      <input
-                        type="date"
-                        value={editedData.foundedDate ? new Date(editedData.foundedDate).toISOString().split('T')[0] : ''}
-                        onChange={(e) => setEditedData({ ...editedData, foundedDate: e.target.value })}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
+              <input
+                type="text"
+                value={editedData.name}
+                onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
+                className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-dark-text-primary bg-gray-50 dark:bg-dark-hover border border-gray-200 dark:border-dark-border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
             ) : (
-              <div className="space-y-4">
-                <p className="text-lg text-gray-600 font-medium">{userData.headline}</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  <div className="flex items-center space-x-3 text-gray-600">
-                    <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                      <MapPin className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                      <span className="font-medium truncate">{userData.location}</span>
-                    </div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-dark-text-primary">{userData.name}</h1>
+                {isStudent && isAlumni() && (
+                  <div className="flex items-center bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light px-2 py-0.5 rounded-full text-xs sm:text-sm">
+                    <GraduationCap className="h-4 w-4 mr-1 sm:h-5 sm:w-5" />
+                    <span className="font-medium">Alumni</span>
                   </div>
-
-                  {/* Student-specific display */}
-                  {isStudent && (
-                    <>
-                      <div className="flex items-center space-x-3 text-gray-600">
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                          <GraduationCap className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium truncate">{userData.department}</span>
-                        </div>
-                      </div>
-
-                      {!isAlumni() && (
-                        <div className="flex items-center space-x-3 text-gray-600">
-                          <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                            <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                            <span className="font-medium">{userData.yearOfStudy}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center space-x-3 text-gray-600">
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                          <User className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium">ID: {studentId}</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Faculty-specific display */}
-                  {isFaculty && (
-                    <>
-                      <div className="flex items-center space-x-3 text-gray-600">
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                          <GraduationCap className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium truncate">{userData.department}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3 text-gray-600">
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                          <Briefcase className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium">{userData.designation}</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Club-specific display */}
-                  {isClub && (
-                    <>
-                      <div className="flex items-center space-x-3 text-gray-600">
-                        <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                          <Users className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                          <span className="font-medium capitalize">{userData.clubType} Club</span>
-                        </div>
-                      </div>
-
-                      {userData.foundedDate && (
-                        <div className="flex items-center space-x-3 text-gray-600">
-                          <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg w-full">
-                            <Calendar className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                            <span className="font-medium">
-                              Founded: {new Date(userData.foundedDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                )}
+                {isClub && (
+                  <div className="flex items-center bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 px-2 py-0.5 rounded-full text-xs sm:text-sm">
+                    <Users className="h-4 w-4 mr-1 sm:h-5 sm:w-5" />
+                    <span className="font-medium">Club</span>
+                  </div>
+                )}
+                {isFaculty && (
+                  <div className="flex items-center bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full text-xs sm:text-sm">
+                    <Briefcase className="h-4 w-4 mr-1 sm:h-5 sm:w-5" />
+                    <span className="font-medium">Faculty</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          {isEditing ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Headline</label>
+                <input
+                  type="text"
+                  value={editedData.headline}
+                  onChange={(e) => setEditedData({ ...editedData, headline: e.target.value })}
+                  className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary text-sm sm:text-base"
+                  placeholder="Add a headline"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Location</label>
+                <input
+                  type="text"
+                  value={editedData.location}
+                  onChange={(e) => setEditedData({ ...editedData, location: e.target.value })}
+                  className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary text-sm sm:text-base"
+                  placeholder="Add location"
+                />
+              </div>
+
+              {isStudent && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Department</label>
+                    <select
+                      value={editedData.department}
+                      onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
+                      className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Year of Study</label>
+                    <select
+                      value={editedData.yearOfStudy}
+                      onChange={(e) => setEditedData({ ...editedData, yearOfStudy: e.target.value })}
+                      className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
+                    >
+                      <option value="">Select Year</option>
+                      {yearOfStudyOptions.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {isFaculty && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Department</label>
+                    <select
+                      value={editedData.department}
+                      onChange={(e) => setEditedData({ ...editedData, department: e.target.value })}
+                      className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map(dept => (
+                        <option key={dept} value={dept}>{dept}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Designation</label>
+                    <select
+                      value={editedData.designation}
+                      onChange={(e) => setEditedData({ ...editedData, designation: e.target.value })}
+                      className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
+                    >
+                      <option value="">Select Designation</option>
+                      {facultyDesignations.map(designation => (
+                        <option key={designation} value={designation}>{designation}</option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {isClub && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Club Type</label>
+                    <select
+                      value={editedData.clubType}
+                      onChange={(e) => setEditedData({ ...editedData, clubType: e.target.value })}
+                      className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
+                    >
+                      <option value="">Select Club Type</option>
+                      {clubTypes.map(type => (
+                        <option key={type} value={type.toLowerCase()}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Founded Date</label>
+                    <input
+                      type="date"
+                      value={editedData.foundedDate ? new Date(editedData.foundedDate).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEditedData({ ...editedData, foundedDate: e.target.value })}
+                      className="w-full p-2 border border-gray-200 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4 mt-4">
+              <p className="text-lg text-gray-600 dark:text-dark-text-secondary font-medium">{userData.headline}</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                  <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                    <span className="font-medium truncate">{userData.location}</span>
+                  </div>
+                </div>
+
+                {/* Student-specific display */}
+                {isStudent && (
+                  <>
+                    <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                      <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                        <GraduationCap className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <span className="font-medium truncate">{userData.department}</span>
+                      </div>
+                    </div>
+
+                    {!isAlumni() && (
+                      <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                        <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                          <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                          <span className="font-medium">{userData.yearOfStudy}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                      <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                        <User className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <span className="font-medium">ID: {studentId}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Faculty-specific display */}
+                {isFaculty && (
+                  <>
+                    <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                      <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                        <GraduationCap className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <span className="font-medium truncate">{userData.department}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                      <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                        <Briefcase className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <span className="font-medium">{userData.designation}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Club-specific display */}
+                {isClub && (
+                  <>
+                    <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                      <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                        <Users className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                        <span className="font-medium capitalize">{userData.clubType} Club</span>
+                      </div>
+                    </div>
+
+                    {userData.foundedDate && (
+                      <div className="flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                        <div className="flex items-center space-x-2 bg-gray-50 dark:bg-dark-hover px-4 py-2 rounded-lg w-full">
+                          <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                          <span className="font-medium">
+                            Founded: {new Date(userData.foundedDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

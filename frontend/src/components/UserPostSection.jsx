@@ -180,7 +180,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
     <div className="mt-4 space-y-6">
       {/* Comment Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
           {commentCount > 0 ? `${commentCount} Comment${commentCount !== 1 ? 's' : ''}` : 'No comments yet'}
         </h3>
       </div>
@@ -199,7 +199,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 placeholder-gray-500"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-dark-hover border border-gray-200 dark:border-dark-border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-primary-light focus:border-transparent text-gray-700 dark:text-dark-text-primary placeholder-gray-500 dark:placeholder-dark-text-muted"
               disabled={isSubmitting}
             />
             <button
@@ -207,12 +207,12 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
               disabled={!newComment.trim() || isSubmitting}
               className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${
                 !newComment.trim() || isSubmitting 
-                  ? 'text-gray-400 cursor-not-allowed'
-                  : 'text-blue-500 hover:text-blue-600 cursor-pointer'
+                  ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                  : 'text-blue-500 hover:text-blue-600 dark:text-primary dark:hover:text-primary-light cursor-pointer'
               }`}
             >
               {isSubmitting ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent" />
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 dark:border-primary border-t-transparent" />
               ) : (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clipRule="evenodd" />
@@ -226,7 +226,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
       {/* Comments Loading State */}
       {isLoadingComments && (
         <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-500 dark:border-primary border-t-transparent"></div>
         </div>
       )}
 
@@ -241,26 +241,26 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                 size="medium"
               />
               <div className="flex-1">
-                <div className="bg-gray-50 rounded-2xl px-4 py-2.5 group-hover:bg-gray-100 transition duration-200">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-2xl px-4 py-2.5 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 transition duration-200">
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-gray-900 dark:text-dark-text-primary">
                         {comment.author?.name || comment.author?.username || "Unknown User"}
                       </span>
-                      <span className="ml-2 text-sm text-gray-500">
+                      <span className="ml-2 text-sm text-gray-500 dark:text-dark-text-muted">
                         {formatTimestamp(comment.createdAt)}
                       </span>
                     </div>
                     {comment.author?._id === user?._id && (
                       <button
                         onClick={() => handleDeleteComment(post._id, comment._id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-gray-400 hover:text-red-500"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                       >
                         <FaTrash className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
-                  <p className="mt-1 text-gray-700">{comment.content}</p>
+                  <p className="mt-1 text-gray-700 dark:text-dark-text-secondary">{comment.content}</p>
                 </div>
 
                 {/* Comment Actions */}
@@ -270,7 +270,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                     className={`flex items-center space-x-1 text-sm cursor-pointer ${
                       comment.likes?.includes(user?._id)
                         ? 'text-red-500'
-                        : 'text-gray-500 hover:text-red-500'
+                        : 'text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400'
                     } transition duration-200`}
                   >
                     {comment.likes?.includes(user?._id) ? (
@@ -284,7 +284,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                   {user && (
                     <button
                       onClick={() => toggleReplies(comment._id)}
-                      className="flex items-center space-x-1.5 text-sm text-gray-500 hover:text-blue-500 transition duration-200 cursor-pointer"
+                      className="flex items-center space-x-1.5 text-sm text-gray-500 hover:text-blue-500 transition duration-200 cursor-pointer dark:text-dark-text-muted dark:hover:text-primary-light"
                     >
                       <FaReply className="h-4 w-4" />
                       <span>Reply</span>
@@ -294,7 +294,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                   {(comment.replies?.length > 0) && (
                     <button
                       onClick={() => toggleReplies(comment._id)}
-                      className="text-sm text-gray-500 hover:text-blue-500 transition duration-200 cursor-pointer"
+                      className="text-sm text-gray-500 hover:text-blue-500 transition duration-200 cursor-pointer dark:text-dark-text-muted dark:hover:text-primary-light"
                     >
                       {showReplies[comment._id] ? 'Hide' : 'Show'} {comment.replies.length} {comment.replies.length === 1 ? 'reply' : 'replies'}
                     </button>
@@ -319,12 +319,12 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                             [comment._id]: e.target.value
                           }))}
                           placeholder="Write a reply..."
-                          className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-700 placeholder-gray-500"
+                          className="w-full px-3 py-1.5 bg-gray-50 dark:bg-dark-hover border border-gray-200 dark:border-dark-border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-primary-light focus:border-transparent text-sm text-gray-700 dark:text-dark-text-primary placeholder-gray-500 dark:placeholder-dark-text-muted"
                           onKeyPress={(e) => e.key === 'Enter' && handleReplySubmit(comment._id)}
                         />
                         {isSubmittingReply[comment._id] && (
                           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 dark:border-primary border-t-transparent" />
                           </div>
                         )}
                       </div>
@@ -344,26 +344,26 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                             size="small"
                           />
                           <div className="flex-1">
-                            <div className="bg-gray-50 rounded-2xl px-3 py-2 group-hover:bg-gray-100 transition duration-200">
+                            <div className="bg-gray-50 dark:bg-gray-700 rounded-2xl px-3 py-2 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 transition duration-200">
                               <div className="flex items-start justify-between">
                                 <div>
-                                  <span className="font-medium text-gray-900">
+                                  <span className="font-medium text-gray-900 dark:text-dark-text-primary">
                                     {reply.author?.name || reply.author?.username || "Unknown User"}
                                   </span>
-                                  <span className="ml-2 text-sm text-gray-500">
+                                  <span className="ml-2 text-sm text-gray-500 dark:text-dark-text-muted">
                                     {formatTimestamp(reply.createdAt)}
                                   </span>
                                 </div>
                                 {reply.author?._id === user?._id && (
                                   <button
                                     onClick={() => handleDeleteReply(comment._id, reply._id)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-gray-400 hover:text-red-500"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
                                   >
                                     <FaTrash className="h-3 w-3" />
                                   </button>
                                 )}
                               </div>
-                              <p className="mt-1 text-sm text-gray-700">{reply.content}</p>
+                              <p className="mt-1 text-sm text-gray-700 dark:text-dark-text-secondary">{reply.content}</p>
                             </div>
 
                             {/* Reply Actions */}
@@ -373,7 +373,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
                                 className={`flex items-center space-x-1 text-xs cursor-pointer ${
                                   reply.likes?.includes(user?._id)
                                     ? 'text-red-500'
-                                    : 'text-gray-500 hover:text-red-500'
+                                    : 'text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400'
                                 } transition duration-200`}
                               >
                                 {reply.likes?.includes(user?._id) ? (
@@ -399,7 +399,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
   );
 };
 
-const UserPostSection = ({ username }) => {
+const UserPostSection = ({ username, accountType, isOwnProfile }) => {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -420,6 +420,7 @@ const UserPostSection = ({ username }) => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyContent, setReplyContent] = useState('');
   const [showRepliesFor, setShowRepliesFor] = useState(new Set());
+  const [showComments, setShowComments] = useState({});
   const navigate = useNavigate();
 
   const fetchPosts = useCallback(async () => {
@@ -481,33 +482,34 @@ const UserPostSection = ({ username }) => {
 
   const handleDelete = (postId) => {
     toast.custom((t) => (
-      <div className="bg-white rounded-lg shadow-lg p-4 w-80 border border-gray-200 text-sm text-gray-800">
+      <div className="bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text-primary p-4 rounded-lg shadow-lg">
         <p className="mb-4">Are you sure you want to delete this post?</p>
         <div className="flex justify-end space-x-3">
           <button
+            className="px-4 py-1.5 rounded-md text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-hover"
             onClick={() => toast.dismiss(t.id)}
-            className="px-4 py-1.5 rounded-md text-gray-700 hover:bg-gray-100 transition"
           >
             Cancel
           </button>
           <button
+            className="px-4 py-1.5 rounded-md bg-red-500 text-white hover:bg-red-600"
             onClick={async () => {
-              toast.dismiss(t.id);
               try {
                 await deletePost(postId);
-                toast.success('Post deleted successfully');
                 setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+                toast.success('Post deleted successfully');
+                toast.dismiss(t.id);
               } catch (error) {
                 toast.error('Failed to delete post');
+                toast.dismiss(t.id);
               }
             }}
-            className="px-4 py-1.5 rounded-md text-white bg-red-500 hover:bg-red-600 transition"
           >
             Delete
           </button>
         </div>
       </div>
-    ));
+    ), { duration: Infinity });
   };
 
   const handleEditClick = (post) => {
@@ -691,15 +693,15 @@ const UserPostSection = ({ username }) => {
     const confirmDelete = () => {
       return new Promise((resolve) => {
         toast.custom((t) => (
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <p className="text-gray-800 mb-4">Are you sure you want to delete this comment?</p>
+          <div className="bg-white dark:bg-dark-card p-4 rounded-lg shadow-lg">
+            <p className="text-gray-800 dark:text-dark-text-primary mb-4">Are you sure you want to delete this comment?</p>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => {
                   toast.dismiss(t.id);
                   resolve(false);
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary"
               >
                 Cancel
               </button>
@@ -749,15 +751,15 @@ const UserPostSection = ({ username }) => {
     const confirmDelete = () => {
       return new Promise((resolve) => {
         toast.custom((t) => (
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <p className="text-gray-800 mb-4">Are you sure you want to delete this reply?</p>
+          <div className="bg-white dark:bg-dark-card p-4 rounded-lg shadow-lg">
+            <p className="text-gray-800 dark:text-dark-text-primary mb-4">Are you sure you want to delete this reply?</p>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => {
                   toast.dismiss(t.id);
                   resolve(false);
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary"
               >
                 Cancel
               </button>
@@ -847,25 +849,25 @@ const UserPostSection = ({ username }) => {
   ), [replyContent, user.profilePicture, user.name, handleReplyContentChange, handleReply]);
 
   return (
-    <div className="p-4 border rounded-lg shadow-md bg-gray-20">
+    <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Posts</h2>
-        {user && !showPostForm && (
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-text-primary">Posts</h2>
+        {isOwnProfile && user && !showPostForm && (
           <div 
-            className="flex items-center space-x-1 hover:bg-blue-100 px-3 py-1.5 rounded-md cursor-pointer transition"
+            className="flex items-center space-x-1 hover:bg-blue-100 dark:hover:bg-blue-900/30 px-3 py-1.5 rounded-md cursor-pointer transition"
             onClick={() => setShowPostForm(true)}
           >
-            <Plus className="text-blue-600" size={16} />
-            <p className="text-blue-600 text-sm">Add Post</p>
+            <Plus className="text-blue-600 dark:text-blue-400" size={16} />
+            <p className="text-blue-600 dark:text-blue-400 text-sm">Add Post</p>
           </div>
         )}
       </div>
       
       {/* Post Creation Form */}
-      {user && showPostForm && (
-        <div className="bg-white p-4 rounded-lg shadow mb-4 border border-gray-200">
+      {isOwnProfile && user && showPostForm && (
+        <div className="bg-white dark:bg-dark-card p-4 rounded-lg shadow mb-4 border border-gray-200 dark:border-dark-border">
           <textarea
-            className="w-full border rounded p-2 mb-3"
+            className="w-full border border-gray-200 dark:border-dark-border rounded p-2 mb-3 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
             placeholder="What's on your mind?"
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
@@ -874,7 +876,7 @@ const UserPostSection = ({ username }) => {
           
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <label className="cursor-pointer flex items-center text-gray-600 hover:text-gray-800">
+              <label className="cursor-pointer flex items-center text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary">
                 <span className="mr-2">Add Photo</span>
                 <input
                   type="file"
@@ -884,7 +886,7 @@ const UserPostSection = ({ username }) => {
                 />
               </label>
               {newPostImage && (
-                <span className="ml-2 text-sm text-gray-500">{newPostImage.name}</span>
+                <span className="ml-2 text-sm text-gray-500 dark:text-dark-text-muted">{newPostImage.name}</span>
               )}
             </div>
             
@@ -895,13 +897,13 @@ const UserPostSection = ({ username }) => {
                   setNewPostContent('');
                   setNewPostImage(null);
                 }}
-                className="px-4 py-1.5 rounded-md text-gray-700 hover:bg-gray-100 transition"
+                className="px-4 py-1.5 rounded-md text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-hover"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreatePost}
-                className="px-4 py-1.5 rounded-md text-white bg-blue-500 hover:bg-blue-600 transition"
+                className="px-4 py-1.5 rounded-md text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
               >
                 Post
               </button>
@@ -911,24 +913,24 @@ const UserPostSection = ({ username }) => {
       )}
       
       {/* Posts List */}
-      <div className="space-y-6 p-4">
+      <div className="space-y-6">
         {loading && (
           <div className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400"></div>
           </div>
         )}
     
         {!loading && posts.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-dark-text-muted">
             <p>No posts yet.</p>
-            {user && (
+            {isOwnProfile && user && (
               <p className="mt-2 text-sm">Be the first one to post something!</p>
             )}
           </div>
         )}
   
         {posts.map((post) => (
-          <div key={post._id} className="bg-white shadow-md rounded-lg p-4">
+          <div key={post._id} className="bg-white dark:bg-dark-card shadow rounded-lg p-4 border border-gray-200 dark:border-dark-border">
             {/* Post Header */}
             <div className="flex items-center mb-2">
               <ProfileImage 
@@ -938,113 +940,103 @@ const UserPostSection = ({ username }) => {
                 className="mt-0.5"
               />
               <div className="ml-3">
-                <p className="font-semibold text-gray-800">{post.author.name || post.author.username || "Unknown User"}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-semibold text-gray-800 dark:text-dark-text-primary">{post.author.name || post.author.username || "Unknown User"}</p>
+                <p className="text-sm text-gray-500 dark:text-dark-text-muted">
                   {formatTimestamp(post.createdAt)}
                 </p>
               </div>
               {post.author._id === user?._id && (
-                <div className="ml-auto flex items-center space-x-3 text-gray-600">
-                  <button onClick={() => handleEditClick(post)}>
-                    <FaEdit className="w-4 h-4 hover:text-blue-500 transition-colors" />
+                <div className="ml-auto flex items-center space-x-3 text-gray-600 dark:text-dark-text-secondary">
+                  <button
+                    onClick={() => handleEditClick(post)}
+                    className="hover:text-blue-500 dark:hover:text-blue-400"
+                  >
+                    <FaEdit />
                   </button>
-                  <button onClick={() => handleDelete(post._id)}>
-                    <FaTrash className="w-4 h-4 hover:text-red-500 transition-colors" />
-                  </button>
-                  <button onClick={() => handleShare(post._id)}>
-                    <FaShareAlt className="w-4 h-4 hover:text-blue-500 transition-colors" />
+                  <button
+                    onClick={() => handleDelete(post._id)}
+                    className="hover:text-red-500 dark:hover:text-red-400"
+                  >
+                    <FaTrash />
                   </button>
                 </div>
               )}
             </div>
-        
-            {/* Post Content or Edit Form */}
+
+            {/* Post Content */}
             {editingPostId === post._id ? (
-              <div className="mb-4">
+              <div className="mt-2">
                 <textarea
-                  className="w-full border rounded p-2 mb-3"
+                  className="w-full border border-gray-200 dark:border-dark-border rounded p-2 mb-3 bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary"
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   rows={3}
                 />
-                
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <label className="cursor-pointer flex items-center text-gray-600 hover:text-gray-800">
-                      <span className="mr-2">Change Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setEditImage(e.target.files[0])}
-                        className="hidden"
-                      />
-                    </label>
-                    {editImage && (
-                      <span className="ml-2 text-sm text-gray-500">{editImage.name}</span>
-                    )}
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={handleCancelEdit}
-                      className="px-4 py-1.5 rounded-md text-gray-700 hover:bg-gray-100 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => handleEditSubmit(post._id)}
-                      className="px-4 py-1.5 rounded-md text-white bg-blue-500 hover:bg-blue-600 transition"
-                    >
-                      Save
-                    </button>
-                  </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={handleCancelEdit}
+                    className="px-4 py-1.5 rounded-md text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-hover"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleEditSubmit(post._id)}
+                    className="px-4 py-1.5 rounded-md text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                  >
+                    Save
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="mb-4">
-                <p className="text-gray-800 whitespace-pre-wrap break-words">{post.content}</p>
+              <>
+                <p className="text-gray-800 dark:text-dark-text-primary mb-3">{post.content}</p>
                 {post.image && (
                   <img
                     src={post.image}
-                    alt="post content"
-                    className="mt-3 w-full rounded-lg max-h-96 object-cover"
+                    alt="Post"
+                    className="w-full rounded-lg mb-3"
                   />
                 )}
-              </div>
+              </>
             )}
 
-            {/* Post Stats */}
-            <div className="flex items-center mb-4">
-              <button 
-                className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 ${
-                  isLiking ? 'opacity-70 cursor-wait' : 'hover:bg-gray-100 active:scale-95'
-                } ${
-                  post.likes?.includes(user?._id) 
-                    ? 'text-red-500' 
-                    : 'text-gray-500'
-                }`} 
+            {/* Post Actions */}
+            <div className="flex items-center space-x-4 mt-3 pt-3 border-t border-gray-200 dark:border-dark-border">
+              <button
                 onClick={() => handleLike(post._id)}
+                className={`flex items-center space-x-1 ${
+                  post.likes?.includes(user?._id)
+                    ? 'text-red-500 dark:text-red-400'
+                    : 'text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400'
+                }`}
                 disabled={isLiking}
               >
-                {post.likes?.includes(user?._id) ? (
-                  <FaHeart className="mr-2 text-red-500" />
-                ) : (
-                  <FaRegHeart className="mr-2" />
-                )}
-                <span>{post.likes?.length || 0} {post.likes?.length === 1 ? 'Like' : 'Likes'}</span>
+                {post.likes?.includes(user?._id) ? <FaHeart /> : <FaRegHeart />}
+                <span>{post.likes?.length || 0}</span>
+              </button>
+              <button
+                onClick={() => setShowComments(prev => ({ ...prev, [post._id]: !prev[post._id] }))}
+                className="flex items-center space-x-1 text-gray-500 dark:text-dark-text-muted hover:text-blue-500 dark:hover:text-blue-400"
+              >
+                <FaRegComment />
+                <span>{post.comments?.length || 0}</span>
+              </button>
+              <button
+                onClick={() => handleShare(post._id)}
+                className="flex items-center space-x-1 text-gray-500 dark:text-dark-text-muted hover:text-green-500 dark:hover:text-green-400"
+              >
+                <FaShareAlt />
               </button>
             </div>
 
-            {/* New Comment Section Component */}
-            <CommentSection 
-              post={post} 
-              user={user} 
-              onCommentAdded={() => {
-                // This function is now largely for backward compatibility
-                // Most comment operations are handled inside the CommentSection component
-                fetchPosts();
-              }}
-            />
+            {/* Comments Section */}
+            {showComments[post._id] && (
+              <CommentSection
+                post={post}
+                user={user}
+                onCommentAdded={() => fetchPosts()}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -1052,64 +1044,61 @@ const UserPostSection = ({ username }) => {
       {/* Share Dialog */}
       {showShareDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Share Post</h3>
-            
+          <div className="bg-white dark:bg-dark-card rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-dark-text-primary">Share Post</h3>
             {isLoadingConnections ? (
-              <p className="text-center">Loading connections...</p>
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 dark:border-blue-400"></div>
+              </div>
             ) : (
-              <>
-                <div className="max-h-60 overflow-y-auto mb-4">
+              <div className="space-y-4">
+                <div className="max-h-60 overflow-y-auto">
                   {connections.map((connection) => (
-                    <div key={connection._id} className="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
-                      <div className="flex items-center">
-                        <img
-                          src={connection.profilePicture || '/default-avatar.png'}
-                          alt={connection.name}
-                          className="w-8 h-8 rounded-full mr-3 object-cover"
-                        />
-                        <span>{connection.name}</span>
-                      </div>
+                    <div
+                      key={connection._id}
+                      className="flex items-center space-x-3 p-2 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-lg cursor-pointer"
+                      onClick={() => {
+                        setSelectedConnections(prev =>
+                          prev.includes(connection._id)
+                            ? prev.filter(id => id !== connection._id)
+                            : [...prev, connection._id]
+                        );
+                      }}
+                    >
                       <input
                         type="checkbox"
                         checked={selectedConnections.includes(connection._id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedConnections([...selectedConnections, connection._id]);
-                          } else {
-                            setSelectedConnections(selectedConnections.filter(id => id !== connection._id));
-                          }
-                        }}
-                        className="h-4 w-4 text-blue-600 rounded"
+                        onChange={() => {}}
+                        className="rounded text-blue-500 dark:text-blue-400"
                       />
+                      <ProfileImage
+                        src={connection.profilePicture}
+                        alt={connection.name}
+                        size="small"
+                      />
+                      <span className="text-gray-900 dark:text-dark-text-primary">{connection.name}</span>
                     </div>
                   ))}
                 </div>
-                
-                <div className="flex justify-between pt-4 border-t">
+                <div className="flex justify-end space-x-3">
                   <button
-                    onClick={handleCopyLink}
-                    className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded"
+                    onClick={() => {
+                      setShowShareDialog(false);
+                      setSelectedConnections([]);
+                    }}
+                    className="px-4 py-2 text-gray-700 dark:text-dark-text-secondary hover:bg-gray-200 dark:hover:bg-dark-hover rounded-lg"
                   >
-                    Copy Link
+                    Cancel
                   </button>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setShowShareDialog(false)}
-                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleShareToConnections}
-                      disabled={isSharing || selectedConnections.length === 0}
-                      className={`px-4 py-2 rounded ${selectedConnections.length === 0 ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
-                    >
-                      {isSharing ? 'Sharing...' : 'Share'}
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => handleShareToConnections(posts[0]._id)}
+                    disabled={selectedConnections.length === 0 || isSharing}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isSharing ? 'Sharing...' : 'Share'}
+                  </button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

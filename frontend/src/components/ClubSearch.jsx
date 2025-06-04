@@ -90,7 +90,7 @@ const ClubSearch = ({ onSelectClub, selectedClub, disabled = false }) => {
 
     return (
         <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary">
                 Organizing Club
             </label>
             <div className="relative">
@@ -99,7 +99,7 @@ const ClubSearch = ({ onSelectClub, selectedClub, disabled = false }) => {
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     placeholder="Search for clubs you're a member of..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-dark-border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={disabled || user?.accountType === 'club'}
                 />
                 {loading && (
@@ -111,7 +111,7 @@ const ClubSearch = ({ onSelectClub, selectedClub, disabled = false }) => {
 
             {/* Search Results Dropdown */}
             {searchResults.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-md shadow-lg max-h-60 overflow-auto">
                     {searchResults.map(club => (
                         <button
                             key={club._id}
@@ -121,7 +121,7 @@ const ClubSearch = ({ onSelectClub, selectedClub, disabled = false }) => {
                                 setSearchQuery(club.name);
                                 setSearchResults([]);
                             }}
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-3"
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-dark-hover flex items-center space-x-3"
                         >
                             <img
                                 src={club.profilePicture}
@@ -129,8 +129,8 @@ const ClubSearch = ({ onSelectClub, selectedClub, disabled = false }) => {
                                 className="w-8 h-8 rounded-full"
                             />
                             <div>
-                                <div className="font-medium">{club.name}</div>
-                                <div className="text-sm text-gray-500">{club.headline}</div>
+                                <div className="font-medium text-gray-900 dark:text-dark-text-primary">{club.name}</div>
+                                <div className="text-sm text-gray-500 dark:text-dark-text-secondary">{club.headline}</div>
                             </div>
                         </button>
                     ))}
@@ -139,15 +139,15 @@ const ClubSearch = ({ onSelectClub, selectedClub, disabled = false }) => {
 
             {/* Selected Club Display */}
             {selectedClub && !user?.accountType === 'club' && (
-                <div className="mt-2 p-3 bg-gray-50 rounded-lg flex items-center space-x-3">
+                <div className="mt-2 p-3 bg-gray-50 dark:bg-dark-hover rounded-lg flex items-center space-x-3">
                     <img
                         src={selectedClub.profilePicture}
                         alt={selectedClub.name}
                         className="w-10 h-10 rounded-full"
                     />
                     <div>
-                        <div className="font-medium">{selectedClub.name}</div>
-                        <div className="text-sm text-gray-500">{selectedClub.headline}</div>
+                        <div className="font-medium text-gray-900 dark:text-dark-text-primary">{selectedClub.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-dark-text-secondary">{selectedClub.headline}</div>
                     </div>
                     {!disabled && (
                         <button

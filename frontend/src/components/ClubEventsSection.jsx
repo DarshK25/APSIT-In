@@ -76,39 +76,24 @@ const ClubEventsSection = ({ userData, isOwnProfile, onSave }) => {
   const fetchClubEvents = async () => {
     try {
       if (userData._id) {
-        // First try to fetch events specific to this club
+        // Try to get all events and filter them
         try {
-          if (typeof eventService.getOrganizedEvents === 'function') {
-            console.log("Fetching organized events using API");
-            const response = await eventService.getOrganizedEvents();
-            if (response.success && response.data) {
-              // Filter events for this specific club
-              const clubEvents = response.data.filter(
-                event => event.organizer?._id === userData._id
-              );
-              setEvents(clubEvents);
-              return; // Early return if successful
-            }
-          } else {
-            console.log("getOrganizedEvents function not available, using alternative method");
-          }
-        } catch (apiError) {
-          console.warn("Could not fetch events using getOrganizedEvents, falling back to alternative method", apiError);
-        }
-        
-        // Fallback: Try to get all events and filter them
-        try {
-          console.log("Fetching all events as fallback");
+          console.log("Fetching all events");
           const allEventsResponse = await eventService.getAllEvents();
           if (allEventsResponse.success && allEventsResponse.data) {
-            const clubEvents = allEventsResponse.data.filter(
-              event => event.organizer?._id === userData._id
-            );
+            // Filter events for this specific club
+            const clubEvents = allEventsResponse.data.filter(event => {
+              // Check both string and object ID formats
+              const organizerId = event.organizer?._id || event.organizer;
+              return organizerId === userData._id || 
+                     (typeof organizerId === 'object' && organizerId.toString() === userData._id);
+            });
+            console.log("Filtered club events:", clubEvents);
             setEvents(clubEvents);
             return;
           }
-        } catch (fallbackError) {
-          console.warn("Fallback event fetch also failed", fallbackError);
+        } catch (error) {
+          console.warn("Error fetching events:", error);
         }
       }
       

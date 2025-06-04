@@ -1,6 +1,6 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
-import { getSuggestedConnections, getPublicProfile, updateProfile, searchUsers, getUnreadCounts, getUserPosts, getUsersByBatch } from "../controllers/user.controller.js";
+import { getSuggestedConnections, getPublicProfile, updateProfile, searchUsers, getUnreadCounts, getUserPosts, getUsersByBatch, addCertification, updateCertification, deleteCertification } from "../controllers/user.controller.js";
 const router = express.Router();
 
 router.get("/unread-counts", protectRoute, getUnreadCounts);
@@ -11,5 +11,10 @@ router.post("/batch", protectRoute, getUsersByBatch);
 router.get("/:username", protectRoute, getPublicProfile);
 router.put("/profile", protectRoute, updateProfile);
 router.get("/:username/posts", protectRoute, getUserPosts);
+
+// Certification routes
+router.post("/certifications", protectRoute, addCertification);
+router.put("/certifications/:certificationId", protectRoute, updateCertification);
+router.delete("/certifications/:certificationId", protectRoute, deleteCertification);
 
 export default router;

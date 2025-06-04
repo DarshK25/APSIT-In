@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { updateUserProfile, getUserProfile } from '../api/userService';
 import { GraduationCap, Briefcase, Users } from 'lucide-react';
+import { Dialog, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 
 const OnboardingToast = () => {
     const { user, setUser } = useAuth();
@@ -189,160 +190,175 @@ const OnboardingToast = () => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <div className="flex items-center mb-4">
-                    {accountType === 'student' && (
-                        <GraduationCap className="h-6 w-6 text-blue-600 mr-2" />
-                    )}
-                    {accountType === 'faculty' && (
-                        <Briefcase className="h-6 w-6 text-green-600 mr-2" />
-                    )}
-                    {accountType === 'club' && (
-                        <Users className="h-6 w-6 text-purple-600 mr-2" />
-                    )}
-                    <h2 className="text-xl font-semibold">
-                        Complete Your {accountType.charAt(0).toUpperCase() + accountType.slice(1)} Profile
-                    </h2>
-                </div>
-                <p className="text-gray-600 mb-6">
-                    {accountType === 'student' 
-                        ? 'Please provide your educational details to continue.'
-                        : accountType === 'faculty'
-                            ? 'Please provide your professional details to continue.'
-                            : 'Please provide your club details to continue.'}
-                </p>
-                
-                <form onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        {/* Common field for students and faculty */}
-                        {(accountType === 'student' || accountType === 'faculty') && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Department
-                                </label>
-                                <select
-                                    value={formData.department}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                                    required={accountType === 'student' || accountType === 'faculty'}
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">Select Department</option>
-                                    {departments.map(dept => (
-                                        <option key={dept} value={dept}>{dept}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Student-specific fields */}
-                        {accountType === 'student' && (
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Start Year
-                                    </label>
-                                    <select
-                                        value={formData.startYear}
-                                        onChange={(e) => setFormData(prev => ({
-                                            ...prev,
-                                            startYear: parseInt(e.target.value),
-                                            graduationYear: parseInt(e.target.value) + 4
-                                        }))}
-                                        required
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        {Array.from({ length: 5 }, (_, i) => currentYear - 3 + i).map(year => (
-                                            <option key={year} value={year}>{year}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Graduation Year
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={formData.graduationYear}
-                                        readOnly
-                                        className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Faculty-specific field */}
-                        {accountType === 'faculty' && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Designation
-                                </label>
-                                <select
-                                    value={formData.designation}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, designation: e.target.value }))}
-                                    required
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <option value="">Select Designation</option>
-                                    {facultyDesignations.map(designation => (
-                                        <option key={designation} value={designation}>{designation}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Club-specific fields */}
-                        {accountType === 'club' && (
-                            <>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Club Type
-                                    </label>
-                                    <select
-                                        value={formData.clubType}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, clubType: e.target.value }))}
-                                        required
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <option value="">Select Club Type</option>
-                                        {clubTypes.map(type => (
-                                            <option key={type} value={type}>
-                                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Founded Date
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={formData.foundedDate}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, foundedDate: e.target.value }))}
-                                        max={new Date().toISOString().split('T')[0]}
-                                        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    />
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    <button
-                        type="submit"
-                        className={`w-full mt-6 px-4 py-2 rounded-md text-white transition-colors duration-200 ${
-                            accountType === 'student' ? 'bg-blue-600 hover:bg-blue-700' :
-                            accountType === 'faculty' ? 'bg-green-600 hover:bg-green-700' :
-                            'bg-purple-600 hover:bg-purple-700'
-                        }`}
+        <Transition
+            show={isOpen}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+        >
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="flex min-h-full items-center justify-center p-4 text-center">
+                    <TransitionChild
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0 scale-95"
+                        enterTo="opacity-100 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-95"
                     >
-                        Save and Continue
-                    </button>
-                </form>
+                        <div className="w-full max-w-md transform overflow-hidden rounded-lg bg-white dark:bg-dark-card p-6 text-left align-middle shadow-xl transition-all">
+                            <DialogTitle
+                                as="h3"
+                                className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
+                            >
+                                Complete Your {accountType.charAt(0).toUpperCase() + accountType.slice(1)} Profile
+                            </DialogTitle>
+                            <div className="mt-2">
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                    {accountType === 'student' 
+                                        ? 'Please provide your educational details to continue.'
+                                        : accountType === 'faculty'
+                                            ? 'Please provide your professional details to continue.'
+                                            : 'Please provide your club details to continue.'}
+                                </p>
+                            </div>
+                            
+                            <form onSubmit={handleSubmit}>
+                                <div className="space-y-4">
+                                    {/* Common field for students and faculty */}
+                                    {(accountType === 'student' || accountType === 'faculty') && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Department
+                                            </label>
+                                            <select
+                                                value={formData.department}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                                                required={accountType === 'student' || accountType === 'faculty'}
+                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Select Department</option>
+                                                {departments.map(dept => (
+                                                    <option key={dept} value={dept}>{dept}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {/* Student-specific fields */}
+                                    {accountType === 'student' && (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Start Year
+                                                </label>
+                                                <select
+                                                    value={formData.startYear}
+                                                    onChange={(e) => setFormData(prev => ({
+                                                        ...prev,
+                                                        startYear: parseInt(e.target.value),
+                                                        graduationYear: parseInt(e.target.value) + 4
+                                                    }))}
+                                                    required
+                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    {Array.from({ length: 5 }, (_, i) => currentYear - 3 + i).map(year => (
+                                                        <option key={year} value={year}>{year}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Graduation Year
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.graduationYear}
+                                                    readOnly
+                                                    className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Faculty-specific field */}
+                                    {accountType === 'faculty' && (
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Designation
+                                            </label>
+                                            <select
+                                                value={formData.designation}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, designation: e.target.value }))}
+                                                required
+                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="">Select Designation</option>
+                                                {facultyDesignations.map(designation => (
+                                                    <option key={designation} value={designation}>{designation}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {/* Club-specific fields */}
+                                    {accountType === 'club' && (
+                                        <>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Club Type
+                                                </label>
+                                                <select
+                                                    value={formData.clubType}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, clubType: e.target.value }))}
+                                                    required
+                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                >
+                                                    <option value="">Select Club Type</option>
+                                                    {clubTypes.map(type => (
+                                                        <option key={type} value={type}>
+                                                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Founded Date
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.foundedDate}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, foundedDate: e.target.value }))}
+                                                    max={new Date().toISOString().split('T')[0]}
+                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className={`w-full mt-6 px-4 py-2 rounded-md text-white transition-colors duration-200 ${
+                                        accountType === 'student' ? 'bg-blue-600 hover:bg-blue-700' :
+                                        accountType === 'faculty' ? 'bg-green-600 hover:bg-green-700' :
+                                        'bg-purple-600 hover:bg-purple-700'
+                                    }`}
+                                >
+                                    Save and Continue
+                                </button>
+                            </form>
+                        </div>
+                    </TransitionChild>
+                </div>
             </div>
-        </div>
+        </Transition>
     );
 };
 

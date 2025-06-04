@@ -18,6 +18,7 @@ const Navbar = ({ children }) => {
         unreadEventsCount: 0
     });
     const [failedSearchImages, setFailedSearchImages] = useState({});
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Function to fetch unread counts
     const fetchUnreadCounts = useCallback(async () => {
@@ -121,16 +122,20 @@ const Navbar = ({ children }) => {
         setFailedSearchImages(prev => ({ ...prev, [userId]: true }));
     };
 
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen);
+    };
+
     return (
-        <nav className='bg-white shadow-md sticky top-0 z-10'>
+        <nav className='bg-white dark:bg-dark-card shadow-md sticky top-0 z-10 border-b border-gray-200 dark:border-dark-border'>
             <div className='max-w-7xl mx-auto px-4'>
                 <div className='flex justify-between items-center py-3'>
                     <div className='flex items-center space-x-4 flex-grow'>
-                        <Link to='/'>
+                        <Link to='/' onClick={() => setIsMobileMenuOpen(false)}>
                             <img className='h-8 rounded' src='/ApsitINlogo.avif' alt='Apsit-In' />
                         </Link>
                         {user && (
-                            <div className="relative flex-grow max-w-2xl">
+                            <div className="relative flex-grow max-w-2xl hidden md:block">
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -138,14 +143,14 @@ const Navbar = ({ children }) => {
                                         value={searchQuery}
                                         onChange={(e) => handleSearch(e.target.value)}
                                         onBlur={handleClickOutside}
-                                        className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                        className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:border-blue-500 dark:focus:border-dark-primary focus:ring-1 focus:ring-blue-500 dark:focus:ring-dark-primary"
                                     />
-                                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-dark-text-muted" />
                                 </div>
                                 {showDropdown && (searchResults.length > 0 || isSearching) && (
-                                    <div className="absolute mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 max-h-96 overflow-y-auto z-50">
+                                    <div className="absolute mt-2 w-full bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border max-h-96 overflow-y-auto z-50">
                                         {isSearching ? (
-                                            <div className="p-4 text-center text-gray-500">
+                                            <div className="p-4 text-center text-gray-500 dark:text-dark-text-muted">
                                                 Searching...
                                             </div>
                                         ) : (
@@ -159,7 +164,7 @@ const Navbar = ({ children }) => {
                                                         setSearchQuery("");
                                                     }}
                                                 >
-                                                    <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                                                    <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors">
                                                         <div className="flex-shrink-0">
                                                             {result.profilePicture && !failedSearchImages[result._id] ? (
                                                                 <img
@@ -169,7 +174,7 @@ const Navbar = ({ children }) => {
                                                                     onError={() => handleSearchImageError(result._id)}
                                                                 />
                                                             ) : (
-                                                                <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center">
+                                                                <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
                                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                                         <circle cx="12" cy="7" r="4" />
@@ -179,16 +184,16 @@ const Navbar = ({ children }) => {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="font-medium text-gray-900 group-hover:text-primary transition-colors">{result.name}</div>
+                                                                <div className="font-medium text-gray-900 dark:text-dark-text-primary group-hover:text-primary dark:group-hover:text-primary-light transition-colors">{result.name}</div>
                                                                 {result.isAlumni && (
-                                                                    <div className="flex items-center bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                                                    <div className="flex items-center bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light px-2 py-0.5 rounded-full">
                                                                         <GraduationCap className="h-3 w-3 mr-1" />
                                                                         <span className="text-xs font-medium">Alumni</span>
                                                                     </div>
                                                                 )}
                                                             </div>
-                                                            <div className="text-sm text-gray-500">@{result.username}</div>
-                                                            <div className="text-xs text-gray-400 mt-0.5">
+                                                            <div className="text-sm text-gray-500 dark:text-dark-text-muted">@{result.username}</div>
+                                                            <div className="text-xs text-gray-400 dark:text-dark-text-muted mt-0.5">
                                                                 {result.department} • {result.yearOfStudy}
                                                             </div>
                                                         </div>
@@ -201,14 +206,14 @@ const Navbar = ({ children }) => {
                             </div>
                         )}
                     </div>
-                    <div className='flex items-center gap-4 md:gap-6'>
+                    <div className='hidden md:flex items-center gap-4 md:gap-6'>
                         {user ? (
                             <>
-                                <Link to='/home' className='text-neutral flex flex-col items-center'>
+                                <Link to='/home' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
                                     <Home size={20} />
                                     <span className='text-xs hidden md:block'>Home</span>
                                 </Link>
-                                <Link to='/network' className='text-neutral flex flex-col items-center relative'>
+                                <Link to='/network' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
                                     <Users size={20} />
                                     <span className='text-xs hidden md:block'>My Network</span>
                                     {unreadCounts.unreadConnectionRequestsCount > 0 && (
@@ -217,7 +222,7 @@ const Navbar = ({ children }) => {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to='/messages' className='text-neutral flex flex-col items-center relative'>
+                                <Link to='/messages' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
                                     <MessageSquare size={20} />
                                     <span className='text-xs hidden md:block'>Messages</span>
                                     {unreadCounts.unreadMessagesCount > 0 && (
@@ -226,7 +231,7 @@ const Navbar = ({ children }) => {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to='/events' className='text-neutral flex flex-col items-center relative'>
+                                <Link to='/events' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
                                     <Calendar size={20} />
                                     <span className='text-xs hidden md:block'>Events</span>
                                     {unreadCounts.unreadEventsCount > 0 && (
@@ -235,7 +240,7 @@ const Navbar = ({ children }) => {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to='/notifications' className='text-neutral flex flex-col items-center relative'>
+                                <Link to='/notifications' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
                                     <Bell size={20} />
                                     <span className='text-xs hidden md:block'>Notifications</span>
                                     {unreadCounts.unreadNotificationCount > 0 && (
@@ -244,35 +249,117 @@ const Navbar = ({ children }) => {
                                         </span>
                                     )}
                                 </Link>
-                                <Link to={`/profile/${user.username}`} className='text-neutral flex flex-col items-center'>
+                                <Link to={`/profile/${user.username}`} className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
                                     <User size={20} />
                                     <span className='text-xs hidden md:block'>Me</span>
                                 </Link>
-                                <Link to={`/settings`} className='text-neutral flex flex-col items-center'>
+                                <Link to='/settings' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
                                     <Settings size={20} />
                                     <span className='text-xs hidden md:block'>Settings</span>
                                 </Link>
-                                <button
-                                    className='flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-800'
-                                    onClick={handleLogout}
-                                >
+                                <button onClick={handleLogout} className='text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500 flex flex-col items-center'>
                                     <LogOut size={20} />
-                                    <span className='hidden md:inline'>Logout</span>
+                                    <span className='text-xs hidden md:block'>Logout</span>
                                 </button>
                             </>
                         ) : (
                             <>
-                                <Link to='/login' className='btn btn-ghost'>
-                                    Sign In
+                                <Link to='/login' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
+                                    <span>Login</span>
                                 </Link>
-                                <Link to='/signup' className='btn btn-primary'>
-                                    Join now
+                                <Link to='/signup' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
+                                    <span>Signup</span>
                                 </Link>
                             </>
                         )}
                     </div>
+
+                    {/* Mobile menu button */}
+                    <div className="md:hidden flex items-center">
+                        <button onClick={toggleMobileMenu} className="outline-none mobile-menu-button text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary">
+                            <svg
+                                className="w-6 h-6"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                {isMobileMenuOpen ? (
+                                    <path d="M6 18L18 6M6 6l12 12"></path>
+                                ) : (
+                                    <path d="M4 6h16M4 12h16M4 18h16"></path>
+                                )}
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Mobile Menu */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden bg-white dark:bg-dark-card border-b border-gray-200 dark:border-dark-border">
+                    {user && (
+                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                             <div className="relative mb-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Search users..."
+                                        value={searchQuery}
+                                        onChange={(e) => handleSearch(e.target.value)}
+                                        onBlur={handleClickOutside}
+                                        className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:border-blue-500 dark:focus:border-dark-primary focus:ring-1 focus:ring-blue-500 dark:focus:ring-dark-primary"
+                                    />
+                                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-dark-text-muted" />
+                                </div>
+                            <Link to='/home' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
+                            <Link to='/network' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
+                                My Network
+                                {unreadCounts.unreadConnectionRequestsCount > 0 && (
+                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
+                                            {unreadCounts.unreadConnectionRequestsCount}
+                                        </span>
+                                )}
+                            </Link>
+                            <Link to='/messages' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
+                                Messages
+                                {unreadCounts.unreadMessagesCount > 0 && (
+                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
+                                            {unreadCounts.unreadMessagesCount}
+                                        </span>
+                                )}
+                            </Link>
+                             <Link to='/events' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
+                                Events
+                                {unreadCounts.unreadEventsCount > 0 && (
+                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
+                                            {unreadCounts.unreadEventsCount}
+                                        </span>
+                                )}
+                            </Link>
+                            <Link to='/notifications' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
+                                Notifications
+                                {unreadCounts.unreadNotificationCount > 0 && (
+                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
+                                            {unreadCounts.unreadNotificationCount}
+                                        </span>
+                                )}
+                            </Link>
+                            <Link to={`/profile/${user.username}`} className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Me</Link>
+                             <Link to='/settings' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Settings</Link>
+                            <button onClick={handleLogout} className='block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'>Logout</button>
+                        </div>
+                    )}
+                     {!user && (
+                         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                             <Link to='/login' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Sign In</Link>
+                             <Link to='/signup' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Join now</Link>
+                         </div>
+                     )}
+                </div>
+            )}
+
             {children}
         </nav>
     );

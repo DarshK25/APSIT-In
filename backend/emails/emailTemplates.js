@@ -130,3 +130,29 @@ export const createClubMembershipEmailTemplate = (userName, clubName, role, club
 </body>
 </html>
 `;
+
+export const createPasswordResetEmailTemplate = (resetCode) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Reset Code</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(to right, #0077B5, #00A0DC); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <img src="/ApsitINLogo.avif" alt="APSIT-In Logo" style="width: 150px; margin-bottom: 20px;border-radius: 10px;"/>
+    <h1 style="color: white; margin: 0; font-size: 28px;">Password Reset Code</h1>
+  </div>
+  <div style="background-color: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <p style="font-size: 18px; color: #0077B5;"><strong>Hello,</strong></p>
+    <p>You requested a password reset for your APSIT-In account. Here is your reset code:</p>
+    <div style="background-color: #f3f6f8; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+      <h2 style="color: #0077B5; margin: 0; font-size: 32px; letter-spacing: 2px;">${resetCode}</h2>
+    </div>
+    <p style="color: #666; font-size: 14px;">This code is valid for 10 minutes. If you did not request this password reset, please ignore this email or contact support if you have concerns.</p>
+    <p>Best regards,<br>The APSIT-In Team</p>
+  </div>
+</body>
+</html>
+`;

@@ -4,7 +4,7 @@ import * as postService from '../api/postService';
 import Post from './Post';
 import { toast } from 'react-hot-toast';
 import PropTypes from 'prop-types';
-import { ImagePlus, Loader2, User, Users } from 'lucide-react';
+import { ImagePlus, Loader2, User, Users, X } from 'lucide-react';
 
 export const Feed = () => {
     const { user } = useAuth();
@@ -22,19 +22,35 @@ export const Feed = () => {
     const fetchPosts = async () => {
         try {
             setIsLoading(true);
+            // Get all posts, not just from connections
             const fetchedPosts = await postService.getAllPosts();
-            const formattedPosts = fetchedPosts.map(post => ({
-                ...post,
-                author: typeof post.author === 'string' 
-                    ? { _id: post.author, username: 'Loading...', profilePicture: null, name: 'User' }
-                    : {
-                        ...post.author,
-                        // Ensure these fields exist
-                        username: post.author?.username || 'Unknown',
-                        name: post.author?.name || post.author?.username || 'Unknown User',
-                        profilePicture: post.author?.profilePicture || null
-                    }
-            }));
+            const formattedPosts = fetchedPosts
+                .filter(post => {
+                    // Only show posts from users who have enabled feed visibility
+                    return post.author?.settings?.showProfileInFeed !== false;
+                })
+                .map(post => ({
+                    ...post,
+                    author: typeof post.author === 'string' 
+                        ? { _id: post.author, username: 'Loading...', profilePicture: null, name: 'User' }
+                        : {
+                            ...post.author,
+                            username: post.author?.username || 'Unknown',
+                            name: post.author?.name || post.author?.username || 'Unknown User',
+                            profilePicture: post.author?.profilePicture || null
+                        }
+                }))
+                // Sort by timestamp and engagement
+                .sort((a, b) => {
+                    const timeA = new Date(a.createdAt).getTime();
+                    const timeB = new Date(b.createdAt).getTime();
+                    const engagementA = (a.likes?.length || 0) + (a.comments?.length || 0);
+                    const engagementB = (b.likes?.length || 0) + (b.comments?.length || 0);
+                    
+                    // Weight recent posts and engagement
+                    return (engagementB * 0.3 + timeB * 0.7) - (engagementA * 0.3 + timeA * 0.7);
+                });
+            
             setPosts(formattedPosts);
         } catch (error) {
             console.error('Error fetching posts:', error);
@@ -128,28 +144,28 @@ export const Feed = () => {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center h-64">
-                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            <div className="flex justify-center items-center h-64 bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border">
+                <Loader2 className="w-8 h-8 text-blue-500 dark:text-blue-400 animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
             {/* Create Post Form */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-start space-x-4">
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-dark-border">
+                <div className="flex items-start space-x-3 sm:space-x-4">
                     <div className="flex-shrink-0">
                         {user?.profilePicture ? (
                             <img
                                 src={user.profilePicture}
                                 alt={user.name || user.username}
-                                className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100"
+                                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border"
                                 onError={(e) => {
                                     e.target.style.display = 'none';
                                     e.target.parentElement.innerHTML = `
-                                        <div class="w-12 h-12 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                 <circle cx="12" cy="7" r="4" />
                                             </svg>
@@ -157,8 +173,8 @@ export const Feed = () => {
                                 }}
                             />
                         ) : (
-                            <div className="w-12 h-12 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
-                                <User className="w-6 h-6 text-white" />
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
+                                <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                             </div>
                         )}
                     </div>
@@ -167,14 +183,14 @@ export const Feed = () => {
                             value={newPostContent}
                             onChange={(e) => setNewPostContent(e.target.value)}
                             placeholder="What's on your mind?"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 min-h-[100px] text-gray-700 placeholder-gray-500"
+                            className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-200 dark:border-dark-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 min-h-[80px] sm:min-h-[100px] text-gray-700 dark:text-dark-text-primary placeholder-gray-500 dark:placeholder-dark-text-muted bg-white dark:bg-dark-hover"
                         />
                         {imagePreview && (
                             <div className="mt-3 relative rounded-xl overflow-hidden group">
                                 <img
                                     src={imagePreview}
                                     alt="Preview"
-                                    className="w-full h-48 object-cover rounded-xl"
+                                    className="w-full h-32 sm:h-48 object-cover rounded-xl"
                                 />
                                 <button
                                     type="button"
@@ -182,73 +198,46 @@ export const Feed = () => {
                                         setSelectedImage(null);
                                         setImagePreview(null);
                                     }}
-                                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-red-600 shadow-lg"
+                                    className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-1.5 rounded-full hover:bg-opacity-75 transition-colors duration-200"
                                 >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <X size={16} />
                                 </button>
                             </div>
                         )}
-                        <div className="flex items-center justify-between mt-4">
-                            <label className="cursor-pointer">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageChange}
-                                    className="hidden"
-                                />
-                                <div className="flex items-center text-blue-600 hover:text-blue-700 transition-colors px-4 py-2 rounded-lg hover:bg-blue-50">
-                                    <ImagePlus className="w-5 h-5 mr-2" />
-                                    <span className="text-sm font-semibold">Add Photo</span>
-                                </div>
+                        <div className="flex justify-between items-center mt-3 sm:mt-4">
+                            <label className="cursor-pointer text-gray-600 dark:text-dark-text-secondary hover:text-primary dark:hover:text-primary-light transition-colors duration-200">
+                                <ImagePlus size={18} />
+                                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
                             </label>
                             <button
+                                type="submit"
                                 onClick={handleCreatePost}
+                                className="px-4 sm:px-6 py-1.5 sm:py-2 text-sm sm:text-base bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={isSubmitting || (!newPostContent.trim() && !selectedImage)}
-                                className={`px-6 py-2.5 rounded-lg font-semibold transition-all duration-200 ${
-                                    isSubmitting || (!newPostContent.trim() && !selectedImage)
-                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg transform hover:-translate-y-0.5'
-                                }`}
                             >
-                                {isSubmitting ? (
-                                    <div className="flex items-center">
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        <span>Posting...</span>
-                                    </div>
-                                ) : (
-                                    'Post'
-                                )}
+                                {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : 'Post'}
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Posts Feed */}
-            <div className="space-y-6">
-                {posts.length > 0 ? (
-                    posts.map(post => (
-                        <Post
-                            key={post._id}
-                            post={post}
-                            onUpdate={handleUpdatePost}
-                            onDelete={handleDeletePost}
-                        />
-                    ))
-                ) : (
-                    <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                        <div className="flex justify-center mb-4">
-                            <Users className="w-16 h-16 text-gray-400" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-800 mb-2">No Posts Yet</h3>
-                        <p className="text-gray-600 mb-4">
-                            Be the first one to share something with your network or connect with more people to see their posts here.
-                        </p>
-                    </div>
-                )}
-            </div>
+            {/* Posts List */}
+            {posts.length > 0 ? (
+                posts.map(post => (
+                    <Post 
+                        key={post._id} 
+                        post={post} 
+                        onDelete={handleDeletePost}
+                        onUpdate={handleUpdatePost}
+                        user={user}
+                    />
+                ))
+            ) : (
+                <div className="bg-white dark:bg-dark-card shadow rounded-lg p-4 sm:p-6 text-center text-sm sm:text-base text-gray-500 dark:text-dark-text-muted border border-gray-200 dark:border-dark-border">
+                    No posts yet. Share something!
+                </div>
+            )}
         </div>
     );
 };

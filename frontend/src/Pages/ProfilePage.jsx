@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import AboutSection from "../components/AboutSection";
 import EducationSection from "../components/EducationSection";
 import SkillsSection from "../components/SkillsSection";
 import ExperienceSection from "../components/ExperienceSection";
 import ProjectsSection from "../components/ProjectsSection";
+import CertificationsSection from "../components/CertificationsSection";
 import ProfileHeader from "../components/ProfileHeader";
 import Recommendations from "../components/Recommendations";
 import UserPostSection from "../components/UserPostSection";
@@ -16,6 +17,7 @@ import { getUserProfile, getPublicProfile, updateUserProfile } from "../api/user
 import { toast } from "react-hot-toast";
 import Feed from "../components/Feed";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 
 const showUserPosts = (userData) => {
   if (!userData?.posts?.length) return null;
@@ -41,8 +43,45 @@ const getAccountType = (userData) => {
   return 'faculty';
 };
 
+// Helper function to calculate profile completion percentage based on account type
+const calculateProfileCompletion = (userData, accountType) => {
+  let requiredFields = [
+    'name',
+    'headline',
+    'location',
+    'about',
+    'profilePicture',
+    'bannerImg',
+    'skills',
+    'projects',
+    'certifications'
+  ];
+  
+  // Add account-type specific fields
+  if (accountType === 'student' || accountType === 'faculty') {
+    requiredFields = [...requiredFields, 'education', 'experience'];
+  }
+  
+  if (accountType === 'faculty') {
+    requiredFields = [...requiredFields, 'designation', 'subjects', 'department'];
+  }
+  
+  if (accountType === 'club') {
+    requiredFields = [...requiredFields, 'clubType', 'foundedDate', 'description'];
+  }
+
+  const completedFields = requiredFields.filter(field => {
+    if (Array.isArray(userData[field])) {
+      return userData[field] && userData[field].length > 0;
+    }
+    return userData[field] && userData[field].trim() !== "";
+  });
+
+  return Math.round((completedFields.length / requiredFields.length) * 100);
+};
+
 const ProfilePage = () => {
-  const { username } = useParams(); // Get username from URL
+  const { username } = useParams();
   const [userData, setUserData] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,6 +89,8 @@ const ProfilePage = () => {
   const [posts, setPosts] = useState([]); 
   const { user, setUser } = useAuth();
   const [accountType, setAccountType] = useState(null);
+  const navigate = useNavigate();
+  const { theme } = useTheme();
   
   useEffect(() => {
     const fetchData = async () => {
@@ -119,7 +160,7 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 dark:bg-dark-secondary">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
@@ -127,8 +168,8 @@ const ProfilePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center text-red-500">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 dark:bg-dark-secondary">
+        <div className="text-center text-red-500 dark:text-red-400">
           <h2 className="text-2xl font-semibold">{error}</h2>
         </div>
       </div>
@@ -137,10 +178,10 @@ const ProfilePage = () => {
 
   if (!userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 dark:bg-dark-secondary">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-800">Profile not found</h2>
-          <p className="text-gray-600 mt-2">The requested profile could not be found</p>
+          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">Profile not found</h2>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">The requested profile could not be found</p>
         </div>
       </div>
     );
@@ -151,44 +192,139 @@ const ProfilePage = () => {
   const isFaculty = accountType === 'faculty';
   const isClub = accountType === 'club';
 
+  const isConnected = currentUser?.connections?.includes(userData?._id);
+  const canViewFullProfile = isOwnProfile || isConnected;
+
+  const shouldShowSection = (section) => {
+    if (isOwnProfile) return true;
+    if (isConnected) return true;
+    
+    // For non-connections, check specific privacy settings
+    switch (section) {
+      case 'education':
+        return userData?.settings?.showEducationToNonConnections;
+      case 'experience':
+        return userData?.settings?.showExperienceToNonConnections;
+      case 'projects':
+        return userData?.settings?.showProjectsToNonConnections;
+      case 'certifications':
+        return userData?.settings?.showCertificationsToNonConnections;
+      case 'about':
+        return true; // Always show basic info
+      case 'skills':
+        return true; // Always show skills
+      default:
+        return false; // Hide other sections by default for non-connections
+    }
+  };
+
+  // Function to determine what information to show in the profile header
+  const getVisibleProfileInfo = () => {
+    if (isOwnProfile || isConnected) {
+      return userData;
+    }
+
+    // For non-connections, only show basic info and what's allowed by settings
+    return {
+      ...userData,
+      education: shouldShowSection('education') ? userData.education : [],
+      experience: shouldShowSection('experience') ? userData.experience : [],
+      projects: shouldShowSection('projects') ? userData.projects : [],
+      // Keep basic info visible
+      name: userData.name,
+      headline: userData.headline,
+      location: userData.location,
+      profilePicture: userData.profilePicture,
+      bannerImg: userData.bannerImg,
+      department: userData.department,
+      yearOfStudy: userData.yearOfStudy,
+      designation: userData.designation,
+      clubType: userData.clubType,
+      foundedDate: userData.foundedDate,
+      skills: userData.skills,
+      about: userData.about
+    };
+  };
+
+  // Get filtered profile data based on privacy settings
+  const visibleProfileData = getVisibleProfileInfo();
+
   return (
-    <div className="bg-gray-50 min-h-screen pb-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-12 gap-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-secondary">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 bg-gray-50 dark:bg-dark-secondary">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
           {/* Left Column - Main Profile Content */}
-          <div className="col-span-12 lg:col-span-8">
-            <ProfileHeader
-              userData={userData}
-              isOwnProfile={isOwnProfile}
-              onSave={handleProfileUpdate}
-              accountType={accountType}
-            />
+          <div className="col-span-1 md:col-span-8">
+            <div className="relative z-[1]">
+              <ProfileHeader
+                userData={visibleProfileData}
+                isOwnProfile={isOwnProfile}
+                onSave={handleProfileUpdate}
+                accountType={accountType}
+              />
+            </div>
             
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6 mt-4 md:mt-6">
+              {/* About Section - Always visible */}
               <AboutSection
-                userData={userData}
+                userData={visibleProfileData}
+                isOwnProfile={isOwnProfile}
+                onSave={handleProfileUpdate}
+              />
+
+              {/* Skills Section - Always visible */}
+              <SkillsSection
+                userData={visibleProfileData}
                 isOwnProfile={isOwnProfile}
                 onSave={handleProfileUpdate}
               />
               
-              {/* User Posts - for all account types */}
-              {userData.username && (
-                <UserPostSection
-                  username={userData.username}
-                  accountType={accountType}
+              {/* Education - for students and faculty only */}
+              {!isClub && shouldShowSection('education') && (
+                <EducationSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
                 />
               )}
-              
+
+              {/* Experience - for students and faculty only */}
+              {!isClub && shouldShowSection('experience') && (
+                <ExperienceSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              )}
+
+              {/* Projects - for all account types */}
+              {shouldShowSection('projects') && (
+                <ProjectsSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              )}
+
+              {/* Certifications - for all account types */}
+              {shouldShowSection('certifications') && (
+                <CertificationsSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              )}
+
               {/* Faculty specific sections */}
               {isFaculty && (
                 <>
                   <FacultyInfoSection
-                    userData={userData}
+                    userData={visibleProfileData}
                     isOwnProfile={isOwnProfile}
                     onSave={handleProfileUpdate}
                   />
                   <SubjectsSection
-                    userData={userData}
+                    userData={visibleProfileData}
                     isOwnProfile={isOwnProfile}
                     onSave={handleProfileUpdate}
                   />
@@ -199,52 +335,52 @@ const ProfilePage = () => {
               {isClub && (
                 <>
                   <ClubEventsSection
-                    userData={userData}
+                    userData={visibleProfileData}
                     isOwnProfile={isOwnProfile}
                     onSave={handleProfileUpdate}
                   />
                   <ClubMemberSection
-                    userData={userData}
+                    userData={visibleProfileData}
                     isOwnProfile={isOwnProfile}
                     onSave={handleProfileUpdate}
                   />
                 </>
               )}
               
-              {/* Experience - for students and faculty only */}
-              {!isClub && (
-                <ExperienceSection
-                  userData={userData}
-                  isOwnProfile={isOwnProfile}
-                  onSave={handleProfileUpdate}
-                />
-              )}
-
-              {/* Projects - for all account types */}
-              <ProjectsSection
-                userData={userData}
-                isOwnProfile={isOwnProfile}
-                onSave={handleProfileUpdate}
-              />
-
-              {/* Education - for students and faculty only */}
-              {!isClub && (
-                <EducationSection
-                  userData={userData}
-                  isOwnProfile={isOwnProfile}
-                  onSave={handleProfileUpdate}
-                />
+              {/* User Posts - for all account types */}
+              {userData.username && (
+                <div className="rounded-lg shadow-sm border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card overflow-hidden">
+                  <UserPostSection
+                    username={userData.username}
+                    accountType={accountType}
+                    isOwnProfile={isOwnProfile}
+                  />
+                </div>
               )}
               
+              {!canViewFullProfile && (
+                <div className="rounded-lg shadow-sm p-4 md:p-6 text-center bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">Connect to see more</h3>
+                  <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
+                    Connect with {userData.name} to see their full profile and activity.
+                  </p>
+                  <button
+                    onClick={() => navigate(`/profile/${userData.username}`)}
+                    className="px-4 md:px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors duration-200"
+                  >
+                    Connect
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right Column - Skills and Additional Info */}
-          <div className="col-span-12 lg:col-span-4 space-y-6">
-            {isOwnProfile && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Completion</h2>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
+          {/* Right Column - Additional Info */}
+          <div className="col-span-1 md:col-span-4 space-y-4 md:space-y-6">
+            {isOwnProfile && calculateProfileCompletion(userData, accountType) < 100 && (
+              <div className="rounded-lg shadow-sm p-4 md:p-6 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">Complete Your Profile</h2>
+                <div className="w-full rounded-full h-2.5 bg-gray-200 dark:bg-dark-hover">
                   <div 
                     className="bg-primary h-2.5 rounded-full transition-all duration-500"
                     style={{ 
@@ -252,18 +388,11 @@ const ProfilePage = () => {
                     }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-gray-600 dark:text-dark-text-secondary mt-2">
                   {calculateProfileCompletion(userData, accountType)}% Complete
                 </p>
               </div>
             )}
-
-            {/* Skills section - for all account types */}
-            <SkillsSection
-              userData={userData}
-              isOwnProfile={isOwnProfile}
-              onSave={handleProfileUpdate}
-            />
 
             {isOwnProfile && <Recommendations currentUser={userData} />}
           </div>
@@ -271,42 +400,6 @@ const ProfilePage = () => {
       </div>
     </div>
   );
-};
-
-// Helper function to calculate profile completion percentage based on account type
-const calculateProfileCompletion = (userData, accountType) => {
-  let requiredFields = [
-    'name',
-    'headline',
-    'location',
-    'about',
-    'profilePicture',
-    'bannerImg',
-    'skills',
-    'projects'
-  ];
-  
-  // Add account-type specific fields
-  if (accountType === 'student' || accountType === 'faculty') {
-    requiredFields = [...requiredFields, 'education', 'experience'];
-  }
-  
-  if (accountType === 'faculty') {
-    requiredFields = [...requiredFields, 'designation', 'subjects'];
-  }
-  
-  if (accountType === 'club') {
-    requiredFields = [...requiredFields, 'clubType', 'foundedDate'];
-  }
-
-  const completedFields = requiredFields.filter(field => {
-    if (Array.isArray(userData[field])) {
-      return userData[field].length > 0;
-    }
-    return userData[field] && userData[field] !== " ";
-  });
-
-  return Math.round((completedFields.length / requiredFields.length) * 100);
 };
 
 export default ProfilePage;

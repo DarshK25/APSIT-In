@@ -185,3 +185,19 @@ export const getUserPosts = async (username) => {
     }
   };
   
+// Certification API calls
+export const addCertification = async (certificationData) => {
+    const response = await axiosInstance.post('/users/certifications', certificationData);
+    return response.data;
+};
+
+export const updateCertification = async (certificationId, certificationData) => {
+    const response = await axiosInstance.put(`/users/certifications/${certificationId}`, certificationData);
+    return response.data;
+};
+
+export const deleteCertification = async (certificationId) => {
+    const response = await axiosInstance.delete(`/users/certifications/${certificationId}`);
+    return response.data;
+};
+  

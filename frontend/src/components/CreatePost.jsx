@@ -64,7 +64,7 @@ export const CreatePost = ({ onPost }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+    <div className="bg-white dark:bg-dark-card rounded-lg shadow-md p-4 mb-4">
       <form onSubmit={handleSubmit}>
         <div className="flex items-start space-x-4">
           <img

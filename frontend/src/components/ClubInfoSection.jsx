@@ -28,9 +28,9 @@ const ClubInfoSection = ({ userData, isOwnProfile, onSave }) => {
     };
 
     return (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white dark:bg-dark-card shadow rounded-lg p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Club Information</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-dark-text-primary">Club Information</h2>
                 {isOwnProfile && !isEditing && (
                     <button
                         onClick={() => setIsEditing(true)}

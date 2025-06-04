@@ -12,8 +12,8 @@ const AboutSection = ({ userData, isOwnProfile, onSave }) => {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6 mb-6">
-      <h2 className="text-xl font-semibold mb-4">About</h2>
+    <div className="bg-white dark:bg-dark-card shadow rounded-lg p-6 mb-6 border border-gray-200 dark:border-dark-border">
+      <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-dark-text-primary">About</h2>
       {isOwnProfile ? (
         <>
           {isEditing ? (
@@ -21,7 +21,7 @@ const AboutSection = ({ userData, isOwnProfile, onSave }) => {
               <textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border border-gray-300 dark:border-dark-border rounded bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 rows="4"
               />
               <button
@@ -33,7 +33,7 @@ const AboutSection = ({ userData, isOwnProfile, onSave }) => {
             </>
           ) : (
             <>
-              <p>{userData.about}</p>
+              <p className="text-gray-600 dark:text-dark-text-secondary">{userData.about || "No information provided yet."}</p>
               <button
                 onClick={() => setIsEditing(true)}
                 className="mt-2 text-primary hover:text-primary-dark transition duration-300"
@@ -44,7 +44,7 @@ const AboutSection = ({ userData, isOwnProfile, onSave }) => {
           )}
         </>
       ) : (
-        <p>{userData.about}</p>
+        <p className="text-gray-600 dark:text-dark-text-secondary">{userData.about || "No information provided yet."}</p>
       )}
     </div>
   );

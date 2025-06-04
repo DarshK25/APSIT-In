@@ -5,6 +5,8 @@ import Message from "../models/message.model.js";
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
 import ConnectionRequest from "../models/connectionRequest.model.js";
+import bcrypt from "bcrypt";
+import Settings from "../models/settings.model.js";
 
 // Only get the users that are not in my connection, not myself, and don't have pending requests
 export const getSuggestedConnections = async (req, res) => {
@@ -275,5 +277,157 @@ export const getUsersByBatch = async (req, res) => {
     } catch (error) {
         console.error("Error in getUsersByBatch: ", error);
         res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
+export const deleteAccount = async (req, res) => {
+    try {
+        const { password } = req.body;
+        const userId = req.user._id;
+
+        // Find user and explicitly select password field
+        const user = await User.findById(userId).select('+password');
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        // Verify password
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, error: 'Incorrect password' });
+        }
+
+        // Delete user's posts
+        await Post.deleteMany({ author: userId });
+
+        // Delete user's comments
+        await Comment.deleteMany({ author: userId });
+
+        // Delete user's connection requests
+        await ConnectionRequest.deleteMany({
+            $or: [{ sender: userId }, { recipient: userId }]
+        });
+
+        // Remove user from others' connections
+        await User.updateMany(
+            { connections: userId },
+            { $pull: { connections: userId } }
+        );
+
+        // Delete user's notifications
+        await Notification.deleteMany({
+            $or: [{ recipient: userId }, { sender: userId }]
+        });
+
+        // Delete user's settings
+        await Settings.deleteOne({ user: userId });
+
+        // Finally, delete the user
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({ success: true, message: 'Account deleted successfully' });
+    } catch (error) {
+        console.error('Error in deleteAccount controller:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete account' });
+    }
+};
+
+// Add certification
+export const addCertification = async (req, res) => {
+    try {
+        const { title, issuer, date, credentialId, credentialUrl, imageUrl } = req.body;
+        
+        // Convert date string to Date object if it exists
+        const formattedDate = date ? new Date(date) : undefined;
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $push: {
+                    certifications: {
+                        title,
+                        issuer,
+                        date: formattedDate,
+                        credentialId,
+                        credentialUrl,
+                        imageUrl
+                    }
+                }
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.status(201).json({ success: true, data: user.certifications });
+    } catch (error) {
+        console.error('Error in addCertification:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Update certification
+export const updateCertification = async (req, res) => {
+    try {
+        const { certificationId } = req.params;
+        const { title, issuer, date, credentialId, credentialUrl, imageUrl } = req.body;
+
+        // Convert date string to Date object if it exists
+        const formattedDate = date ? new Date(date) : undefined;
+
+        const user = await User.findOneAndUpdate(
+            { 
+                _id: req.user._id,
+                'certifications._id': certificationId 
+            },
+            {
+                $set: {
+                    'certifications.$.title': title,
+                    'certifications.$.issuer': issuer,
+                    'certifications.$.date': formattedDate,
+                    'certifications.$.credentialId': credentialId,
+                    'certifications.$.credentialUrl': credentialUrl,
+                    'certifications.$.imageUrl': imageUrl
+                }
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User or certification not found' });
+        }
+
+        res.status(200).json({ success: true, data: user.certifications });
+    } catch (error) {
+        console.error('Error in updateCertification:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+// Delete certification
+export const deleteCertification = async (req, res) => {
+    try {
+        const { certificationId } = req.params;
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            {
+                $pull: {
+                    certifications: { _id: certificationId }
+                }
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        res.status(200).json({ success: true, data: user.certifications });
+    } catch (error) {
+        console.error('Error in deleteCertification:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 };

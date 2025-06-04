@@ -9,18 +9,18 @@ import * as postService from "../api/postService";
 import authService from "../api/authService";
 
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-dark-secondary">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
   </div>
 );
 
 const ErrorDisplay = ({ error, onRetry }) => (
-  <div className="min-h-screen flex items-center justify-center">
+  <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-dark-secondary">
     <div className="text-center">
-      <p className="text-red-500 mb-4">{error}</p>
+      <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
       <button
         onClick={onRetry}
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        className="bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
       >
         Try Again
       </button>
@@ -107,7 +107,7 @@ const HomePage = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-100 min-h-screen">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-2 sm:p-4 bg-gray-100 dark:bg-dark-secondary min-h-screen">
       {/* Sidebar */}
       <div className="md:col-span-1">
         <Sidebar user={user} />

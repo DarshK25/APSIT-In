@@ -36,6 +36,26 @@ const settingsSchema = new mongoose.Schema({
     showActivity: {
         type: Boolean,
         default: true
+    },
+    showProfileInFeed: {
+        type: Boolean,
+        default: true
+    },
+    showEducationToNonConnections: {
+        type: Boolean,
+        default: true
+    },
+    showExperienceToNonConnections: {
+        type: Boolean,
+        default: true
+    },
+    showProjectsToNonConnections: {
+        type: Boolean,
+        default: true
+    },
+    showCertificationsToNonConnections: {
+        type: Boolean,
+        default: true
     }
 }, {
     timestamps: true

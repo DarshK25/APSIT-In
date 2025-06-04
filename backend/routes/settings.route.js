@@ -1,18 +1,18 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import { protectRoute } from '../middleware/auth.middleware.js';
 import { 
     getSettings, 
     updateSettings,
     changePassword
-} from '../controllers/settingsController.js';
+} from '../controllers/settings.controller.js';
 
 const router = express.Router();
 
 router.route('/')
-    .get(protect, getSettings)
-    .put(protect, updateSettings);
+    .get(protectRoute, getSettings)
+    .put(protectRoute, updateSettings);
 
 router.route('/change-password')
-    .post(protect, changePassword);
+    .post(protectRoute, changePassword);
 
 export default router;

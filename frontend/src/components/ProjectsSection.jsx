@@ -141,9 +141,9 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
     };
 
     return (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <div className="bg-white dark:bg-dark-card shadow rounded-lg p-6 mb-6 border border-gray-200 dark:border-dark-border">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Projects</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-text-primary">Projects</h2>
                 {isOwnProfile && !isEditing && (
                     <button
                         onClick={handleAddNew}
@@ -157,20 +157,20 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
 
             {/* List of Projects */}
             {!isEditing && projects.map((project, index) => (
-                <div key={index} className="mb-6 p-4 border rounded-lg group hover:border-primary transition-colors">
+                <div key={index} className="mb-6 p-4 border border-gray-200 dark:border-dark-border rounded-lg group hover:border-primary dark:hover:border-primary-light transition-colors">
                     <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-xl text-gray-900">{project.title}</h3>
+                        <h3 className="font-semibold text-xl text-gray-900 dark:text-dark-text-primary">{project.title}</h3>
                         {isOwnProfile && (
                             <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                     onClick={() => handleEditProject(index)}
-                                    className="text-gray-500 hover:text-primary transition-colors"
+                                    className="text-gray-500 hover:text-primary transition-colors dark:text-dark-text-muted dark:hover:text-primary-light"
                                 >
                                     <Edit size={16} />
                                 </button>
                                 <button
                                     onClick={() => handleDeleteProject(index)}
-                                    className="text-gray-500 hover:text-red-500 transition-colors"
+                                    className="text-gray-500 hover:text-red-500 transition-colors dark:text-dark-text-muted dark:hover:text-red-400"
                                 >
                                     <X size={16} />
                                 </button>
@@ -178,7 +178,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                         )}
                     </div>
 
-                    <p className="text-gray-600 mt-2">{project.description}</p>
+                    <p className="text-gray-600 dark:text-dark-text-secondary mt-2">{project.description}</p>
 
                     {/* Project Links */}
                     <div className="flex gap-4 mt-3">
@@ -187,7 +187,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                                 href={project.projectUrl.startsWith('http') ? project.projectUrl : `https://${project.projectUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center text-primary hover:text-primary-dark"
+                                className="flex items-center text-primary hover:text-primary-dark dark:text-dark-primary dark:hover:text-primary-light"
                             >
                                 <LinkIcon size={16} className="mr-1" />
                                 Live Demo
@@ -198,7 +198,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                                 href={project.repoUrl.startsWith('http') ? project.repoUrl : `https://${project.repoUrl}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center text-primary hover:text-primary-dark"
+                                className="flex items-center text-primary hover:text-primary-dark dark:text-dark-primary dark:hover:text-primary-light"
                             >
                                 <Github size={16} className="mr-1" />
                                 Repository
@@ -212,7 +212,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                             {project.technologies.map((tech, i) => (
                                 <span
                                     key={i}
-                                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-sm"
+                                    className="bg-gray-100 dark:bg-dark-hover text-gray-700 dark:text-dark-text-secondary px-2 py-1 rounded-full text-sm"
                                 >
                                     {tech}
                                 </span>
@@ -221,11 +221,11 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                     )}
 
                     {/* Project Timeline */}
-                    <div className="flex items-center text-gray-500 mt-3">
+                    <div className="flex items-center text-gray-500 dark:text-dark-text-muted mt-3">
                         <Calendar size={16} className="mr-1" />
                         <span>
-                            {new Date(project.startDate).toLocaleDateString()} - 
-                            {project.isOngoing ? ' Present' : new Date(project.endDate).toLocaleDateString()}
+                            {project.startDate ? new Date(project.startDate).toLocaleDateString() : 'N/A'} - 
+                            {project.isOngoing ? ' Present' : (project.endDate ? new Date(project.endDate).toLocaleDateString() : 'N/A')}
                         </span>
                     </div>
 
@@ -250,180 +250,181 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                             ))}
                         </div>
                     )}
+
+                    {/* Collaborators */}
+                    {project.collaborators && project.collaborators.length > 0 && (
+                        <div className="mt-4">
+                            <h4 className="text-md font-medium text-gray-700 dark:text-dark-text-secondary mb-2">Collaborators:</h4>
+                            <div className="flex flex-wrap gap-2">
+                                {project.collaborators.map((collaborator, i) => (
+                                    <span key={i} className="bg-gray-100 dark:bg-dark-hover text-gray-700 dark:text-dark-text-secondary px-2 py-1 rounded-full text-sm">
+                                        {collaborator.name || collaborator.username || 'Unknown Collaborator'}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             ))}
 
             {/* Edit/Add Form */}
             {isEditing && (
-                <div className="mt-4 space-y-4">
+                <div className="mt-4 space-y-3">
                     <input
                         type="text"
                         placeholder="Project Title"
                         value={currentProject.title}
                         onChange={(e) => setCurrentProject({ ...currentProject, title: e.target.value })}
-                        className="w-full p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        className="w-full p-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                     />
-
                     <textarea
                         placeholder="Project Description"
                         value={currentProject.description}
                         onChange={(e) => setCurrentProject({ ...currentProject, description: e.target.value })}
-                        className="w-full p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        rows={4}
+                        className="w-full p-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        rows="4"
                     />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <input
-                            type="text"
-                            placeholder="Project URL"
-                            value={currentProject.projectUrl}
-                            onChange={(e) => setCurrentProject({ ...currentProject, projectUrl: e.target.value })}
-                            className="w-full p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        />
-
-                        <input
-                            type="text"
-                            placeholder="Repository URL"
-                            value={currentProject.repoUrl}
-                            onChange={(e) => setCurrentProject({ ...currentProject, repoUrl: e.target.value })}
-                            className="w-full p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                        />
-                    </div>
-
+                    <input
+                        type="text"
+                        placeholder="Project URL (Optional)"
+                        value={currentProject.projectUrl}
+                        onChange={(e) => setCurrentProject({ ...currentProject, projectUrl: e.target.value })}
+                        className="w-full p-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Repository URL (Optional)"
+                        value={currentProject.repoUrl}
+                        onChange={(e) => setCurrentProject({ ...currentProject, repoUrl: e.target.value })}
+                        className="w-full p-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
                     {/* Technologies Input */}
-                    <div>
-                        <div className="flex gap-2">
+                    <div className="border border-gray-300 dark:border-dark-border rounded-lg p-3 bg-white dark:bg-dark-hover">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">Technologies Used:</h4>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {currentProject.technologies.map((tech, i) => (
+                                <div key={i} className="flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-dark-text-secondary px-3 py-1 rounded-full text-sm">
+                                    <span>{tech}</span>
+                                    <button
+                                        onClick={() => handleRemoveTechnology(tech)}
+                                        className="ml-2 text-gray-600 hover:text-gray-800 dark:text-dark-text-muted dark:hover:text-dark-text-secondary"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex">
                             <input
                                 type="text"
-                                placeholder="Add Technology"
+                                placeholder="Add a technology"
                                 value={newTechnology}
                                 onChange={(e) => setNewTechnology(e.target.value)}
-                                className="flex-1 p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTechnology(); } }}
+                                className="flex-1 p-1.5 border border-gray-300 dark:border-dark-border rounded-l-lg bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-primary/20"
                             />
                             <button
                                 onClick={handleAddTechnology}
-                                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors"
+                                className="px-4 py-1.5 bg-primary text-white rounded-r-lg hover:bg-primary-dark transition-colors duration-200"
                             >
                                 Add
                             </button>
                         </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {currentProject.technologies.map((tech, index) => (
-                                <span
-                                    key={index}
-                                    className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-sm flex items-center"
-                                >
-                                    {tech}
-                                    <button
-                                        onClick={() => handleRemoveTechnology(tech)}
-                                        className="ml-1 text-gray-500 hover:text-red-500"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </span>
-                            ))}
-                        </div>
                     </div>
-
                     {/* Date Inputs */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">Start Date:</label>
                             <input
                                 type="date"
                                 value={currentProject.startDate}
                                 onChange={(e) => setCurrentProject({ ...currentProject, startDate: e.target.value })}
-                                className="w-full p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                className="w-full p-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                             <label className="block text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-1">End Date:</label>
                             <input
                                 type="date"
                                 value={currentProject.endDate}
                                 onChange={(e) => setCurrentProject({ ...currentProject, endDate: e.target.value })}
+                                className="w-full p-2 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                                 disabled={currentProject.isOngoing}
-                                className="w-full p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-100"
                             />
                         </div>
                     </div>
-
-                    <div className="flex items-center">
+                     <div className="flex items-center mb-2">
                         <input
                             type="checkbox"
                             id="isOngoing"
                             checked={currentProject.isOngoing}
-                            onChange={(e) => setCurrentProject({ ...currentProject, isOngoing: e.target.checked })}
+                            onChange={(e) => setCurrentProject({ ...currentProject, isOngoing: e.target.checked, endDate: e.target.checked ? "" : currentProject.endDate })}
                             className="mr-2"
                         />
-                        <label htmlFor="isOngoing">This is an ongoing project</label>
+                        <label htmlFor="isOngoing" className="text-gray-700 dark:text-dark-text-secondary">Ongoing Project</label>
                     </div>
-
                     {/* Media Upload */}
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+                     <div className="border border-gray-300 dark:border-dark-border rounded-lg p-3 bg-white dark:bg-dark-hover">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">Media:</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                            {currentProject.images.map((img, i) => (
+                                <div key={i} className="relative">
+                                    <img src={img} alt="Project Media" className="rounded-lg w-full h-24 object-cover" />
+                                    <button
+                                        onClick={() => handleRemoveMedia('images', i)}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            {currentProject.videos.map((video, i) => (
+                                 <div key={i} className="relative">
+                                    <video src={video} controls className="rounded-lg w-full h-24 object-cover" />
+                                     <button
+                                        onClick={() => handleRemoveMedia('videos', i)}
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                 </div>
+                            ))}
+                        </div>
+                         <label className="flex items-center justify-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-dark-text-secondary rounded-lg cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                            {uploadingMedia ? (
+                                <div className="flex items-center"><div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-700 dark:border-dark-text-secondary border-t-transparent mr-2"></div> Uploading...</div>
+                            ) : (
+                                <><Plus size={16} className="mr-2" /> Add Images or Videos</>
+                            )}
                             <input
                                 type="file"
-                                accept="image/*"
                                 multiple
                                 onChange={(e) => handleMediaUpload(e, 'images')}
-                                className="w-full"
+                                className="hidden"
+                                accept="image/*,video/*"
                                 disabled={uploadingMedia}
                             />
-                            <div className="grid grid-cols-4 gap-2 mt-2">
-                                {currentProject.images.map((img, index) => (
-                                    <div key={index} className="relative group">
-                                        <img
-                                            src={img}
-                                            alt={`Project image ${index + 1}`}
-                                            className="w-full h-24 object-cover rounded"
-                                        />
-                                        <button
-                                            onClick={() => handleRemoveMedia('images', index)}
-                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Videos</label>
-                            <input
-                                type="file"
-                                accept="video/*"
-                                multiple
-                                onChange={(e) => handleMediaUpload(e, 'videos')}
-                                className="w-full"
-                                disabled={uploadingMedia}
-                            />
-                            <div className="grid grid-cols-4 gap-2 mt-2">
-                                {currentProject.videos.map((video, index) => (
-                                    <div key={index} className="relative group">
-                                        <video
-                                            src={video}
-                                            className="w-full h-24 object-cover rounded"
-                                        />
-                                        <button
-                                            onClick={() => handleRemoveMedia('videos', index)}
-                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        </label>
                     </div>
+
+                    {/* Collaborators Input */}
+                     <div className="border border-gray-300 dark:border-dark-border rounded-lg p-3 bg-white dark:bg-dark-hover">
+                         <h4 className="text-sm font-medium text-gray-700 dark:text-dark-text-secondary mb-2">Collaborators:</h4>
+                         <p className="text-sm text-gray-500 dark:text-dark-text-muted mb-2">Enter usernames of collaborators</p>
+                         {/* Add input for collaborators and display current ones */}
+                          <input
+                            type="text"
+                            placeholder="Add collaborator username (Optional)"
+                            // Add state and handlers for collaborators
+                            className="w-full p-1.5 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-primary/20"
+                          />
+                           {/* Display existing collaborators similar to technologies */}
+                     </div>
 
                     <div className="flex space-x-3">
                         <button
                             onClick={handleSaveProject}
-                            disabled={uploadingMedia}
-                            className="bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300 disabled:opacity-50"
+                            className="bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300"
                         >
                             {editingIndex !== null ? 'Update Project' : 'Add Project'}
                         </button>
@@ -432,7 +433,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
                                 setIsEditing(false);
                                 setEditingIndex(null);
                             }}
-                            className="border border-gray-300 text-gray-600 py-2 px-4 rounded hover:bg-gray-50 transition duration-300"
+                             className="px-4 py-2 border border-gray-300 dark:border-dark-border text-gray-600 dark:text-dark-text-secondary rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors duration-200"
                         >
                             Cancel
                         </button>
@@ -441,7 +442,7 @@ const ProjectsSection = ({ userData, isOwnProfile, onSave }) => {
             )}
 
             {!isEditing && projects.length === 0 && (
-                <p className="text-gray-500 text-center py-4">No projects added yet</p>
+                <p className="text-gray-500 dark:text-dark-text-muted text-center py-4">No projects added yet</p>
             )}
         </div>
     );

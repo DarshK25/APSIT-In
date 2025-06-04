@@ -11,6 +11,7 @@ import connectionRoutes from "./routes/connection.route.js";
 import messageRoutes from "./routes/message.route.js";
 import eventRoutes from "./routes/event.route.js";
 import clubRoutes from "./routes/club.route.js";
+import settingsRoutes from "./routes/settings.route.js";
 import { connectDB } from "./lib/db.js";
 import { initSocket } from './socket/socket.js';
 import { createServer } from "http";
@@ -20,7 +21,7 @@ import mongoose from 'mongoose';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Create uploads directory if it doesn't exist
 createUploadsDir();
@@ -39,9 +40,6 @@ app.use(express.json({ limit: '50mb' })); // Increase payload limit
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
-
 // Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
@@ -52,6 +50,11 @@ app.use("/api/v1/messages", messageRoutes);
 app.use("/api/v1/events", eventRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/clubs", clubRoutes);
+app.use("/api/v1/settings", settingsRoutes);
+
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Error:', err);

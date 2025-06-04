@@ -380,9 +380,9 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
 
     if (isLoading) {
         return (
-            <div className="bg-white shadow rounded-lg p-6 mb-6">
+            <div className="bg-white dark:bg-dark-card shadow rounded-lg p-6 mb-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold">Club Members</h2>
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-text-primary">Club Members</h2>
                 </div>
                 <div className="flex justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
@@ -392,233 +392,235 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
     }
 
     return (
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Club Members</h2>
-                {isOwnProfile && !isEditing && (
-                    <button
-                        onClick={() => setIsEditing(true)}
-                        className="flex items-center text-primary hover:text-primary-dark transition duration-300"
-                    >
-                        <Edit size={20} className="mr-1" />
-                        Manage Members
-                    </button>
-                )}
-            </div>
-
-            {!isEditing ? (
-                <div className="space-y-3">
-                    {membersData.length > 0 ? (
-                        membersData.map((member, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-200">
-                                <div className="flex items-center">
-                                    {member.profile?.profilePicture && !failedMemberImages[member.profile?._id] ? (
-                                        <img 
-                                            src={member.profile.profilePicture}
-                                            alt={member.profile?.name || "Member"}
-                                            className="w-10 h-10 rounded-full mr-3 object-cover"
-                                            onError={() => handleMemberImageError(member.profile?._id)}
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                <circle cx="12" cy="7" r="4" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <h4 className="font-medium">{member.profile?.name || "Unknown Member"}</h4>
-                                        <p className="text-sm text-gray-500">@{member.profile?.username || "unknown"}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {getRoleIcon(member.role)}
-                                    <span className="capitalize text-sm">{member.role}</span>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="text-center py-8 text-gray-500">
-                            <User size={48} className="mx-auto mb-3 text-gray-300" />
-                            <p>No members added yet</p>
-                            {isOwnProfile && (
-                                <button 
-                                    onClick={() => setIsEditing(true)}
-                                    className="mt-2 text-primary hover:underline"
-                                >
-                                    Add club members
-                                </button>
-                            )}
-                        </div>
+        <>
+            <div className="bg-white dark:bg-dark-card shadow rounded-lg p-6 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-text-primary">Club Members</h2>
+                    {isOwnProfile && !isEditing && (
+                        <button
+                            onClick={() => setIsEditing(true)}
+                            className="flex items-center text-primary hover:text-primary-dark transition duration-300"
+                        >
+                            <Edit size={20} className="mr-1" />
+                            Manage Members
+                        </button>
                     )}
                 </div>
-            ) : (
-                <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Search and Add Members
-                        </label>
-                        <div className="flex gap-2 flex-wrap md:flex-nowrap">
-                            <div className="relative flex-grow">
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => {
-                                        setSearchQuery(e.target.value);
-                                        handleSearch(e.target.value);
-                                    }}
-                                    className="w-full p-2 pl-10 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                    placeholder="Search users by name or username"
-                                />
-                                <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
-                                {isSearching && (
-                                    <div className="absolute right-3 top-2.5">
-                                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
+
+                {!isEditing ? (
+                    <div className="space-y-3">
+                        {membersData.length > 0 ? (
+                            membersData.map((member, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition duration-200">
+                                    <div className="flex items-center">
+                                        {member.profile?.profilePicture && !failedMemberImages[member.profile?._id] ? (
+                                            <img 
+                                                src={member.profile.profilePicture}
+                                                alt={member.profile?.name || "Member"}
+                                                className="w-10 h-10 rounded-full mr-3 object-cover"
+                                                onError={() => handleMemberImageError(member.profile?._id)}
+                                            />
+                                        ) : (
+                                            <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                    <circle cx="12" cy="7" r="4" />
+                                                </svg>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h4 className="font-medium">{member.profile?.name || "Unknown Member"}</h4>
+                                            <p className="text-sm text-gray-500">@{member.profile?.username || "unknown"}</p>
+                                        </div>
                                     </div>
+                                    <div className="flex items-center gap-2">
+                                        {getRoleIcon(member.role)}
+                                        <span className="capitalize text-sm">{member.role}</span>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-gray-500">
+                                <User size={48} className="mx-auto mb-3 text-gray-300" />
+                                <p>No members added yet</p>
+                                {isOwnProfile && (
+                                    <button 
+                                        onClick={() => setIsEditing(true)}
+                                        className="mt-2 text-primary hover:underline"
+                                    >
+                                        Add club members
+                                    </button>
                                 )}
                             </div>
-                            <select
-                                value={newMemberRole}
-                                onChange={(e) => setNewMemberRole(e.target.value)}
-                                className="w-full md:w-48 p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                            >
-                                <option value="member">Member</option>
-                                <option value="secretary">Secretary</option>
-                                <option value="vice-president">Vice President</option>
-                                <option value="president">President</option>
-                            </select>
-                        </div>
-
-                        {searchResults.length > 0 && (
-                            <div className="mt-3 border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-                                {searchResults.map(user => (
-                                    <div 
-                                        key={user._id} 
-                                        className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <div className="flex items-center">
-                                            {user.profilePicture && !failedSearchImages[user._id] ? (
-                                                <img 
-                                                    src={user.profilePicture}
-                                                    alt={user.name}
-                                                    className="w-8 h-8 rounded-full mr-3 object-cover"
-                                                    onError={() => handleSearchImageError(user._id)}
-                                                />
-                                            ) : (
-                                                <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center mr-3">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                        <circle cx="12" cy="7" r="4" />
-                                                    </svg>
-                                                </div>
-                                            )}
-                                            <div>
-                                                <h4 className="font-medium">{user.name}</h4>
-                                                <p className="text-sm text-gray-500">@{user.username}</p>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => handleAddPendingMember(user)}
-                                            className="flex items-center text-primary hover:text-primary-dark px-3 py-1 rounded-full border border-primary hover:bg-primary/5 transition-colors"
-                                        >
-                                            <UserPlus size={16} className="mr-1" />
-                                            Add
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        
-                        {searchQuery.length >= 3 && searchResults.length === 0 && !isSearching && (
-                            <div className="mt-3 text-center py-3 text-gray-500 border rounded-lg">
-                                No users found matching "{searchQuery}"
-                            </div>
                         )}
                     </div>
-
-                    <div>
-                        <h3 className="font-medium mb-3">Current Members ({pendingMembers.length})</h3>
-                        {pendingMembers.length > 0 ? (
-                            <div className="space-y-2">
-                                {pendingMembersData.map((member, i) => (
-                                    <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center">
-                                            {member.profile?.profilePicture && !failedPendingImages[member.profile?._id] ? (
-                                                <img 
-                                                    src={member.profile.profilePicture}
-                                                    alt={member.profile?.name || "Member"}
-                                                    className="w-10 h-10 rounded-full mr-3 object-cover"
-                                                    onError={() => handlePendingImageError(member.profile?._id)}
-                                                />
-                                            ) : (
-                                                <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                        <circle cx="12" cy="7" r="4" />
-                                                    </svg>
-                                                </div>
-                                            )}
-                                            <div>
-                                                <h4 className="font-medium">{member.profile?.name || "Unknown Member"}</h4>
-                                                <p className="text-sm text-gray-500">@{member.profile?.username || "unknown"}</p>
-                                            </div>
+                ) : (
+                    <div className="space-y-4">
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Search and Add Members
+                            </label>
+                            <div className="flex gap-2 flex-wrap md:flex-nowrap">
+                                <div className="relative flex-grow">
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value);
+                                            handleSearch(e.target.value);
+                                        }}
+                                        className="w-full p-2 pl-10 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                        placeholder="Search users by name or username"
+                                    />
+                                    <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
+                                    {isSearching && (
+                                        <div className="absolute right-3 top-2.5">
+                                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary"></div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <select
-                                                value={member.role}
-                                                onChange={(e) => {
-                                                    const userId = getMemberId(member);
-                                                    console.log(`Changing role for user ${userId} from ${member.role} to ${e.target.value}`);
-                                                    handleUpdatePendingRole(userId, e.target.value);
-                                                }}
-                                                className="p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
-                                            >
-                                                <option value="member">Member</option>
-                                                <option value="secretary">Secretary</option>
-                                                <option value="vice-president">Vice President</option>
-                                                <option value="president">President</option>
-                                            </select>
+                                    )}
+                                </div>
+                                <select
+                                    value={newMemberRole}
+                                    onChange={(e) => setNewMemberRole(e.target.value)}
+                                    className="w-full md:w-48 p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                >
+                                    <option value="member">Member</option>
+                                    <option value="secretary">Secretary</option>
+                                    <option value="vice-president">Vice President</option>
+                                    <option value="president">President</option>
+                                </select>
+                            </div>
+
+                            {searchResults.length > 0 && (
+                                <div className="mt-3 border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                                    {searchResults.map(user => (
+                                        <div 
+                                            key={user._id} 
+                                            className="flex items-center justify-between p-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <div className="flex items-center">
+                                                {user.profilePicture && !failedSearchImages[user._id] ? (
+                                                    <img 
+                                                        src={user.profilePicture}
+                                                        alt={user.name}
+                                                        className="w-8 h-8 rounded-full mr-3 object-cover"
+                                                        onError={() => handleSearchImageError(user._id)}
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                            <circle cx="12" cy="7" r="4" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <h4 className="font-medium">{user.name}</h4>
+                                                    <p className="text-sm text-gray-500">@{user.username}</p>
+                                                </div>
+                                            </div>
                                             <button
-                                                onClick={() => {
-                                                    const userId = getMemberId(member);
-                                                    console.log(`Removing user ${userId}`);
-                                                    handleRemovePendingMember(userId);
-                                                }}
-                                                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
-                                                title="Remove member"
+                                                onClick={() => handleAddPendingMember(user)}
+                                                className="flex items-center text-primary hover:text-primary-dark px-3 py-1 rounded-full border border-primary hover:bg-primary/5 transition-colors"
                                             >
-                                                <X size={16} />
+                                                <UserPlus size={16} className="mr-1" />
+                                                Add
                                             </button>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-6 text-gray-500 border rounded-lg">
-                                <p>No members added yet</p>
-                                <p className="text-sm mt-1">Search for users above to add them to your club</p>
-                            </div>
-                        )}
-                    </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {searchQuery.length >= 3 && searchResults.length === 0 && !isSearching && (
+                                <div className="mt-3 text-center py-3 text-gray-500 border rounded-lg">
+                                    No users found matching "{searchQuery}"
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="flex space-x-3 pt-2">
-                        <button
-                            onClick={handleSave}
-                            className="bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300"
-                        >
-                            Save Changes
-                        </button>
-                        <button
-                            onClick={handleCancel}
-                            className="border border-gray-300 text-gray-600 py-2 px-4 rounded hover:bg-gray-50 transition duration-300"
-                        >
-                            Cancel
-                        </button>
+                        <div>
+                            <h3 className="font-medium mb-3">Current Members ({pendingMembers.length})</h3>
+                            {pendingMembers.length > 0 ? (
+                                <div className="space-y-2">
+                                    {pendingMembersData.map((member, i) => (
+                                        <div key={i} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                                            <div className="flex items-center">
+                                                {member.profile?.profilePicture && !failedPendingImages[member.profile?._id] ? (
+                                                    <img 
+                                                        src={member.profile.profilePicture}
+                                                        alt={member.profile?.name || "Member"}
+                                                        className="w-10 h-10 rounded-full mr-3 object-cover"
+                                                        onError={() => handlePendingImageError(member.profile?._id)}
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                            <circle cx="12" cy="7" r="4" />
+                                                        </svg>
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <h4 className="font-medium">{member.profile?.name || "Unknown Member"}</h4>
+                                                    <p className="text-sm text-gray-500">@{member.profile?.username || "unknown"}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <select
+                                                    value={member.role}
+                                                    onChange={(e) => {
+                                                        const userId = getMemberId(member);
+                                                        console.log(`Changing role for user ${userId} from ${member.role} to ${e.target.value}`);
+                                                        handleUpdatePendingRole(userId, e.target.value);
+                                                    }}
+                                                    className="p-2 border rounded focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                                                >
+                                                    <option value="member">Member</option>
+                                                    <option value="secretary">Secretary</option>
+                                                    <option value="vice-president">Vice President</option>
+                                                    <option value="president">President</option>
+                                                </select>
+                                                <button
+                                                    onClick={() => {
+                                                        const userId = getMemberId(member);
+                                                        console.log(`Removing user ${userId}`);
+                                                        handleRemovePendingMember(userId);
+                                                    }}
+                                                    className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                                                    title="Remove member"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-6 text-gray-500 border rounded-lg">
+                                    <p>No members added yet</p>
+                                    <p className="text-sm mt-1">Search for users above to add them to your club</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex space-x-3 pt-2">
+                            <button
+                                onClick={handleSave}
+                                className="bg-primary text-white py-2 px-4 rounded hover:bg-primary-dark transition duration-300"
+                            >
+                                Save Changes
+                            </button>
+                            <button
+                                onClick={handleCancel}
+                                className="border border-gray-300 text-gray-600 py-2 px-4 rounded hover:bg-gray-50 transition duration-300"
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )}
+            </div>
+        </>
     );
 };
 

@@ -4,7 +4,8 @@ import {
   createCommentNotificationEmailTemplate,
   createConnectionAcceptedEmailTemplate,
   createWelcomeEmailTemplate,
-  createClubMembershipEmailTemplate
+  createClubMembershipEmailTemplate,
+  createPasswordResetEmailTemplate
 } from "./emailTemplates.js";
 
 export const sendWelcomeEmail = async (email, name, profileUrl) => {
@@ -90,6 +91,20 @@ export const sendClubMembershipEmail = async (
     console.log("Club Membership Email sent successfully");
   } catch (error) {
     console.error("Error sending Club Membership Email:", error);
+    throw error;
+  }
+};
+
+export const sendPasswordResetEmail = async (email, resetCode) => {
+  try {
+    const subject = "APSIT-In Password Reset Code";
+    const html = createPasswordResetEmailTemplate(resetCode);
+
+    await sendMail(email, subject, "", html);
+
+    console.log("Password Reset Email sent successfully");
+  } catch (error) {
+    console.error("Error sending Password Reset Email:", error);
     throw error;
   }
 };
