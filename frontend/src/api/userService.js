@@ -160,10 +160,14 @@ export const uploadToCloudinary = async (file) => {
 export const getUserRecommendations = async (page = 1) => {
     try {
         const response = await axiosInstance.get(`/users/suggestions?page=${page}`);
+        if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to fetch recommendations');
+        }
         return response.data;
     } catch (error) {
         console.error('Error fetching recommendations:', error);
-        throw error;
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to fetch recommendations';
+        throw new Error(errorMessage);
     }
 };
 

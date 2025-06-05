@@ -37,7 +37,7 @@ const Recommendations = ({ currentUser }) => {
             
             if (pageNumber === 1) {
                 setInitialRecommendations(newRecommendations);
-                setTotalUsers(response.total || newRecommendations.length);
+                setTotalUsers(response.pagination?.totalUsers || newRecommendations.length);
                 recommendationsRef.current = newRecommendations;
             } else {
                 recommendationsRef.current = [...recommendationsRef.current, ...newRecommendations];
@@ -47,13 +47,14 @@ const Recommendations = ({ currentUser }) => {
             
             // Update hasMore based on total users and current items shown
             const currentItemsCount = recommendationsRef.current.length;
-            const remainingUsers = (response.total || totalUsers) - currentItemsCount;
+            const remainingUsers = (response.pagination?.totalUsers || totalUsers) - currentItemsCount;
             setHasMore(remainingUsers > 0);
             
         } catch (error) {
             console.error("Failed to fetch recommendations:", error);
-            setError("Failed to load recommendations. Please try again later.");
-            toast.error("Failed to load recommendations");
+            const errorMessage = error.response?.data?.message || error.message || "Failed to load recommendations. Please try again later.";
+            setError(errorMessage);
+            toast.error(errorMessage);
             setHasMore(false);
         } finally {
             setLoading(false);
@@ -87,7 +88,7 @@ const Recommendations = ({ currentUser }) => {
                 
                 // Update hasMore based on total users and current items shown
                 const currentItemsCount = recommendationsRef.current.length;
-                const remainingUsers = (response.total || totalUsers) - currentItemsCount;
+                const remainingUsers = (response.pagination?.totalUsers || totalUsers) - currentItemsCount;
                 setHasMore(remainingUsers > 0);
                 setExpanded(true);
             } else {
