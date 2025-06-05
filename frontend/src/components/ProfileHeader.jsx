@@ -15,7 +15,13 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const { theme } = useTheme();
+  const [bannerImageLoadError, setBannerImageLoadError] = useState(false); // State to track banner image loading errors
   
+  // Function to check if bannerImg is likely a URL
+  const isBannerImageUrl = (url) => {
+    return typeof url === 'string' && (url.startsWith('http') || url.startsWith('/'));
+  };
+
   // Initialize editedData with all possible fields
   const [editedData, setEditedData] = useState({
     name: userData.name || "",
@@ -273,23 +279,25 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
     <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden relative">
       {/* Banner */}
       <div className="relative h-40 sm:h-64">
-        <div 
-          className="w-full h-full"
-          style={{ 
-            background: isClub 
-              ? 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)'
-              : isFaculty
-              ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-              : 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)'
-          }}
-        />
-        {userData.bannerImg && (
+        {!userData.bannerImg || !isBannerImageUrl(userData.bannerImg) || bannerImageLoadError ? (
+          <div 
+            className="w-full h-full"
+            style={{ 
+              background: isClub 
+                ? 'linear-gradient(135deg, #ec4899 0%, #f43f5e 100%)'
+                : isFaculty
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)'
+            }}
+          />
+        ) : (
           <img
             src={userData.bannerImg}
             alt="Profile Banner"
             className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              e.target.style.display = 'none';
+            onError={() => {
+              console.log('Banner image failed to load. Setting bannerImageLoadError to true.');
+              setBannerImageLoadError(true);
             }}
           />
         )}

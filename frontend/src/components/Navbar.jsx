@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
 import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap, Settings, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -11,7 +11,8 @@ const Navbar = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
+    const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+    const [showProfileDropdown, setShowProfileDropdown] = useState(false);
     const [unreadCounts, setUnreadCounts] = useState({
         unreadConnectionRequestsCount: 0,
         unreadNotificationCount: 0,
@@ -20,6 +21,9 @@ const Navbar = () => {
     });
     const [failedSearchImages, setFailedSearchImages] = useState({});
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    const searchInputRef = useRef(null);
+    const searchDropdownRef = useRef(null);
 
     // Function to fetch unread counts
     const fetchUnreadCounts = useCallback(async () => {
@@ -85,6 +89,23 @@ const Navbar = () => {
         return () => window.removeEventListener('unreadCountsUpdated', handleUnreadCountsUpdate);
     }, []);
 
+    // Close search dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchInputRef.current && searchDropdownRef.current &&
+                !searchInputRef.current.contains(event.target) &&
+                !searchDropdownRef.current.contains(event.target))
+             {
+                setShowSearchDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     const handleLogout = async () => {
         await logout();
     };
@@ -93,12 +114,13 @@ const Navbar = () => {
         setSearchQuery(query);
         if (query.trim().length === 0) {
             setSearchResults([]);
-            setShowDropdown(false);
+            setShowSearchDropdown(false);
             return;
         }
 
         setIsSearching(true);
-        setShowDropdown(true);
+        // Open dropdown only if there's a query
+        setShowSearchDropdown(true);
 
         try {
             const response = await axios.get(`http://localhost:3000/api/v1/users/search?query=${query}`, {
@@ -111,12 +133,6 @@ const Navbar = () => {
         } finally {
             setIsSearching(false);
         }
-    };
-
-    const handleClickOutside = () => {
-        setTimeout(() => {
-            setShowDropdown(false);
-        }, 200);
     };
 
     const handleSearchImageError = (userId) => {
@@ -170,13 +186,14 @@ const Navbar = () => {
                                         placeholder="Search users..."
                                         value={searchQuery}
                                         onChange={(e) => handleSearch(e.target.value)}
-                                        onBlur={handleClickOutside}
+                                        onFocus={() => searchQuery && setShowSearchDropdown(true)}
+                                        ref={searchInputRef}
                                         className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                                     />
                                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-dark-text-muted" />
                                 </div>
-                                {showDropdown && (searchResults.length > 0 || isSearching) && (
-                                    <div className="absolute mt-2 w-full bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border max-h-96 overflow-y-auto z-50">
+                                {showSearchDropdown && (searchResults.length > 0 || isSearching) && (
+                                    <div ref={searchDropdownRef} className="absolute mt-2 w-full bg-white dark:bg-dark-card rounded-lg shadow-lg border border-gray-200 dark:border-dark-border max-h-96 overflow-y-auto z-50">
                                         {isSearching ? (
                                             <div className="p-4 text-center text-gray-500 dark:text-dark-text-muted">
                                                 Searching...
@@ -186,13 +203,14 @@ const Navbar = () => {
                                                 <Link 
                                                     key={result._id}
                                                     to={`/profile/${result.username}`}
-                                                    className="block"
+                                                    className="block w-full hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors"
                                                     onClick={() => {
-                                                        setShowDropdown(false);
+                                                        // This onClick is just to ensure dropdown closes after navigation
+                                                        setShowSearchDropdown(false);
                                                         setSearchQuery("");
                                                     }}
                                                 >
-                                                    <div className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors">
+                                                    <div className="flex items-start space-x-4 p-3">
                                                         <div className="flex-shrink-0">
                                                             {result.profilePicture && !failedSearchImages[result._id] ? (
                                                                 <img
@@ -212,7 +230,7 @@ const Navbar = () => {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="font-medium text-gray-900 dark:text-dark-text-primary group-hover:text-primary dark:group-hover:text-primary-light transition-colors">{result.name}</div>
+                                                                <div className="font-medium text-gray-900 dark:text-dark-text-primary">{result.name}</div>
                                                                 {result.isAlumni && (
                                                                     <div className="flex items-center bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-light px-2 py-0.5 rounded-full">
                                                                         <GraduationCap className="h-3 w-3 mr-1" />
@@ -236,8 +254,8 @@ const Navbar = () => {
 
                         {/* Desktop Navigation */}
                         <div className='hidden md:flex items-center space-x-1'>
-                        {user ? (
-                            <>
+                            {user ? (
+                                <>
                                     {navItems.map((item) => (
                                         <Link
                                             key={item.path}
@@ -248,50 +266,63 @@ const Navbar = () => {
                                             {item.badge > 0 && (
                                                 <span className='absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center'>
                                                     {item.badge}
-                                        </span>
-                                    )}
-                                </Link>
+                                                </span>
+                                            )}
+                                        </Link>
                                     ))}
                                     <div className="relative">
                                         <button
-                                            onClick={() => setShowDropdown(!showDropdown)}
+                                            onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                                             className='p-2 rounded-full text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
                                         >
-                                    <User size={20} />
+                                            <User size={20} />
                                         </button>
-                                        {showDropdown && (
+                                        {showProfileDropdown && (
                                             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-card rounded-xl shadow-lg border border-gray-200 dark:border-dark-border py-1">
                                                 <Link
                                                     to={`/profile/${user.username}`}
                                                     className='block px-4 py-2 text-sm text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                                    onClick={() => setShowProfileDropdown(false)}
                                                 >
                                                     Profile
-                                </Link>
+                                                </Link>
                                                 <Link
                                                     to="/settings"
                                                     className='block px-4 py-2 text-sm text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                                    onClick={() => setShowProfileDropdown(false)}
                                                 >
                                                     Settings
-                                </Link>
+                                                </Link>
                                                 <button
-                                                    onClick={handleLogout}
+                                                    onClick={() => {
+                                                        setShowProfileDropdown(false);
+                                                        handleLogout();
+                                                    }}
                                                     className='block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-dark-hover'
                                                 >
                                                     Logout
-                                </button>
+                                                </button>
                                             </div>
                                         )}
                                     </div>
-                            </>
-                        ) : (
-                                <Link
-                                    to="/login"
-                                    className='px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200'
-                                >
-                                    Sign In
-                                </Link>
-                        )}
-                    </div>
+                                </>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        to="/login"
+                                        className='px-4 py-2 rounded-full bg-gray-100 dark:bg-dark-hover text-gray-700 dark:text-dark-text-primary hover:bg-gray-200 dark:hover:bg-dark-hover/80 transition-colors duration-200'
+                                    >
+                                        Sign In
+                                    </Link>
+                                    <Link
+                                        to="/signup"
+                                        className='px-4 py-2 rounded-full bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-200'
+                                    >
+                                        Sign Up
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Mobile Menu Button */}
                         <button
@@ -387,13 +418,22 @@ const Navbar = () => {
                         </div>
                          </div>
                                     ) : (
-                                        <Link
-                                            to="/login"
-                                            onClick={() => setIsSidebarOpen(false)}
-                                            className='block w-full px-4 py-2 text-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200'
-                                        >
-                                            Sign In
-                                        </Link>
+                                        <div className="flex flex-col gap-2 p-4">
+                                            <Link
+                                                to="/login"
+                                                onClick={() => setIsSidebarOpen(false)}
+                                                className='w-full px-4 py-2 text-center rounded-lg bg-gray-100 dark:bg-dark-hover text-gray-700 dark:text-dark-text-primary hover:bg-gray-200 dark:hover:bg-dark-hover/80 transition-colors duration-200'
+                                            >
+                                                Sign In
+                                            </Link>
+                                            <Link
+                                                to="/signup"
+                                                onClick={() => setIsSidebarOpen(false)}
+                                                className='w-full px-4 py-2 text-center rounded-lg bg-blue-600 dark:bg-blue-500 text-white hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-200'
+                                            >
+                                                Sign Up
+                                            </Link>
+                                        </div>
                      )}
                 </div>
                             </div>

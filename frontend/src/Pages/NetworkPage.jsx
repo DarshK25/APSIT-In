@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Home, UserPlus, Bell } from "lucide-react";
+import { Home, UserPlus, Bell, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../components/Sidebar.jsx";
 import Recommendations from "../components/Recommendations.jsx";
 import userService from "../api/userService";
@@ -10,7 +11,12 @@ import connectionService from "../api/connectionService";
 // UserCard component
 const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 	return (
-		<div className='bg-white rounded-lg shadow p-4 flex flex-col items-center transition-all hover:shadow-md'>
+		<motion.div 
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.3 }}
+			className='bg-white dark:bg-dark-card rounded-lg shadow p-4 flex flex-col items-center transition-all hover:shadow-md dark:hover:shadow-dark-hover'
+		>
 			<Link to={`/profile/${user.username}`} className='flex flex-col items-center'>
 				{user.profilePicture ? (
 					<img
@@ -19,7 +25,7 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 						className='w-24 h-24 rounded-full object-cover mb-4'
 						onError={(e) => {
 							e.target.outerHTML = `
-								<div class="w-24 h-24 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center mb-4">
+								<div class="w-24 h-24 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center mb-4">
 									<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
 										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 										<circle cx="12" cy="7" r="4" />
@@ -28,33 +34,35 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 						}}
 					/>
 				) : (
-					<div className="w-24 h-24 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center mb-4">
+					<div className="w-24 h-24 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center mb-4">
 						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
 							<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 							<circle cx="12" cy="7" r="4" />
 						</svg>
 					</div>
 				)}
-				<h3 className='font-semibold text-lg text-center'>{user.name}</h3>
+				<h3 className='font-semibold text-lg text-center dark:text-dark-text-primary'>{user.name}</h3>
 			</Link>
-			<p className='text-gray-600 text-center line-clamp-2'>{user.headline || 'APSIT Student'}</p>
-			<p className='text-sm text-gray-500 mt-2'>
+			<p className='text-gray-600 dark:text-dark-text-secondary text-center line-clamp-2'>{user.headline || 'APSIT Student'}</p>
+			<p className='text-sm text-gray-500 dark:text-dark-text-muted mt-2'>
 				{user.connectionsCount || user.connections?.length || 0} connections
 			</p>
 			
 			{connectionStatus === 'not_connected' && (
-				<button 
+				<motion.button 
+					whileHover={{ scale: 1.02 }}
+					whileTap={{ scale: 0.98 }}
 					onClick={() => onConnect(user._id)}
 					className='mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors w-full flex items-center justify-center gap-2'
 				>
 					<UserPlus size={18} />
 					Connect
-				</button>
+				</motion.button>
 			)}
 			
 			{connectionStatus === 'pending' && (
 				<button 
-					className='mt-4 bg-gray-200 text-gray-800 px-4 py-2 rounded-md cursor-not-allowed w-full'
+					className='mt-4 bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md cursor-not-allowed w-full'
 					disabled
 				>
 					Request Pending
@@ -62,36 +70,40 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 			)}
 			
 			{connectionStatus === 'connected' && (
-				<button 
+				<motion.button 
+					whileHover={{ scale: 1.02 }}
+					whileTap={{ scale: 0.98 }}
 					onClick={() => onRemove(user._id)}
-					className='mt-4 bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors w-full'
+					className='mt-4 bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors w-full'
 				>
 					Remove Connection
-				</button>
+				</motion.button>
 			)}
-		</div>
+		</motion.div>
 	);
 };
 
 // FriendRequest component
-const FriendRequest = ({ request, onAccept, onReject }) => {
-	// If request or sender is null/undefined, don't render anything
-	if (!request?.sender) {
-		return null;
-	}
+const FriendRequest = ({ request, onAccept, onReject, isConnection = false }) => {
+	if (!request?.sender) return null;
 
 	return (
-		<div className='bg-white rounded-lg shadow p-4 flex items-center justify-between transition-all hover:shadow-md'>
+		<motion.div 
+			initial={{ opacity: 0, x: -20 }}
+			animate={{ opacity: 1, x: 0 }}
+			transition={{ duration: 0.3 }}
+			className='bg-white dark:bg-dark-card rounded-lg shadow p-4 flex items-center justify-between transition-all hover:shadow-md dark:hover:shadow-dark-hover'
+		>
 			<div className='flex items-center gap-4'>
 				<Link to={`/profile/${request.sender.username}`}>
 					{request.sender.profilePicture ? (
 						<img
 							src={request.sender.profilePicture}
 							alt={request.sender.name}
-							className='w-16 h-16 rounded-full object-cover ring-2 ring-gray-100'
+							className='w-16 h-16 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border'
 							onError={(e) => {
 								e.target.outerHTML = `
-									<div class="w-16 h-16 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+									<div class="w-16 h-16 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
 										<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
 											<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 											<circle cx="12" cy="7" r="4" />
@@ -100,7 +112,7 @@ const FriendRequest = ({ request, onAccept, onReject }) => {
 							}}
 						/>
 					) : (
-						<div className="w-16 h-16 rounded-full bg-gray-900 ring-2 ring-gray-100 flex items-center justify-center">
+						<div className="w-16 h-16 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
 							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
 								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 								<circle cx="12" cy="7" r="4" />
@@ -110,29 +122,46 @@ const FriendRequest = ({ request, onAccept, onReject }) => {
 				</Link>
 
 				<div>
-					<Link to={`/profile/${request.sender.username}`} className='font-semibold text-lg hover:underline'>
+					<Link to={`/profile/${request.sender.username}`} className='font-semibold text-lg hover:underline dark:text-dark-text-primary'>
 						{request.sender.name || 'APSIT Student'}
 					</Link>
-					<p className='text-gray-600 line-clamp-1'>{request.sender.headline || 'APSIT Student'}</p>
-					<p className='text-sm text-gray-500'>{request.sender.connections?.length || 0} connections</p>
+					<p className='text-gray-600 dark:text-dark-text-secondary line-clamp-1'>{request.sender.headline || 'APSIT Student'}</p>
+					<p className='text-sm text-gray-500 dark:text-dark-text-muted'>{request.sender.connections?.length || 0} connections</p>
 				</div>
 			</div>
 
 			<div className='space-x-2'>
-				<button
-					className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors'
-					onClick={() => onAccept(request._id)}
-				>
-					Accept
-				</button>
-				<button
-					className='bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors'
-					onClick={() => onReject(request._id)}
-				>
-					Reject
-				</button>
+				{isConnection ? (
+					<motion.button
+						whileHover={{ scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						className='bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors'
+						onClick={() => onReject(request.sender._id)}
+					>
+						Remove Connection
+					</motion.button>
+				) : (
+					<>
+						<motion.button
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
+							className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors'
+							onClick={() => onAccept(request._id)}
+						>
+							Accept
+						</motion.button>
+						<motion.button
+							whileHover={{ scale: 1.02 }}
+							whileTap={{ scale: 0.98 }}
+							className='bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors'
+							onClick={() => onReject(request._id)}
+						>
+							Reject
+						</motion.button>
+					</>
+				)}
 			</div>
-		</div>
+		</motion.div>
 	);
 };
 
@@ -144,6 +173,9 @@ const NetworkPage = () => {
 	const [suggestedUsers, setSuggestedUsers] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [page, setPage] = useState(1);
+	const [hasMore, setHasMore] = useState(true);
+	const [loadingMore, setLoadingMore] = useState(false);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -155,13 +187,14 @@ const NetworkPage = () => {
 					userService.getCurrentUser(),
 					connectionService.getConnectionRequests(),
 					connectionService.getConnections(),
-					userService.getSuggestedUsers()
+					userService.getSuggestedUsers(1)
 				]);
 
 				setUser(userData);
 				setConnectionRequests(requestsData);
 				setConnections(connectionsData);
 				setSuggestedUsers(suggestionsData);
+				setHasMore(suggestionsData.length === 10); // Assuming 10 is the page size
 			} catch (err) {
 				console.error("Error fetching network data:", err);
 				setError(err.response?.data?.message || "An error occurred while fetching data");
@@ -173,6 +206,22 @@ const NetworkPage = () => {
 
 		fetchData();
 	}, []);
+
+	const loadMoreUsers = async () => {
+		try {
+			setLoadingMore(true);
+			const nextPage = page + 1;
+			const newUsers = await userService.getSuggestedUsers(nextPage);
+			setSuggestedUsers(prev => [...prev, ...newUsers]);
+			setPage(nextPage);
+			setHasMore(newUsers.length === 10); // Assuming 10 is the page size
+		} catch (error) {
+			console.error("Error loading more users:", error);
+			toast.error("Failed to load more users");
+		} finally {
+			setLoadingMore(false);
+		}
+	};
 
 	const handleAcceptRequest = async (requestId) => {
 		try {
@@ -231,7 +280,7 @@ const NetworkPage = () => {
 
 	if (loading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center">
+			<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#121212]">
 				<div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
 			</div>
 		);
@@ -239,8 +288,8 @@ const NetworkPage = () => {
 
 	if (error) {
 		return (
-			<div className="min-h-screen flex items-center justify-center">
-				<div className="text-center text-red-600">
+			<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#121212]">
+				<div className="text-center text-red-600 dark:text-red-400">
 					<p className="text-xl font-semibold mb-2">Error</p>
 					<p>{error}</p>
 				</div>
@@ -249,7 +298,7 @@ const NetworkPage = () => {
 	}
 
 	return (
-		<div className='grid grid-cols-1 lg:grid-cols-4 gap-6 p-4 bg-gray-50'>
+		<div className='grid grid-cols-1 lg:grid-cols-4 gap-6 p-4 bg-gray-50 dark:bg-[#121212]'>
 			<div className="hidden lg:block lg:col-span-1">
 				{user && <Sidebar user={user} />}
 			</div>
@@ -257,8 +306,12 @@ const NetworkPage = () => {
 			<div className='col-span-1 lg:col-span-3 space-y-6'>
 				{/* Connection Requests Section */}
 				{connectionRequests.length > 0 && (
-					<div className='bg-white rounded-lg shadow p-6'>
-						<h2 className='text-xl font-semibold mb-4 flex items-center gap-2'>
+					<motion.div 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						className='bg-white dark:bg-dark-card rounded-lg shadow p-6'
+					>
+						<h2 className='text-xl font-semibold mb-4 flex items-center gap-2 dark:text-dark-text-primary'>
 							<UserPlus size={24} className="text-blue-600" />
 							Connection Requests
 						</h2>
@@ -272,51 +325,78 @@ const NetworkPage = () => {
 								/>
 							))}
 						</div>
-					</div>
+					</motion.div>
 				)}
 
 				{/* My Connections */}
-				<div className='bg-white rounded-lg shadow p-6'>
-					<h2 className='text-xl font-semibold mb-4'>My Connections ({connections.length})</h2>
+				<motion.div 
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					className='bg-white dark:bg-dark-card rounded-lg shadow p-6'
+				>
+					<h2 className='text-xl font-semibold mb-4 dark:text-dark-text-primary'>My Connections ({connections.length})</h2>
 					{connections.length > 0 ? (
-						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+						<div className='space-y-4'>
 							{connections.map((connection) => (
-								<UserCard
+								<FriendRequest
 									key={connection._id}
-									user={connection}
-									onRemove={handleRemoveConnection}
-									connectionStatus="connected"
+									request={{ sender: connection }}
+									onReject={handleRemoveConnection}
+									isConnection={true}
 								/>
 							))}
 						</div>
 					) : (
-						<p className='text-center text-gray-500 py-4'>
+						<p className='text-center text-gray-500 dark:text-dark-text-muted py-4'>
 							You haven't connected with anyone yet. Start by exploring suggested connections!
 						</p>
 					)}
-				</div>
+				</motion.div>
 
 				{/* Recommendations Section */}
 				{user && <Recommendations currentUser={user} />}
 
 				{/* Suggested Connections */}
 				{suggestedUsers.length > 0 && (
-					<div className='bg-white rounded-lg shadow p-6'>
-						<h2 className='text-xl font-semibold mb-4'>People You May Know</h2>
-						<div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+					<motion.div 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						className='bg-white dark:bg-dark-card rounded-lg shadow p-6'
+					>
+						<h2 className='text-xl font-semibold mb-4 dark:text-dark-text-primary'>People You May Know</h2>
+						<div className='space-y-4'>
 							{suggestedUsers.map((user) => (
-								<UserCard
+								<FriendRequest
 									key={user._id}
-									user={user}
-									onConnect={handleSendRequest}
-									connectionStatus="not_connected"
+									request={{ sender: user }}
+									onAccept={() => handleSendRequest(user._id)}
+									onReject={() => {}}
 								/>
 							))}
 						</div>
-					</div>
+						{hasMore && (
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								onClick={loadMoreUsers}
+								disabled={loadingMore}
+								className='mt-6 w-full bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-dark-hover/80 transition-colors flex items-center justify-center gap-2'
+							>
+								{loadingMore ? (
+									<>
+										<Loader2 className="w-5 h-5 animate-spin" />
+										Loading...
+									</>
+								) : (
+									<>
+										See More
+										<ChevronRight size={18} />
+									</>
+								)}
+							</motion.button>
+						)}
+					</motion.div>
 				)}
-
-				
 			</div>
 		</div>
 	);
