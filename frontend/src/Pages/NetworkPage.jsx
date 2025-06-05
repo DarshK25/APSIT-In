@@ -15,7 +15,7 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.3 }}
-			className='bg-white dark:bg-dark-card rounded-lg shadow p-4 flex flex-col items-center transition-all hover:shadow-md dark:hover:shadow-dark-hover'
+			className='bg-white dark:bg-dark-card rounded-lg shadow p-6 border border-gray-200 dark:border-dark-border flex flex-col items-center transition-all hover:shadow-md dark:hover:shadow-dark-hover'
 		>
 			<Link to={`/profile/${user.username}`} className='flex flex-col items-center'>
 				{user.profilePicture ? (
@@ -92,7 +92,7 @@ const FriendRequest = ({ request, onAccept, onReject, isConnection = false }) =>
 			initial={{ opacity: 0, x: -20 }}
 			animate={{ opacity: 1, x: 0 }}
 			transition={{ duration: 0.3 }}
-			className='bg-white dark:bg-dark-card rounded-lg shadow p-4 flex items-center justify-between transition-all hover:shadow-md dark:hover:shadow-dark-hover'
+			className='bg-white dark:bg-dark-card rounded-lg shadow p-4 border border-gray-200 dark:border-dark-border flex items-center justify-between transition-all hover:shadow-md dark:hover:shadow-dark-hover'
 		>
 			<div className='flex items-center gap-4'>
 				<Link to={`/profile/${request.sender.username}`}>
@@ -170,12 +170,8 @@ const NetworkPage = () => {
 	const [user, setUser] = useState(null);
 	const [connectionRequests, setConnectionRequests] = useState([]);
 	const [connections, setConnections] = useState([]);
-	const [suggestedUsers, setSuggestedUsers] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
-	const [page, setPage] = useState(1);
-	const [hasMore, setHasMore] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -183,18 +179,15 @@ const NetworkPage = () => {
 				setLoading(true);
 				setError(null);
 
-				const [userData, requestsData, connectionsData, suggestionsData] = await Promise.all([
+				const [userData, requestsData, connectionsData] = await Promise.all([
 					userService.getCurrentUser(),
 					connectionService.getConnectionRequests(),
-					connectionService.getConnections(),
-					userService.getSuggestedUsers(1)
+					connectionService.getConnections()
 				]);
 
 				setUser(userData);
 				setConnectionRequests(requestsData);
 				setConnections(connectionsData);
-				setSuggestedUsers(suggestionsData);
-				setHasMore(suggestionsData.length === 10); // Assuming 10 is the page size
 			} catch (err) {
 				console.error("Error fetching network data:", err);
 				setError(err.response?.data?.message || "An error occurred while fetching data");
@@ -206,22 +199,6 @@ const NetworkPage = () => {
 
 		fetchData();
 	}, []);
-
-	const loadMoreUsers = async () => {
-		try {
-			setLoadingMore(true);
-			const nextPage = page + 1;
-			const newUsers = await userService.getSuggestedUsers(nextPage);
-			setSuggestedUsers(prev => [...prev, ...newUsers]);
-			setPage(nextPage);
-			setHasMore(newUsers.length === 10); // Assuming 10 is the page size
-		} catch (error) {
-			console.error("Error loading more users:", error);
-			toast.error("Failed to load more users");
-		} finally {
-			setLoadingMore(false);
-		}
-	};
 
 	const handleAcceptRequest = async (requestId) => {
 		try {
@@ -261,23 +238,6 @@ const NetworkPage = () => {
 		}
 	};
 
-	const handleSendRequest = async (userId) => {
-		try {
-			await connectionService.sendConnectionRequest(userId);
-			setSuggestedUsers((prev) =>
-				prev.map((user) =>
-					user._id === userId
-						? { ...user, connectionStatus: "pending" }
-						: user
-				)
-			);
-			toast.success("Connection request sent");
-		} catch (error) {
-			console.error("Error sending connection request:", error);
-			toast.error("Failed to send connection request");
-		}
-	};
-
 	if (loading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#121212]">
@@ -309,7 +269,7 @@ const NetworkPage = () => {
 					<motion.div 
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						className='bg-white dark:bg-dark-card rounded-lg shadow p-6'
+						className='bg-white dark:bg-dark-card rounded-lg shadow p-6 border border-gray-200 dark:border-dark-border'
 					>
 						<h2 className='text-xl font-semibold mb-4 flex items-center gap-2 dark:text-dark-text-primary'>
 							<UserPlus size={24} className="text-blue-600" />
@@ -332,7 +292,7 @@ const NetworkPage = () => {
 				<motion.div 
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className='bg-white dark:bg-dark-card rounded-lg shadow p-6'
+					className='bg-white dark:bg-dark-card rounded-lg shadow p-6 border border-gray-200 dark:border-dark-border'
 				>
 					<h2 className='text-xl font-semibold mb-4 dark:text-dark-text-primary'>My Connections ({connections.length})</h2>
 					{connections.length > 0 ? (
@@ -353,50 +313,8 @@ const NetworkPage = () => {
 					)}
 				</motion.div>
 
-				{/* Recommendations Section */}
+				{/* Recommended Connections Section */}
 				{user && <Recommendations currentUser={user} />}
-
-				{/* Suggested Connections */}
-				{suggestedUsers.length > 0 && (
-					<motion.div 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						className='bg-white dark:bg-dark-card rounded-lg shadow p-6'
-					>
-						<h2 className='text-xl font-semibold mb-4 dark:text-dark-text-primary'>People You May Know</h2>
-						<div className='space-y-4'>
-							{suggestedUsers.map((user) => (
-								<FriendRequest
-									key={user._id}
-									request={{ sender: user }}
-									onAccept={() => handleSendRequest(user._id)}
-									onReject={() => {}}
-								/>
-							))}
-						</div>
-						{hasMore && (
-							<motion.button
-								whileHover={{ scale: 1.02 }}
-								whileTap={{ scale: 0.98 }}
-								onClick={loadMoreUsers}
-								disabled={loadingMore}
-								className='mt-6 w-full bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-dark-hover/80 transition-colors flex items-center justify-center gap-2'
-							>
-								{loadingMore ? (
-									<>
-										<Loader2 className="w-5 h-5 animate-spin" />
-										Loading...
-									</>
-								) : (
-									<>
-										See More
-										<ChevronRight size={18} />
-									</>
-								)}
-							</motion.button>
-						)}
-					</motion.div>
-				)}
 			</div>
 		</div>
 	);
