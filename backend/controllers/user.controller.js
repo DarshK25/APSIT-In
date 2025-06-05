@@ -7,6 +7,7 @@ import Comment from "../models/comment.model.js";
 import Connection from "../models/connection.model.js";
 import bcrypt from "bcrypt";
 import Settings from "../models/settings.model.js";
+import mongoose from "mongoose";
 
 // Only get the users that are not in my connection, not myself, and don't have pending requests
 export const getSuggestedConnections = async (req, res) => {
@@ -16,17 +17,11 @@ export const getSuggestedConnections = async (req, res) => {
         const limit = page === 1 ? 5 : 10;
         const skip = page === 1 ? 0 : 5 + ((page - 2) * 10);
 
-        // Get user's connections
-        const userConnections = await Connection.find({
-            $or: [
-                { sender: userId, status: 'accepted' },
-                { receiver: userId, status: 'accepted' }
-            ]
-        }).select('sender receiver');
+        console.log('Current user ID:', userId);
 
-        const connectedUserIds = userConnections.map(conn => 
-            conn.sender.toString() === userId.toString() ? conn.receiver.toString() : conn.sender.toString()
-        );
+        // Get current user with connections
+        const currentUser = await User.findById(userId).populate('connections');
+        const connectedUserIds = currentUser.connections.map(conn => conn._id);
 
         // Get user's pending requests
         const pendingRequests = await Connection.find({
@@ -34,40 +29,52 @@ export const getSuggestedConnections = async (req, res) => {
                 { sender: userId, status: 'pending' },
                 { receiver: userId, status: 'pending' }
             ]
-        }).select('sender receiver');
+        }).populate('sender receiver').lean();
 
+        console.log('Found pending requests:', pendingRequests);
+
+        // Get all pending user IDs
         const pendingUserIds = pendingRequests.map(conn => 
-            conn.sender.toString() === userId.toString() ? conn.receiver.toString() : conn.sender.toString()
+            conn.sender._id.toString() === userId.toString() 
+                ? conn.receiver._id 
+                : conn.sender._id
         );
 
-        // Get user's own ID
-        const ownId = userId.toString();
+        // Create array of all IDs to exclude
+        const excludeIds = [
+            ...connectedUserIds,
+            ...pendingUserIds,
+            userId
+        ];
 
-        // Get total count of available users
-        const totalUsers = await User.countDocuments({
-            _id: { 
-                $nin: [...connectedUserIds, ...pendingUserIds, ownId]
-            }
+        console.log('Excluding IDs:', {
+            connected: connectedUserIds,
+            pending: pendingUserIds,
+            self: userId
         });
 
-        // Get suggested users with pagination
+        // Get total count of available users (excluding connected, pending, and self)
+        const totalUsers = await User.countDocuments({
+            _id: { $nin: excludeIds }
+        });
+
+        // Get suggested users with pagination (excluding connected, pending, and self)
         const suggestedUsers = await User.find({
-            _id: { 
-                $nin: [...connectedUserIds, ...pendingUserIds, ownId]
-            }
+            _id: { $nin: excludeIds }
         })
         .select('name username profilePicture department headline accountType')
         .limit(limit)
         .skip(skip);
 
+        console.log('Found suggested users:', suggestedUsers.map(u => ({ id: u._id, name: u.name })));
+
         // Get mutual connections count for each suggested user
         const usersWithMutualConnections = await Promise.all(
             suggestedUsers.map(async (user) => {
-                const mutualConnections = await Connection.countDocuments({
-                    $or: [
-                        { sender: user._id, receiver: { $in: connectedUserIds }, status: 'accepted' },
-                        { receiver: user._id, sender: { $in: connectedUserIds }, status: 'accepted' }
-                    ]
+                // Get mutual connections (users who are connected to both current user and suggested user)
+                const mutualConnections = await User.countDocuments({
+                    _id: { $in: connectedUserIds },
+                    connections: user._id
                 });
 
                 return {
@@ -88,9 +95,10 @@ export const getSuggestedConnections = async (req, res) => {
         });
     } catch (error) {
         console.error('Error in getSuggestedConnections:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to get suggested connections'
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to get suggested connections',
+            error: error.message
         });
     }
 };
