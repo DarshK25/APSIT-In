@@ -4,7 +4,7 @@ import Notification from "../models/notification.model.js";
 import Message from "../models/message.model.js";
 import Post from "../models/post.model.js";
 import Comment from "../models/comment.model.js";
-import ConnectionRequest from "../models/connectionRequest.model.js";
+import Connection from "../models/connection.model.js";
 import bcrypt from "bcrypt";
 import Settings from "../models/settings.model.js";
 
@@ -12,88 +12,85 @@ import Settings from "../models/settings.model.js";
 export const getSuggestedConnections = async (req, res) => {
     try {
         const userId = req.user._id;
-        const currentUser = await User.findById(userId);
+        const page = parseInt(req.query.page) || 1;
+        const limit = page === 1 ? 5 : 10;
+        const skip = page === 1 ? 0 : 5 + ((page - 2) * 10);
 
-        if (!currentUser) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "Current user not found" 
-            });
-        }
+        // Get user's connections
+        const userConnections = await Connection.find({
+            $or: [
+                { sender: userId, status: 'accepted' },
+                { receiver: userId, status: 'accepted' }
+            ]
+        }).select('sender receiver');
 
-        // Get pending connection requests to exclude those users
-        const pendingRequests = await ConnectionRequest.find({
+        const connectedUserIds = userConnections.map(conn => 
+            conn.sender.toString() === userId.toString() ? conn.receiver.toString() : conn.sender.toString()
+        );
+
+        // Get user's pending requests
+        const pendingRequests = await Connection.find({
             $or: [
                 { sender: userId, status: 'pending' },
-                { recipient: userId, status: 'pending' }
+                { receiver: userId, status: 'pending' }
             ]
+        }).select('sender receiver');
+
+        const pendingUserIds = pendingRequests.map(conn => 
+            conn.sender.toString() === userId.toString() ? conn.receiver.toString() : conn.sender.toString()
+        );
+
+        // Get user's own ID
+        const ownId = userId.toString();
+
+        // Get total count of available users
+        const totalUsers = await User.countDocuments({
+            _id: { 
+                $nin: [...connectedUserIds, ...pendingUserIds, ownId]
+            }
         });
 
-        // Get users to exclude (current connections and users with pending requests)
-        const pendingUserIds = pendingRequests.map(request => 
-            request.sender.toString() === userId.toString() ? request.recipient : request.sender
-        );
-        const usersToExclude = [...currentUser.connections, ...pendingUserIds, userId];
-
-        console.log('Users to exclude:', usersToExclude.length);
-        console.log('Current user department:', currentUser.department);
-
-        // First, try to find users with mutual connections
-        const mutualConnections = await User.find({
-            _id: { $nin: usersToExclude },
-            connections: { $in: currentUser.connections }
+        // Get suggested users with pagination
+        const suggestedUsers = await User.find({
+            _id: { 
+                $nin: [...connectedUserIds, ...pendingUserIds, ownId]
+            }
         })
-        .select('name username profilePicture headline department yearOfStudy connections')
-        .limit(5);
+        .select('name username profilePicture department headline accountType')
+        .limit(limit)
+        .skip(skip);
 
-        console.log('Found mutual connections:', mutualConnections.length);
+        // Get mutual connections count for each suggested user
+        const usersWithMutualConnections = await Promise.all(
+            suggestedUsers.map(async (user) => {
+                const mutualConnections = await Connection.countDocuments({
+                    $or: [
+                        { sender: user._id, receiver: { $in: connectedUserIds }, status: 'accepted' },
+                        { receiver: user._id, sender: { $in: connectedUserIds }, status: 'accepted' }
+                    ]
+                });
 
-        let recommendedUsers = mutualConnections;
-
-        // If we don't have enough mutual connections, add users from the same department
-        if (recommendedUsers.length < 5 && currentUser.department) {
-            const departmentUsers = await User.find({
-                _id: { $nin: [...usersToExclude, ...recommendedUsers.map(u => u._id)] },
-                department: currentUser.department
+                return {
+                    ...user.toObject(),
+                    mutualConnections
+                };
             })
-            .select('name username profilePicture headline department yearOfStudy connections')
-            .limit(5 - recommendedUsers.length);
-
-            console.log('Found department users:', departmentUsers.length);
-            recommendedUsers = [...recommendedUsers, ...departmentUsers];
-        }
-
-        // If we still don't have enough recommendations, add random users
-        if (recommendedUsers.length < 5) {
-            const randomUsers = await User.find({
-                _id: { $nin: [...usersToExclude, ...recommendedUsers.map(u => u._id)] }
-            })
-            .select('name username profilePicture headline department yearOfStudy connections')
-            .limit(5 - recommendedUsers.length);
-
-            console.log('Found random users:', randomUsers.length);
-            recommendedUsers = [...recommendedUsers, ...randomUsers];
-        }
-
-        // Sort users by number of mutual connections
-        recommendedUsers = recommendedUsers.map(user => {
-            const mutualCount = user.connections.filter(connId => 
-                currentUser.connections.includes(connId)
-            ).length;
-            return { ...user.toObject(), mutualConnections: mutualCount };
-        }).sort((a, b) => b.mutualConnections - a.mutualConnections);
-
-        console.log('Total recommended users:', recommendedUsers.length);
+        );
 
         res.json({
             success: true,
-            data: recommendedUsers
+            data: usersWithMutualConnections,
+            pagination: {
+                currentPage: page,
+                totalUsers,
+                hasMore: skip + usersWithMutualConnections.length < totalUsers
+            }
         });
     } catch (error) {
         console.error('Error in getSuggestedConnections:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error getting suggested connections' 
+        res.status(500).json({
+            success: false,
+            message: 'Failed to get suggested connections'
         });
     }
 };
@@ -170,18 +167,11 @@ export const getUnreadCounts = async (req, res) => {
             isRead: false
         });
 
-        // Get pending connection requests count
-        const unreadConnectionRequestsCount = await ConnectionRequest.countDocuments({
-            recipient: userId,
-            status: 'pending'
-        });
-
         res.json({
             success: true,
             data: {
                 unreadNotificationCount,
-                unreadMessagesCount,
-                unreadConnectionRequestsCount
+                unreadMessagesCount
             }
         });
     } catch (error) {
@@ -304,8 +294,8 @@ export const deleteAccount = async (req, res) => {
         await Comment.deleteMany({ author: userId });
 
         // Delete user's connection requests
-        await ConnectionRequest.deleteMany({
-            $or: [{ sender: userId }, { recipient: userId }]
+        await Connection.deleteMany({
+            $or: [{ sender: userId }, { receiver: userId }]
         });
 
         // Remove user from others' connections

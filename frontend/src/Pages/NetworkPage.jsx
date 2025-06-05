@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Home, UserPlus, Bell, ChevronRight, Loader2 } from "lucide-react";
+import { Home, UserPlus, Bell, ChevronRight, Loader2, X, Check } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import Sidebar from "../components/Sidebar.jsx";
@@ -76,7 +76,7 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 					onClick={() => onRemove(user._id)}
 					className='mt-4 bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors w-full'
 				>
-					Remove Connection
+					Remove
 				</motion.button>
 			)}
 		</motion.div>
@@ -92,74 +92,107 @@ const FriendRequest = ({ request, onAccept, onReject, isConnection = false }) =>
 			initial={{ opacity: 0, x: -20 }}
 			animate={{ opacity: 1, x: 0 }}
 			transition={{ duration: 0.3 }}
-			className='bg-white dark:bg-dark-card rounded-lg shadow p-4 border border-gray-200 dark:border-dark-border flex items-center justify-between transition-all hover:shadow-md dark:hover:shadow-dark-hover'
+			className='p-4 hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors duration-200'
 		>
-			<div className='flex items-center gap-4'>
-				<Link to={`/profile/${request.sender.username}`}>
-					{request.sender.profilePicture ? (
-						<img
-							src={request.sender.profilePicture}
-							alt={request.sender.name}
-							className='w-16 h-16 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border'
-							onError={(e) => {
-								e.target.outerHTML = `
-									<div class="w-16 h-16 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-										<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-											<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-											<circle cx="12" cy="7" r="4" />
-										</svg>
-									</div>`;
-							}}
-						/>
-					) : (
-						<div className="w-16 h-16 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-							<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-								<circle cx="12" cy="7" r="4" />
-							</svg>
-						</div>
-					)}
-				</Link>
-
-				<div>
-					<Link to={`/profile/${request.sender.username}`} className='font-semibold text-lg hover:underline dark:text-dark-text-primary'>
-						{request.sender.name || 'APSIT Student'}
+			<div className='flex items-center justify-between'>
+				<div className='flex items-center space-x-3 min-w-0 flex-grow'>
+					<Link to={`/profile/${request.sender.username}`} className='flex-shrink-0'>
+						{request.sender.profilePicture ? (
+							<img
+								src={request.sender.profilePicture}
+								alt={request.sender.name}
+								className='w-10 h-10 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-hover'
+								onError={(e) => {
+									e.target.outerHTML = `
+										<div class="w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-700 ring-2 ring-gray-100 dark:ring-dark-hover flex items-center justify-center">
+											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+												<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+												<circle cx="12" cy="7" r="4" />
+											</svg>
+										</div>`;
+								}}
+							/>
+						) : (
+							<div className="w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-700 ring-2 ring-gray-100 dark:ring-dark-hover flex items-center justify-center">
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+									<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+									<circle cx="12" cy="7" r="4" />
+								</svg>
+							</div>
+						)}
 					</Link>
-					<p className='text-gray-600 dark:text-dark-text-secondary line-clamp-1'>{request.sender.headline || 'APSIT Student'}</p>
-					<p className='text-sm text-gray-500 dark:text-dark-text-muted'>{request.sender.connections?.length || 0} connections</p>
+					<div className='min-w-0 flex-grow'>
+						<Link to={`/profile/${request.sender.username}`} className='block group'>
+							<h3 className='text-sm font-semibold text-gray-900 dark:text-dark-text-primary group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate'>
+								{request.sender.name || 'APSIT Student'}
+							</h3>
+						</Link>
+						<p className='text-sm text-gray-600 dark:text-dark-text-secondary line-clamp-1 truncate'>{request.sender.headline || 'APSIT Student'}</p>
+						<p className='text-xs text-gray-500 dark:text-dark-text-muted mt-0.5'>{request.sender.connections?.length || 0} connections</p>
+					</div>
 				</div>
-			</div>
 
-			<div className='space-x-2'>
-				{isConnection ? (
-					<motion.button
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						className='bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors'
-						onClick={() => onReject(request.sender._id)}
-					>
-						Remove Connection
-					</motion.button>
-				) : (
-					<>
-						<motion.button
-							whileHover={{ scale: 1.02 }}
-							whileTap={{ scale: 0.98 }}
-							className='bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors'
-							onClick={() => onAccept(request._id)}
-						>
-							Accept
-						</motion.button>
-						<motion.button
-							whileHover={{ scale: 1.02 }}
-							whileTap={{ scale: 0.98 }}
-							className='bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors'
-							onClick={() => onReject(request._id)}
-						>
-							Reject
-						</motion.button>
-					</>
-				)}
+				<div className='flex-shrink-0 flex items-center space-x-2'>
+					{isConnection ? (
+						<>
+							{/* Full button for large screens */}
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								className='hidden md:flex bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors items-center justify-center gap-2'
+								onClick={() => onReject(request.sender._id)}
+							>
+								<span>Remove</span>
+							</motion.button>
+							{/* Circular icon for small screens */}
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								className='md:hidden w-8 h-8 rounded-full bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors flex items-center justify-center'
+								onClick={() => onReject(request.sender._id)}
+							>
+								<X size={16} className='w-4 h-4'/>
+							</motion.button>
+						</>
+					) : (
+						<>
+							{/* Full buttons for large screens */}
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								className='hidden md:flex bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors items-center justify-center gap-2'
+								onClick={() => onAccept(request._id)}
+							>
+								<span>Accept</span>
+							</motion.button>
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								className='hidden md:flex bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors items-center justify-center gap-2'
+								onClick={() => onReject(request._id)}
+							>
+								<span>Reject</span>
+							</motion.button>
+							{/* Circular icons for small screens */}
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								className='md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors items-center justify-center'
+								onClick={() => onAccept(request._id)}
+							>
+								<Check size={16} className='w-4 h-4'/>
+							</motion.button>
+							<motion.button
+								whileHover={{ scale: 1.02 }}
+								whileTap={{ scale: 0.98 }}
+								className='md:hidden flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary hover:bg-gray-300 dark:hover:bg-dark-hover/80 transition-colors items-center justify-center'
+								onClick={() => onReject(request._id)}
+							>
+								<X size={16} className='w-4 h-4'/>
+							</motion.button>
+						</>
+					)}
+				</div>
 			</div>
 		</motion.div>
 	);
@@ -269,13 +302,15 @@ const NetworkPage = () => {
 					<motion.div 
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
-						className='bg-white dark:bg-dark-card rounded-lg shadow p-6 border border-gray-200 dark:border-dark-border'
+						className='bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-dark-border'
 					>
-						<h2 className='text-xl font-semibold mb-4 flex items-center gap-2 dark:text-dark-text-primary'>
-							<UserPlus size={24} className="text-blue-600" />
-							Connection Requests
-						</h2>
-						<div className='space-y-4'>
+						<div className="p-4 border-b border-gray-200 dark:border-dark-border">
+							<h2 className='text-lg font-semibold flex items-center gap-2 dark:text-dark-text-primary'>
+								<UserPlus size={20} className="text-blue-600" />
+								Connection Requests
+							</h2>
+						</div>
+						<div className='divide-y divide-gray-200 dark:divide-dark-border'>
 							{connectionRequests.map((request) => (
 								<FriendRequest
 									key={request._id}
@@ -292,11 +327,13 @@ const NetworkPage = () => {
 				<motion.div 
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
-					className='bg-white dark:bg-dark-card rounded-lg shadow p-6 border border-gray-200 dark:border-dark-border'
+					className='bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-dark-border'
 				>
-					<h2 className='text-xl font-semibold mb-4 dark:text-dark-text-primary'>My Connections ({connections.length})</h2>
+					<div className="p-4 border-b border-gray-200 dark:border-dark-border">
+						<h2 className='text-lg font-semibold dark:text-dark-text-primary'>My Connections ({connections.length})</h2>
+					</div>
 					{connections.length > 0 ? (
-						<div className='space-y-4'>
+						<div className='divide-y divide-gray-200 dark:divide-dark-border'>
 							{connections.map((connection) => (
 								<FriendRequest
 									key={connection._id}

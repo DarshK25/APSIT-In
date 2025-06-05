@@ -6,6 +6,41 @@ const API_URL = "http://localhost:3000/api/v1";
 const AUTH_URL = `${API_URL}/auth`;
 const USER_URL = `${API_URL}/users`;
 
+// Create axios instance with default config
+const api = axios.create({
+    baseURL: API_URL,
+    timeout: 30000, // Increase timeout to 30 seconds
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
+// Add request interceptor to include auth token
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+    (response) => response.data,
+    (error) => {
+        if (error.code === 'ECONNABORTED') {
+            console.error('Request timeout:', error);
+            return Promise.reject(new Error('Request timed out. Please try again.'));
+        }
+        return Promise.reject(error);
+    }
+);
+
 class UserService {
   async getCurrentUser() {
     try {
@@ -122,15 +157,12 @@ export const uploadToCloudinary = async (file) => {
     }
 };
 
-export const getUserRecommendations = async () => {
+export const getUserRecommendations = async (page = 1) => {
     try {
-        const response = await axiosInstance.get('/users/recommendations');
-        if (!response.data.success) {
-            throw new Error(response.data.message || "Failed to fetch recommendations");
-        }
+        const response = await axiosInstance.get(`/users/suggestions?page=${page}`);
         return response.data;
     } catch (error) {
-        console.error("Error fetching recommendations:", error);
+        console.error('Error fetching recommendations:', error);
         throw error;
     }
 };

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import { UserPlus, AlertCircle, Loader2, GraduationCap, Briefcase, ChevronRight, Users } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { UserPlus, AlertCircle, Loader2, GraduationCap, Briefcase, ChevronRight, ChevronUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { getUserRecommendations, sendConnectionRequest } from "../api/userService";
 
 const Recommendations = ({ currentUser }) => {
+    console.log("Recommendations component rendering.");
     const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,18 +13,17 @@ const Recommendations = ({ currentUser }) => {
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
+    const [expanded, setExpanded] = useState(false);
+    const [initialRecommendations, setInitialRecommendations] = useState([]);
+    const [totalUsers, setTotalUsers] = useState(0);
+    const recommendationsRef = useRef([]);
 
-    useEffect(() => {
-        fetchRecommendations(1);
-    }, [currentUser?._id]);
-
-    const fetchRecommendations = async (pageNumber) => {
+    const fetchRecommendations = useCallback(async (pageNumber) => {
         try {
             if (pageNumber === 1) {
                 setLoading(true);
-                setRecommendations([]); // Clear existing recommendations when fetching first page
-            } else {
-                setLoadingMore(true);
+                setRecommendations([]);
+                recommendationsRef.current = [];
             }
             setError(null);
             
@@ -33,30 +33,81 @@ const Recommendations = ({ currentUser }) => {
             }
             
             const newRecommendations = response.data || [];
-            setRecommendations(prev => 
-                pageNumber === 1 ? newRecommendations : [...prev, ...newRecommendations]
-            );
+            console.log("Received new recommendations:", newRecommendations.length, "items");
             
-            // Determine if there are more recommendations to load
-            // Assuming API returns less than expected items when no more data
-            setHasMore(newRecommendations.length === 10); // Adjust based on your API's page size
+            if (pageNumber === 1) {
+                setInitialRecommendations(newRecommendations);
+                setTotalUsers(response.total || newRecommendations.length);
+                recommendationsRef.current = newRecommendations;
+            } else {
+                recommendationsRef.current = [...recommendationsRef.current, ...newRecommendations];
+            }
+            
+            setRecommendations(recommendationsRef.current);
+            
+            // Update hasMore based on total users and current items shown
+            const currentItemsCount = recommendationsRef.current.length;
+            const remainingUsers = (response.total || totalUsers) - currentItemsCount;
+            setHasMore(remainingUsers > 0);
             
         } catch (error) {
             console.error("Failed to fetch recommendations:", error);
             setError("Failed to load recommendations. Please try again later.");
             toast.error("Failed to load recommendations");
+            setHasMore(false);
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
-    };
+    }, [totalUsers]);
+
+    useEffect(() => {
+        if (currentUser?._id) {
+            fetchRecommendations(1);
+        }
+    }, [currentUser?._id, fetchRecommendations]);
 
     const loadMoreRecommendations = async () => {
-        if (loadingMore || !hasMore) return;
+        if (loadingMore) return;
         
         const nextPage = page + 1;
         setPage(nextPage);
-        await fetchRecommendations(nextPage);
+        setLoadingMore(true);
+        
+        try {
+            const response = await getUserRecommendations(nextPage);
+            if (!response.success) {
+                throw new Error(response.message || "Failed to fetch more recommendations");
+            }
+            
+            const newRecommendations = response.data || [];
+            if (newRecommendations.length > 0) {
+                recommendationsRef.current = [...recommendationsRef.current, ...newRecommendations];
+                setRecommendations(recommendationsRef.current);
+                
+                // Update hasMore based on total users and current items shown
+                const currentItemsCount = recommendationsRef.current.length;
+                const remainingUsers = (response.total || totalUsers) - currentItemsCount;
+                setHasMore(remainingUsers > 0);
+                setExpanded(true);
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error("Failed to load more recommendations:", error);
+            toast.error("Failed to load more recommendations");
+            setHasMore(false);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    const handleSeeLess = () => {
+        setRecommendations(initialRecommendations);
+        recommendationsRef.current = initialRecommendations;
+        setPage(1);
+        setHasMore(totalUsers > 5);
+        setExpanded(false);
     };
 
     const handleConnect = async (userId) => {
@@ -173,29 +224,47 @@ const Recommendations = ({ currentUser }) => {
         </div>
     );
 
-    const renderLoadMoreButton = () => (
-        hasMore && recommendations.length > 0 && (
-            <div className="p-4 border-t border-gray-200 dark:border-dark-border">
-                <button
-                    onClick={loadMoreRecommendations}
-                    disabled={loadingMore}
-                    className="w-full bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-dark-hover/80 transition-colors flex items-center justify-center gap-2"
-                >
-                    {loadingMore ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            Loading...
-                        </>
-                    ) : (
-                        <>
-                            See More
-                            <ChevronRight size={18} />
-                        </>
-                    )}
-                </button>
-            </div>
-        )
-    );
+    const renderLoadMoreButton = () => {
+        // Don't show button if we're loading
+        if (loadingMore) {
+            return null;
+        }
+
+        // Always show button if we have recommendations
+        if (recommendations.length > 0) {
+            // Only show See Less when we've loaded all profiles and are expanded
+            const showSeeLess = expanded && !hasMore;
+
+            return (
+                <div className="p-4 border-t border-gray-200 dark:border-dark-border">
+                    <button
+                        onClick={showSeeLess ? handleSeeLess : loadMoreRecommendations}
+                        disabled={loadingMore}
+                        className="w-full bg-gray-100 dark:bg-dark-hover text-gray-800 dark:text-dark-text-primary px-4 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-dark-hover/80 transition-colors flex items-center justify-center gap-2"
+                    >
+                        {loadingMore ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Loading...
+                            </>
+                        ) : showSeeLess ? (
+                            <>
+                                See Less
+                                <ChevronUp size={18} />
+                            </>
+                        ) : (
+                            <>
+                                See More
+                                <ChevronRight size={18} />
+                            </>
+                        )}
+                    </button>
+                </div>
+            );
+        }
+
+        return null;
+    };
 
     const renderRecommendationsSection = (accountType, title) => (
         <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm border border-gray-200 dark:border-dark-border">

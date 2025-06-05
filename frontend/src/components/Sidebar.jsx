@@ -34,7 +34,7 @@ const Sidebar = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-200 dark:border-dark-border overflow-hidden">
                 <div className="relative">
                     <div 
                         className={`h-32 w-full ${!user.bannerImg ? 'bg-gradient-to-r from-blue-500 to-purple-600' : ''}`}
