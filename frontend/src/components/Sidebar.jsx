@@ -20,19 +20,7 @@ const Sidebar = () => {
     const currentExperience = user?.experience?.find(exp => !exp.endDate);
 
     if (!user) {
-        return (
-            <div className="space-y-6">
-                <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6 animate-pulse">
-                    <div className="h-32 w-full bg-gray-100 dark:bg-dark-hover rounded-t-lg" />
-                    <div className="flex flex-col items-center">
-                        <div className="w-24 h-24 bg-gray-100 dark:bg-dark-hover rounded-full mt-[-48px] border-4 border-white dark:border-dark-card" />
-                        <div className="h-4 bg-gray-100 dark:bg-dark-hover rounded w-3/4 mt-4" />
-                        <div className="h-3 bg-gray-100 dark:bg-dark-hover rounded w-1/2 mt-2" />
-                        <div className="h-3 bg-gray-100 dark:bg-dark-hover rounded w-1/3 mt-2" />
-                    </div>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     const navItems = [
@@ -46,16 +34,6 @@ const Sidebar = () => {
 
     return (
         <div className="space-y-6">
-            <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm p-6 animate-pulse">
-                <div className="h-32 w-full bg-gray-100 rounded-t-lg" />
-                <div className="flex flex-col items-center">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full mt-[-48px] border-4 border-white" />
-                    <div className="h-4 bg-gray-100 rounded w-3/4 mt-4" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2 mt-2" />
-                    <div className="h-3 bg-gray-100 rounded w-1/3 mt-2" />
-                </div>
-            </div>
-
             <div className="bg-white dark:bg-dark-card rounded-xl shadow-sm overflow-hidden">
                 <div className="relative">
                     <div 

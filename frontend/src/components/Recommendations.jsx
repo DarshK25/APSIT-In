@@ -52,7 +52,7 @@ const Recommendations = ({ currentUser }) => {
 
     if (loading) {
         return (
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-4 lg:space-y-6 hidden lg:block">
                 {currentUser && currentUser.accountType === 'student' && (
                     <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm p-6 border border-gray-200 dark:border-dark-border">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">People You May Know</h2>
@@ -229,7 +229,7 @@ const Recommendations = ({ currentUser }) => {
 
     if (error) {
         return (
-            <div className="space-y-4 md:space-y-6">
+            <div className="space-y-4 lg:space-y-6 hidden lg:block">
                 {currentUser && currentUser.accountType === 'student' && (
                     <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm p-6 border border-gray-200 dark:border-dark-border">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">People You May Know</h2>
@@ -264,7 +264,7 @@ const Recommendations = ({ currentUser }) => {
     }
 
     return (
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-4 lg:space-y-6 hidden lg:block">
             {currentUser && currentUser.accountType === 'student' && (
                 <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm p-6 border border-gray-200 dark:border-dark-border">
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-4">People You May Know</h2>

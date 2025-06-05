@@ -48,7 +48,8 @@ const HomePage = () => {
       // Fetch user data first
       const userData = await userService.getCurrentUser();
       if (!userData) {
-        throw new Error("Failed to fetch user data");
+        // If user data fetch fails or returns null, treat it as an error
+        throw new Error("Failed to fetch user data or user not authenticated.");
       }
       setUser(userData);
 
@@ -65,6 +66,7 @@ const HomePage = () => {
     } catch (error) {
       console.error("Error fetching data:", error);
       setError(error?.message || "Failed to load data");
+      setUser(null); // Ensure user is null if there's an error
       toast.error("Failed to load data");
     } finally {
       setIsLoading(false);
@@ -72,12 +74,12 @@ const HomePage = () => {
   };
 
   useEffect(() => {
+    // Fetch initial data on component mount
     fetchData();
-    
-    // Set up an interval to refresh posts every 30 seconds
+
     const refreshInterval = setInterval(() => {
-      if (!isLoading) {
-        // Only refresh posts, not user data
+      // Only refresh posts if user data is already loaded and not in a main loading state
+      if (!isLoading && user) {
         postService.getAllPosts()
           .then(postsData => {
             if (postsData) {
@@ -90,10 +92,13 @@ const HomePage = () => {
           });
       }
     }, 30000);
-    
-    return () => clearInterval(refreshInterval);
-  }, [navigate]);
 
+    return () => clearInterval(refreshInterval);
+  }, [navigate]); // Depend only on navigate for initial fetch and interval setup
+
+  console.log('HomePage render state: isLoading=', isLoading, ', error=', error, ', user=', !!user); // Log state before rendering
+
+  // Render loading spinner or error display while data is being fetched or if there's an error
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -102,26 +107,39 @@ const HomePage = () => {
     return <ErrorDisplay error={error} onRetry={fetchData} />;
   }
 
-  if (!user) {
-    return null;
-  }
-
+  // Render the main content only if not loading and user data is available
+  // The outer div for the grid layout is always rendered to maintain structure
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-2 sm:p-4 bg-gray-100 dark:bg-dark-secondary min-h-screen">
-      {/* Sidebar */}
-      <div className="md:col-span-1">
-        <Sidebar user={user} />
-      </div>
+    // Define grid columns for different breakpoints:
+    // On small (<md), it's 1 column (items stack)
+    // On md (<lg), it's 3 columns (Sidebar + Feed (2))
+    // On lg (<xl), it's 4 columns (Sidebar + Feed (2) + Recommendations (1))
+    // On xl+, it's 4 columns (Sidebar + Feed (2) + Recommendations (1))
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 p-2 sm:p-4 bg-gray-100 dark:bg-dark-secondary min-h-screen">
+      {/* Sidebar - Conditionally rendered and takes 1 column from md up */}
+      {user && (
+        <div className="hidden md:block md:col-span-1">
+          <Sidebar user={user} />
+        </div>
+      )}
 
-      {/* Main Content */}
-      <div className="md:col-span-2">
+      {/* Main Content (Feed) - Adjust col-span based on breakpoint and sidebar presence */}
+      {/* When user is logged in: */}
+      {/* md (<lg): spans 2 columns (taking the 2nd and 3rd columns of md:grid-cols-3) */}
+      {/* lg (<xl): spans 2 columns (taking the 2nd and 3rd columns of lg:grid-cols-4) */}
+      {/* xl+: spans 2 columns (taking the 2nd and 3rd columns of xl:grid-cols-4) */}
+      {/* When user is not logged in: spans full width (col-span-full) */}
+      <div className={`${user ? 'md:col-span-2 lg:col-span-2' : 'col-span-full'}`}>
         <Feed posts={posts} setPosts={setPosts} />
       </div>
 
-      {/* Recommendations */}
-      <div className="md:col-span-1 hidden md:block">
-        <Recommendations currentUser={user} />
-      </div>
+      {/* Recommendations - Conditionally rendered and hidden on smaller than lg screens */}
+      {/* Takes 1 column from lg up (the 4th column of lg:grid-cols-4) */}
+      {user && (
+        <div className="lg:col-span-1 hidden lg:block">
+          <Recommendations currentUser={user} />
+        </div>
+      )}
     </div>
   );
 };

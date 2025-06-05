@@ -6,16 +6,15 @@ import * as commentService from '../api/commentService';
 import connectionService from '../api/connectionService';
 import axios from 'axios';
 import { FaHeart, FaRegHeart, FaTrash, FaEdit, FaLink, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { MessageCircle, Share2, User } from 'lucide-react';
+import { MessageCircle, Share2, User as UserIcon, Reply } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { toast } from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { Dialog, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
 
-const Post = ({ post, onUpdate, onDelete }) => {
+const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user: authUser } = useAuth();
+    const user = currentUser || authUser; // Use user prop if provided, otherwise use authUser
     const [isEditing, setIsEditing] = useState(false);
     const [editedContent, setEditedContent] = useState(post.content);
     const [newComment, setNewComment] = useState('');
@@ -502,7 +501,7 @@ const Post = ({ post, onUpdate, onDelete }) => {
         });
     };
 
-    const isLiked = Array.isArray(post.likes) && post.likes.includes(user._id);
+    const isLiked = Array.isArray(post.likes) && post.likes.includes(user?._id);
 
     // Add a ProfileImage component to handle null profile pictures
     const ProfileImage = ({ src, alt, size = "medium", className = "" }) => {
@@ -523,7 +522,7 @@ const Post = ({ post, onUpdate, onDelete }) => {
         if (!src || imageError) {
             return (
                 <div className={`${sizeClasses[size]} rounded-full bg-gray-900 dark:bg-dark-hover flex items-center justify-center ${className}`}>
-                    <User className={`${iconSizes[size]} text-white`} />
+                    <UserIcon className={`${iconSizes[size]} text-white`} />
                 </div>
             );
         }
@@ -553,31 +552,16 @@ const Post = ({ post, onUpdate, onDelete }) => {
                 <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
                         <Link to={`/profile/${post.author?.username}`} className="flex-shrink-0">
-                            {post.author?.profilePicture ? (
-                                <img
-                            src={post.author.profilePicture}
-                                    alt={post.author.name}
-                                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border"
-                                    onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.parentElement.innerHTML = `
-                                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                    <circle cx="12" cy="7" r="4" />
-                                                </svg>
-                                            </div>`;
-                                    }}
-                                />
-                            ) : (
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                    <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                                </div>
-                            )}
+                            <ProfileImage
+                                src={post.author?.profilePicture}
+                                alt={post.author?.name}
+                                size="large"
+                                className="ring-2 ring-gray-100 dark:ring-dark-border"
+                            />
                     </Link>
                         <div className="flex-1 min-w-0">
                             <Link to={`/profile/${post.author?.username}`} className="text-sm sm:text-base font-semibold text-gray-900 dark:text-dark-text-primary hover:underline">
-                                {post.author?.name || 'Unknown User'}
+                                {post.author?.username || 'Unknown User'}
                         </Link>
                             <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted">
                             {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
@@ -683,27 +667,12 @@ const Post = ({ post, onUpdate, onDelete }) => {
                         {/* New Comment Input */}
                         <div className="flex items-start space-x-3">
                             <div className="flex-shrink-0">
-                                {user?.profilePicture ? (
-                                    <img
-                                src={user.profilePicture}
-                                        alt={user.name}
-                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border"
-                                        onError={(e) => {
-                                            e.target.style.display = 'none';
-                                            e.target.parentElement.innerHTML = `
-                                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                        <circle cx="12" cy="7" r="4" />
-                                                    </svg>
-                                                </div>`;
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                        <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                                    </div>
-                                )}
+                                <ProfileImage
+                                    src={user?.profilePicture}
+                                    alt={user?.name}
+                                    size="large"
+                                    className="ring-2 ring-gray-100 dark:ring-dark-border"
+                                />
                             </div>
                             <div className="flex-1 min-w-0">
                                     <textarea
@@ -730,33 +699,18 @@ const Post = ({ post, onUpdate, onDelete }) => {
                                 <div key={comment._id} className="space-y-2">
                                     <div className="flex items-start space-x-3">
                                         <div className="flex-shrink-0">
-                                            {comment.author?.profilePicture ? (
-                                                <img
-                                    src={comment.author.profilePicture}
-                                                    alt={comment.author.name}
-                                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border"
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.parentElement.innerHTML = `
-                                                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                                    <circle cx="12" cy="7" r="4" />
-                                                                </svg>
-                                                            </div>`;
-                                                    }}
-                                                />
-                                            ) : (
-                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                                            </div>
-                                            )}
+                                            <ProfileImage
+                                                src={comment.author?.profilePicture}
+                                                alt={comment.author?.name}
+                                                size="large"
+                                                className="ring-2 ring-gray-100 dark:ring-dark-border"
+                                            />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="bg-gray-50 dark:bg-dark-hover rounded-xl p-3 sm:p-4">
                                                 <div className="flex items-center justify-between mb-1">
                                                     <Link to={`/profile/${comment.author?.username}`} className="text-sm sm:text-base font-semibold text-gray-900 dark:text-dark-text-primary hover:underline">
-                                                        {comment.author?.name || 'Unknown User'}
+                                                        {comment.author?.name || comment.author?.username || 'Unknown User'}
                                                     </Link>
                                                     <span className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted">
                                                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
@@ -769,22 +723,29 @@ const Post = ({ post, onUpdate, onDelete }) => {
                                             <div className="flex items-center space-x-4 mt-2">
                                             <button
                                                 onClick={() => handleLikeComment(comment._id)}
-                                                    className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                    className="flex items-center space-x-1 text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                                 >
-                                                    {comment.likes?.includes(user?._id) ? 'Liked' : 'Like'}
-                                            </button>
-                                            <button
-                                                onClick={() => setReplyingTo(comment._id)}
-                                                    className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                                            >
-                                                Reply
-                                            </button>
-                                                {user?._id === comment.author?._id && (
+                                                    {comment.likes?.includes(user?._id) ? (
+                                                        <FaHeart className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
+                                                    ) : (
+                                                        <FaRegHeart className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                    )}
+                                                    <span className="text-xs sm:text-sm">{comment.likes?.length || 0}</span>
+                                                </button>
                                                 <button
+                                                    onClick={() => setReplyingTo(comment._id)}
+                                                    className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                                                >
+                                                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                    <span>Reply</span>
+                                                </button>
+                                                {user?._id === comment.author?._id && (
+                                                    <button
                                                         onClick={() => handleDeleteComment(comment._id)}
-                                                        className="text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                        className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                                     >
-                                                        Delete
+                                                        <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                        <span>Delete</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -799,37 +760,22 @@ const Post = ({ post, onUpdate, onDelete }) => {
                                                     {comment.replies.map((reply) => (
                                                         <div key={reply._id} className="flex items-start space-x-3">
                                                             <div className="flex-shrink-0">
-                                                                {reply.author?.profilePicture ? (
-                                                                    <img
-                                                                        src={reply.author.profilePicture}
-                                                                        alt={reply.author.name}
-                                                                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border"
-                                                                        onError={(e) => {
-                                                                            e.target.style.display = 'none';
-                                                                            e.target.parentElement.innerHTML = `
-                                                                                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                                                        <circle cx="12" cy="7" r="4" />
-                                                                                    </svg>
-                                                                                </div>`;
-                                                                        }}
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                                        <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                                                                    </div>
-                                                                )}
+                                                                <ProfileImage
+                                                                    src={reply.author?.profilePicture}
+                                                                    alt={reply.author?.name}
+                                                                    size="small"
+                                                                    className="ring-2 ring-gray-100 dark:ring-dark-border"
+                                                                />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="bg-gray-50 dark:bg-dark-hover rounded-xl p-2 sm:p-3">
                                                                     <div className="flex items-center justify-between mb-1">
                                                                         <Link to={`/profile/${reply.author?.username}`} className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-dark-text-primary hover:underline">
-                                                                            {reply.author?.name || 'Unknown User'}
+                                                                            {reply.author?.username || 'Unknown User'}
                                                                         </Link>
                                                                         <span className="text-xs text-gray-500 dark:text-dark-text-muted">
                                                                             {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
-                                                </span>
+                                                                        </span>
                                                                     </div>
                                                                     <p className="text-xs sm:text-sm text-gray-700 dark:text-dark-text-primary">
                                                                         {reply.content}
@@ -838,20 +784,25 @@ const Post = ({ post, onUpdate, onDelete }) => {
                                                                 <div className="flex items-center space-x-4 mt-1">
                                                                     <button
                                                                         onClick={() => handleLikeComment(reply._id)}
-                                                                        className="text-xs text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                                        className="flex items-center space-x-1 text-xs text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                                                     >
-                                                                        {reply.likes?.includes(user?._id) ? 'Liked' : 'Like'}
+                                                                        {reply.likes?.includes(user?._id) ? (
+                                                                            <FaHeart className="w-3 h-3 text-red-500" />
+                                                                        ) : (
+                                                                            <FaRegHeart className="w-3 h-3" />
+                                                                        )}
+                                                                        <span className="text-xs">{reply.likes?.length || 0}</span>
                                                                     </button>
                                                                     {user?._id === reply.author?._id && (
                                                                         <button
                                                                             onClick={() => handleDeleteReply(reply._id)}
-                                                                            className="text-xs text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                                                                            className="flex items-center space-x-1 text-xs text-gray-500 dark:text-dark-text-muted hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                                                         >
-                                                                            Delete
+                                                                            <FaTrash className="w-3 h-3" />
                                                                         </button>
-                                            )}
-                                        </div>
-                                    </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     ))}
                                                     <button
@@ -879,27 +830,12 @@ const Post = ({ post, onUpdate, onDelete }) => {
                                         <div className="ml-12 sm:ml-14 mt-3">
                                             <div className="flex items-start space-x-3">
                                                 <div className="flex-shrink-0">
-                                                    {user?.profilePicture ? (
-                                                        <img
-                                                    src={user.profilePicture}
-                                                            alt={user.name}
-                                                            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover ring-2 ring-gray-100 dark:ring-dark-border"
-                                                            onError={(e) => {
-                                                                e.target.style.display = 'none';
-                                                                e.target.parentElement.innerHTML = `
-                                                                    <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                                                            <circle cx="12" cy="7" r="4" />
-                                                                        </svg>
-                                                                    </div>`;
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center">
-                                                            <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                                                        </div>
-                                                    )}
+                                                    <ProfileImage
+                                                        src={user?.profilePicture}
+                                                        alt={user?.name}
+                                                        size="large"
+                                                        className="ring-2 ring-gray-100 dark:ring-dark-border"
+                                                    />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <textarea
@@ -938,123 +874,91 @@ const Post = ({ post, onUpdate, onDelete }) => {
             )}
 
             {/* Share Dialog */}
-            <Transition appear show={showShareDialog} as={Fragment}>
-                <Dialog
-                    as="div"
-                    className="fixed inset-0 z-50 overflow-y-auto"
-                    onClose={() => setShowShareDialog(false)}
-                >
-                    <div className="min-h-screen px-4 text-center">
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300"
-                            enterFrom="opacity-0"
-                            enterTo="opacity-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100"
-                            leaveTo="opacity-0"
-                        >
-                            <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50" />
-                        </Transition.Child>
+            {showShareDialog && (
+                <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-dark-card rounded-2xl shadow-xl w-full max-w-md p-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg sm:text-xl font-medium text-gray-900 dark:text-dark-text-primary">
+                                Share Post
+                            </h3>
+                            <button
+                                onClick={() => setShowShareDialog(false)}
+                                className="text-gray-500 hover:text-gray-700 dark:text-dark-text-muted dark:hover:text-dark-text-primary"
+                            >
+                                <FaTimes className="w-5 h-5" />
+                            </button>
+                        </div>
 
-                        <span
-                            className="inline-block h-screen align-middle"
-                            aria-hidden="true"
-                        >
-                            &#8203;
-                        </span>
-
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300"
-                            enterFrom="opacity-0 scale-95"
-                            enterTo="opacity-100 scale-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100 scale-100"
-                            leaveTo="opacity-0 scale-95"
-                        >
-                            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-dark-card shadow-xl rounded-2xl">
-                                <Dialog.Title
-                                    as="h3"
-                                    className="text-lg sm:text-xl font-medium leading-6 text-gray-900 dark:text-dark-text-primary"
-                                >
-                                    Share Post
-                                </Dialog.Title>
-
-                                <div className="mt-4">
-                                    <div className="space-y-4">
-                                        <div className="max-h-60 overflow-y-auto">
-                        {isLoadingConnections ? (
-                                                <div className="flex justify-center items-center py-4">
-                                                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-                            </div>
-                                            ) : connections.length > 0 ? (
-                                                <div className="space-y-2">
-                                    {connections.map((connection) => (
-                                                        <label
-                                                            key={connection._id}
-                                                            className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover cursor-pointer"
-                                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedConnections.includes(connection._id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedConnections([...selectedConnections, connection._id]);
-                                                    } else {
-                                                        setSelectedConnections(selectedConnections.filter(id => id !== connection._id));
-                                                    }
-                                                }}
-                                                                className="rounded text-blue-500 focus:ring-blue-500"
-                                                            />
-                                                            <div className="flex items-center space-x-3">
-                                                                {connection.profilePicture ? (
-                                                                    <img
-                                                                        src={connection.profilePicture}
-                                                                        alt={connection.name}
-                                                                        className="w-8 h-8 rounded-full object-cover"
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-dark-hover flex items-center justify-center text-white">
-                                                                        {typeof User === 'function' && <User className="w-4 h-4" />}
-                                        </div>
-                                                                )}
-                                                                <span className="text-sm sm:text-base text-gray-700 dark:text-dark-text-primary">
-                                                                    {connection.name}
-                                                                </span>
-                                                            </div>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p className="text-sm sm:text-base text-gray-500 dark:text-dark-text-muted text-center py-4">
-                                                    No connections found
-                                                </p>
-                                            )}
-                                </div>
-                                
-                                        <div className="flex justify-end space-x-2">
-                                        <button
-                                            onClick={() => setShowShareDialog(false)}
-                                                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary"
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button
-                                            onClick={handleShareToConnections}
-                                                disabled={selectedConnections.length === 0 || isSharing}
-                                                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {isSharing ? 'Sharing...' : 'Share'}
-                                        </button>
+                        <div className="space-y-4">
+                            <div className="max-h-60 overflow-y-auto">
+                                {isLoadingConnections ? (
+                                    <div className="flex justify-center items-center py-4">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                                     </div>
-                                </div>
+                                ) : connections.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {connections.map((connection) => (
+                                            <label
+                                                key={connection._id}
+                                                className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover cursor-pointer"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedConnections.includes(connection._id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedConnections([...selectedConnections, connection._id]);
+                                                        } else {
+                                                            setSelectedConnections(selectedConnections.filter(id => id !== connection._id));
+                                                        }
+                                                    }}
+                                                    className="rounded text-blue-500 focus:ring-blue-500"
+                                                />
+                                                <div className="flex items-center space-x-3">
+                                                    {connection.profilePicture ? (
+                                                        <img
+                                                            src={connection.profilePicture}
+                                                            alt={connection.name}
+                                                            className="w-8 h-8 rounded-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-gray-900 dark:bg-dark-hover flex items-center justify-center text-white">
+                                                            <UserIcon className="w-4 h-4" />
+                                                        </div>
+                                                    )}
+                                                    <span className="text-sm sm:text-base text-gray-700 dark:text-dark-text-primary">
+                                                        {connection.name}
+                                                    </span>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm sm:text-base text-gray-500 dark:text-dark-text-muted text-center py-4">
+                                        No connections found
+                                    </p>
+                                )}
+                            </div>
+                            
+                            <div className="flex justify-end space-x-2">
+                                <button
+                                    onClick={() => setShowShareDialog(false)}
+                                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleShareToConnections}
+                                    disabled={selectedConnections.length === 0 || isSharing}
+                                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {isSharing ? 'Sharing...' : 'Share'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                        </Transition.Child>
-                    </div>
-                </Dialog>
-            </Transition>
+            )}
         </div>
     );
 };
@@ -1066,7 +970,7 @@ Post.propTypes = {
         author: PropTypes.shape({
             _id: PropTypes.string.isRequired,
             username: PropTypes.string.isRequired,
-            name: PropTypes.string.isRequired,
+            name: PropTypes.string,
             profilePicture: PropTypes.string
         }).isRequired,
         likes: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -1077,6 +981,7 @@ Post.propTypes = {
                 author: PropTypes.shape({
                     _id: PropTypes.string.isRequired,
                     username: PropTypes.string.isRequired,
+                    name: PropTypes.string,
                     profilePicture: PropTypes.string
                 }).isRequired,
                 likes: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -1087,6 +992,7 @@ Post.propTypes = {
                         author: PropTypes.shape({
                             _id: PropTypes.string.isRequired,
                             username: PropTypes.string.isRequired,
+                            name: PropTypes.string,
                             profilePicture: PropTypes.string
                         }).isRequired
                     })
@@ -1097,7 +1003,13 @@ Post.propTypes = {
         image: PropTypes.string
     }).isRequired,
     onUpdate: PropTypes.func.isRequired,
-    onDelete: PropTypes.func.isRequired
+    onDelete: PropTypes.func.isRequired,
+    user: PropTypes.shape({
+        _id: PropTypes.string.isRequired,
+        username: PropTypes.string.isRequired,
+        name: PropTypes.string,
+        profilePicture: PropTypes.string
+    }).isRequired
 };
 
 export default Post; 

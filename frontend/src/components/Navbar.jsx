@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
-import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap, Settings } from "lucide-react";
+import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap, Settings, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 
-const Navbar = ({ children }) => {
+const Navbar = () => {
     const { user, logout } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState([]);
@@ -18,7 +19,7 @@ const Navbar = ({ children }) => {
         unreadEventsCount: 0
     });
     const [failedSearchImages, setFailedSearchImages] = useState({});
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     // Function to fetch unread counts
     const fetchUnreadCounts = useCallback(async () => {
@@ -122,20 +123,47 @@ const Navbar = ({ children }) => {
         setFailedSearchImages(prev => ({ ...prev, [userId]: true }));
     };
 
-    const toggleMobileMenu = () => {
-        setIsMobileMenuOpen(!isMobileMenuOpen);
-    };
+    const navItems = [
+        { icon: Home, label: 'Home', path: '/home', badge: null },
+        { 
+            icon: Users, 
+            label: 'My Network', 
+            path: '/network', 
+            badge: unreadCounts.unreadConnectionRequestsCount 
+        },
+        { 
+            icon: MessageSquare, 
+            label: 'Messages', 
+            path: '/messages', 
+            badge: unreadCounts.unreadMessagesCount 
+        },
+        { 
+            icon: Calendar, 
+            label: 'Events', 
+            path: '/events', 
+            badge: unreadCounts.unreadEventsCount 
+        },
+        { 
+            icon: Bell, 
+            label: 'Notifications', 
+            path: '/notifications', 
+            badge: unreadCounts.unreadNotificationCount 
+        }
+    ];
 
     return (
-        <nav className='bg-white dark:bg-dark-card shadow-md sticky top-0 z-10 border-b border-gray-200 dark:border-dark-border'>
-            <div className='max-w-7xl mx-auto px-4'>
-                <div className='flex justify-between items-center py-3'>
-                    <div className='flex items-center space-x-4 flex-grow'>
-                        <Link to='/' onClick={() => setIsMobileMenuOpen(false)}>
-                            <img className='h-8 rounded' src='/ApsitINlogo.avif' alt='Apsit-In' />
+        <>
+            <nav className='bg-white/80 dark:bg-dark-card/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-200/50 dark:border-dark-border/50'>
+                <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+                    <div className='flex justify-between items-center h-16'>
+                        {/* Logo */}
+                        <Link to='/' className='flex-shrink-0'>
+                            <img className='h-8 w-auto' src='/ApsitINlogo.avif' alt='Apsit-In' />
                         </Link>
+
+                        {/* Search Bar - Desktop */}
                         {user && (
-                            <div className="relative flex-grow max-w-2xl hidden md:block">
+                            <div className="hidden md:block flex-1 max-w-2xl mx-8">
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -143,7 +171,7 @@ const Navbar = ({ children }) => {
                                         value={searchQuery}
                                         onChange={(e) => handleSearch(e.target.value)}
                                         onBlur={handleClickOutside}
-                                        className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:border-blue-500 dark:focus:border-dark-primary focus:ring-1 focus:ring-blue-500 dark:focus:ring-dark-primary"
+                                        className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200"
                                     />
                                     <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-dark-text-muted" />
                                 </div>
@@ -205,168 +233,181 @@ const Navbar = ({ children }) => {
                                 )}
                             </div>
                         )}
-                    </div>
-                    <div className='hidden md:flex items-center gap-4 md:gap-6'>
+
+                        {/* Desktop Navigation */}
+                        <div className='hidden md:flex items-center space-x-1'>
                         {user ? (
                             <>
-                                <Link to='/home' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
-                                    <Home size={20} />
-                                    <span className='text-xs hidden md:block'>Home</span>
-                                </Link>
-                                <Link to='/network' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
-                                    <Users size={20} />
-                                    <span className='text-xs hidden md:block'>My Network</span>
-                                    {unreadCounts.unreadConnectionRequestsCount > 0 && (
-                                        <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
-                                            {unreadCounts.unreadConnectionRequestsCount}
+                                    {navItems.map((item) => (
+                                        <Link
+                                            key={item.path}
+                                            to={item.path}
+                                            className='relative p-2 rounded-full text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
+                                        >
+                                            <item.icon size={20} />
+                                            {item.badge > 0 && (
+                                                <span className='absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center'>
+                                                    {item.badge}
                                         </span>
                                     )}
                                 </Link>
-                                <Link to='/messages' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
-                                    <MessageSquare size={20} />
-                                    <span className='text-xs hidden md:block'>Messages</span>
-                                    {unreadCounts.unreadMessagesCount > 0 && (
-                                        <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
-                                            {unreadCounts.unreadMessagesCount}
-                                        </span>
-                                    )}
-                                </Link>
-                                <Link to='/events' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
-                                    <Calendar size={20} />
-                                    <span className='text-xs hidden md:block'>Events</span>
-                                    {unreadCounts.unreadEventsCount > 0 && (
-                                        <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
-                                            {unreadCounts.unreadEventsCount}
-                                        </span>
-                                    )}
-                                </Link>
-                                <Link to='/notifications' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center relative'>
-                                    <Bell size={20} />
-                                    <span className='text-xs hidden md:block'>Notifications</span>
-                                    {unreadCounts.unreadNotificationCount > 0 && (
-                                        <span className='absolute -top-1 -right-1 md:right-4 bg-blue-500 text-white text-xs rounded-full size-3 md:size-4 flex items-center justify-center'>
-                                            {unreadCounts.unreadNotificationCount}
-                                        </span>
-                                    )}
-                                </Link>
-                                <Link to={`/profile/${user.username}`} className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
+                                    ))}
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowDropdown(!showDropdown)}
+                                            className='p-2 rounded-full text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
+                                        >
                                     <User size={20} />
-                                    <span className='text-xs hidden md:block'>Me</span>
+                                        </button>
+                                        {showDropdown && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-dark-card rounded-xl shadow-lg border border-gray-200 dark:border-dark-border py-1">
+                                                <Link
+                                                    to={`/profile/${user.username}`}
+                                                    className='block px-4 py-2 text-sm text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                                >
+                                                    Profile
                                 </Link>
-                                <Link to='/settings' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
-                                    <Settings size={20} />
-                                    <span className='text-xs hidden md:block'>Settings</span>
+                                                <Link
+                                                    to="/settings"
+                                                    className='block px-4 py-2 text-sm text-gray-700 dark:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                                >
+                                                    Settings
                                 </Link>
-                                <button onClick={handleLogout} className='text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500 flex flex-col items-center'>
-                                    <LogOut size={20} />
-                                    <span className='text-xs hidden md:block'>Logout</span>
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className='block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-dark-hover'
+                                                >
+                                                    Logout
                                 </button>
+                                            </div>
+                                        )}
+                                    </div>
                             </>
                         ) : (
-                            <>
-                                <Link to='/login' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
-                                    <span>Login</span>
+                                <Link
+                                    to="/login"
+                                    className='px-4 py-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200'
+                                >
+                                    Sign In
                                 </Link>
-                                <Link to='/signup' className='text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary flex flex-col items-center'>
-                                    <span>Signup</span>
-                                </Link>
-                            </>
                         )}
                     </div>
 
-                    {/* Mobile menu button */}
-                    <div className="md:hidden flex items-center">
-                        <button onClick={toggleMobileMenu} className="outline-none mobile-menu-button text-gray-600 dark:text-dark-text-secondary hover:text-gray-800 dark:hover:text-dark-text-primary">
-                            <svg
-                                className="w-6 h-6"
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                {isMobileMenuOpen ? (
-                                    <path d="M6 18L18 6M6 6l12 12"></path>
-                                ) : (
-                                    <path d="M4 6h16M4 12h16M4 18h16"></path>
-                                )}
-                            </svg>
+                        {/* Mobile Menu Button */}
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className='md:hidden p-2 rounded-full text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
+                        >
+                            <Menu size={24} />
                         </button>
                     </div>
                 </div>
-            </div>
+            </nav>
 
-            {/* Mobile Menu */}
-            {isMobileMenuOpen && (
-                <div className="md:hidden bg-white dark:bg-dark-card border-b border-gray-200 dark:border-dark-border">
-                    {user && (
-                        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                             <div className="relative mb-2">
-                                    <input
-                                        type="text"
-                                        placeholder="Search users..."
-                                        value={searchQuery}
-                                        onChange={(e) => handleSearch(e.target.value)}
-                                        onBlur={handleClickOutside}
-                                        className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-hover text-gray-900 dark:text-dark-text-primary focus:outline-none focus:border-blue-500 dark:focus:border-dark-primary focus:ring-1 focus:ring-blue-500 dark:focus:ring-dark-primary"
-                                    />
-                                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-dark-text-muted" />
+            {/* Mobile Sidebar */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 md:hidden"
+                        />
+
+                        {/* Sidebar */}
+                        <motion.div
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 20 }}
+                            className="fixed right-0 top-0 h-full w-64 bg-white dark:bg-dark-card shadow-xl z-50 md:hidden"
+                        >
+                            <div className="flex flex-col h-full">
+                                {/* Sidebar Header */}
+                                <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-dark-border">
+                                    <h2 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">Menu</h2>
+                                    <button
+                                        onClick={() => setIsSidebarOpen(false)}
+                                        className="p-2 rounded-full text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200"
+                                    >
+                                        <X size={20} />
+                                    </button>
                                 </div>
-                            <Link to='/home' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
-                            <Link to='/network' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
-                                My Network
-                                {unreadCounts.unreadConnectionRequestsCount > 0 && (
-                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
-                                            {unreadCounts.unreadConnectionRequestsCount}
+
+                                {/* Sidebar Content */}
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    {user ? (
+                                        <div className="space-y-4">
+                                            {navItems.map((item) => (
+                                                <Link
+                                                    key={item.path}
+                                                    to={item.path}
+                                                    onClick={() => setIsSidebarOpen(false)}
+                                                    className='flex items-center space-x-3 p-2 rounded-lg text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
+                                                >
+                                                    <item.icon size={20} />
+                                                    <span>{item.label}</span>
+                                                    {item.badge > 0 && (
+                                                        <span className='ml-auto bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center'>
+                                                            {item.badge}
                                         </span>
                                 )}
                             </Link>
-                            <Link to='/messages' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
-                                Messages
-                                {unreadCounts.unreadMessagesCount > 0 && (
-                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
-                                            {unreadCounts.unreadMessagesCount}
-                                        </span>
-                                )}
+                                            ))}
+                                            <div className="pt-4 border-t border-gray-200 dark:border-dark-border">
+                                                <Link
+                                                    to={`/profile/${user.username}`}
+                                                    onClick={() => setIsSidebarOpen(false)}
+                                                    className='flex items-center space-x-3 p-2 rounded-lg text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
+                                                >
+                                                    <User size={20} />
+                                                    <span>Profile</span>
                             </Link>
-                             <Link to='/events' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
-                                Events
-                                {unreadCounts.unreadEventsCount > 0 && (
-                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
-                                            {unreadCounts.unreadEventsCount}
-                                        </span>
-                                )}
+                                                <Link
+                                                    to="/settings"
+                                                    onClick={() => setIsSidebarOpen(false)}
+                                                    className='flex items-center space-x-3 p-2 rounded-lg text-gray-600 dark:text-dark-text-secondary hover:text-gray-900 dark:hover:text-dark-text-primary hover:bg-gray-100 dark:hover:bg-dark-hover transition-all duration-200'
+                                                >
+                                                    <Settings size={20} />
+                                                    <span>Settings</span>
                             </Link>
-                            <Link to='/notifications' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover relative' onClick={() => setIsMobileMenuOpen(false)}>
-                                Notifications
-                                {unreadCounts.unreadNotificationCount > 0 && (
-                                     <span className='absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full px-1 py-0.5'>
-                                            {unreadCounts.unreadNotificationCount}
-                                        </span>
-                                )}
-                            </Link>
-                            <Link to={`/profile/${user.username}`} className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Me</Link>
-                             <Link to='/settings' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Settings</Link>
-                            <button onClick={handleLogout} className='block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30'>Logout</button>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsSidebarOpen(false);
+                                                        handleLogout();
+                                                    }}
+                                                    className='flex items-center space-x-3 p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 w-full'
+                                                >
+                                                    <LogOut size={20} />
+                                                    <span>Logout</span>
+                                                </button>
                         </div>
-                    )}
-                     {!user && (
-                         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                             <Link to='/login' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Sign In</Link>
-                             <Link to='/signup' className='block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-dark-text-secondary hover:bg-gray-100 dark:hover:bg-dark-hover' onClick={() => setIsMobileMenuOpen(false)}>Join now</Link>
                          </div>
+                                    ) : (
+                                        <Link
+                                            to="/login"
+                                            onClick={() => setIsSidebarOpen(false)}
+                                            className='block w-full px-4 py-2 text-center rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors duration-200'
+                                        >
+                                            Sign In
+                                        </Link>
                      )}
                 </div>
+                            </div>
+                        </motion.div>
+                    </>
             )}
-
-            {children}
-        </nav>
+            </AnimatePresence>
+        </>
     );
 };
 
 Navbar.propTypes = {
-    children: PropTypes.node,
+    // Remove this line:
+    // children: PropTypes.node.isRequired
 };
 
 export default Navbar;

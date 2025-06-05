@@ -18,8 +18,8 @@ export default {
         // Dark mode colors
         dark: {
           primary: '#3b82f6',
-          secondary: '#1e293b',
-          card: '#1e293b',
+          secondary: '#121212',
+          card: '#121212',
           hover: '#2d3748',
           border: '#334155',
           text: {
