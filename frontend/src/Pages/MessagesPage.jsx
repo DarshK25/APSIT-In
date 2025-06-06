@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Send, Search, MessageSquare, MoreVertical, Paperclip, File } from 'lucide-react';
+import { Send, Search, MessageSquare, MoreVertical, Paperclip, File, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -85,6 +85,8 @@ const MessagesPage = () => {
     const [messageRequestStatus, setMessageRequestStatus] = useState(null);
     const [isLoadingStatus, setIsLoadingStatus] = useState(false);
     const [showProfileFallback, setShowProfileFallback] = useState(false);
+    const [isMobileView, setIsMobileView] = useState(false);
+    const [showChat, setShowChat] = useState(false);
 
     // Get user ID from URL query parameter and fetch user data if needed
     useEffect(() => {
@@ -364,6 +366,30 @@ const MessagesPage = () => {
         setShowProfileFallback(false);
     }, [selectedUser]);
 
+    // Add window resize handler
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobileView(window.innerWidth < 768);
+        };
+
+        handleResize(); // Initial check
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Modify the setSelectedUser function to handle mobile view
+    const handleSelectUser = (user) => {
+        setSelectedUser(user);
+        if (isMobileView) {
+            setShowChat(true);
+        }
+    };
+
+    // Add back button handler
+    const handleBackToList = () => {
+        setShowChat(false);
+    };
+
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -550,33 +576,33 @@ const MessagesPage = () => {
 
     return (
         <div className="fixed inset-0 bg-gray-50">
-            <div className="h-full max-w-8xl mx-auto p-4 pt-20">
-                <div className="h-[calc(100vh-5rem)] bg-white rounded-lg shadow-lg flex">
+            <div className="h-full max-w-8xl mx-auto p-2 sm:p-4 pt-16 sm:pt-20">
+                <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] bg-white rounded-lg shadow-lg flex">
                     {/* Conversations List */}
-                    <div className="w-1/3 border-r border-gray-200 flex flex-col">
-                        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+                    <div className={`${isMobileView && showChat ? 'hidden' : 'w-full sm:w-1/3'} border-r border-gray-200 flex flex-col`}>
+                        <div className="p-2 sm:p-4 border-b border-gray-200 flex-shrink-0">
                             <div className="relative">
                                 <input
                                     type="text"
                                     placeholder="Search messages..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-8 sm:pl-10 pr-4 py-1.5 sm:py-2 text-sm rounded-lg bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
-                                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                                <Search className="absolute left-2 sm:left-3 top-2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                             </div>
                         </div>
                         <div className="overflow-y-auto flex-1">
                             {filteredConversations.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500">
+                                <div className="p-4 text-center text-gray-500 text-sm">
                                     {searchQuery ? 'No conversations found' : 'No messages yet'}
                                 </div>
                             ) : (
                                 filteredConversations.map((conversation) => (
                                     <div
                                         key={conversation.user._id}
-                                        onClick={() => setSelectedUser(conversation.user)}
-                                        className={`p-4 border-b border-gray-100 cursor-pointer ${
+                                        onClick={() => handleSelectUser(conversation.user)}
+                                        className={`p-2 sm:p-4 border-b border-gray-100 cursor-pointer ${
                                             selectedUser?._id === conversation.user._id 
                                                 ? 'bg-blue-100' 
                                                 : conversation.unreadCount > 0
@@ -584,35 +610,35 @@ const MessagesPage = () => {
                                                     : 'hover:bg-gray-50'
                                         }`}
                                     >
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex items-center space-x-2 sm:space-x-3">
                                             <div className="relative">
                                                 {conversation.user.profilePicture ? (
                                                     <img
                                                         src={conversation.user.profilePicture}
                                                         alt={conversation.user.name}
-                                                        className="w-10 h-10 rounded-full object-cover"
+                                                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                                                         onError={(e) => {
                                                             e.target.style.display = 'none';
                                                             e.target.parentElement.innerHTML = 
-                                                                `<div class=\"w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center\">\n` +
-                                                                `    <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\">` +
-                                                                `        <path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\" />` +
-                                                                `        <circle cx=\"12\" cy=\"7\" r=\"4\" />` +
-                                                                `    </svg>` +
-                                                                `</div>`;
+                                                                `<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                                    <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                                                        <circle cx="12" cy="7" r="4" />
+                                                                    </svg>
+                                                                </div>`;
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                        <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                             <circle cx="12" cy="7" r="4" />
                                                         </svg>
                                                     </div>
                                                 )}
                                                 {conversation.unreadCount > 0 && (
-                                                    <div className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
-                                                        <span className="text-[11px] text-white font-bold">
+                                                    <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
+                                                        <span className="text-[10px] sm:text-[11px] text-white font-bold">
                                                             {conversation.unreadCount}
                                                         </span>
                                                     </div>
@@ -620,14 +646,14 @@ const MessagesPage = () => {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-start">
-                                                    <h3 className={`${
+                                                    <h3 className={`text-sm sm:text-base ${
                                                         conversation.unreadCount > 0
                                                             ? 'text-black font-bold' 
                                                             : 'text-gray-800 font-medium'
                                                     }`}>
                                                         {conversation.user.name}
                                                     </h3>
-                                                    <span className={`text-xs ${
+                                                    <span className={`text-[10px] sm:text-xs ${
                                                         conversation.unreadCount > 0
                                                             ? 'text-black font-semibold' 
                                                             : 'text-gray-500'
@@ -636,7 +662,7 @@ const MessagesPage = () => {
                                                     </span>
                                                 </div>
                                                 {conversation.lastMessage && (
-                                                    <p className={`text-sm truncate ${
+                                                    <p className={`text-xs sm:text-sm truncate ${
                                                         conversation.unreadCount > 0
                                                             ? 'text-black font-semibold' 
                                                             : 'text-gray-500'
@@ -653,19 +679,30 @@ const MessagesPage = () => {
                     </div>
 
                     {/* Chat Area */}
-                    <div className="flex-1 flex flex-col">
+                    <div className={`${isMobileView && !showChat ? 'hidden' : 'flex-1'} flex flex-col`}>
                         {selectedUser ? (
                             <>
                                 {/* Chat Header */}
                                 <div 
-                                    className="p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    className="p-2 sm:p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
                                     onClick={() => handleNavigateToProfile(selectedUser.username)}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
+                                        <div className="flex items-center space-x-2 sm:space-x-3">
+                                            {isMobileView && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleBackToList();
+                                                    }}
+                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors mr-1"
+                                                >
+                                                    <ArrowLeft className="w-5 h-5 text-gray-600" />
+                                                </button>
+                                            )}
                                             {(!selectedUser.profilePicture || showProfileFallback) ? (
-                                                <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                    <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                         <circle cx="12" cy="7" r="4" />
                                                     </svg>
@@ -674,13 +711,13 @@ const MessagesPage = () => {
                                                 <img
                                                     src={selectedUser.profilePicture}
                                                     alt={selectedUser.name}
-                                                    className="w-10 h-10 rounded-full"
+                                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full"
                                                     onError={() => setShowProfileFallback(true)}
                                                 />
                                             )}
                                             <div>
-                                                <h3 className="font-medium">{selectedUser.name}</h3>
-                                                <p className="text-sm text-gray-500">
+                                                <h3 className="text-sm sm:text-base font-medium">{selectedUser.name}</h3>
+                                                <p className="text-xs sm:text-sm text-gray-500">
                                                     {selectedUser.headline || 'APSIT Student'}
                                                 </p>
                                             </div>
@@ -691,9 +728,9 @@ const MessagesPage = () => {
                                                     e.stopPropagation();
                                                     setShowOptions(!showOptions);
                                                 }}
-                                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
                                             >
-                                                <MoreVertical className="w-5 h-5 text-gray-600" />
+                                                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                             </button>
                                             {showOptions && (
                                                 <ChatOptions
@@ -706,7 +743,7 @@ const MessagesPage = () => {
                                 </div>
 
                                 {/* Messages */}
-                                <div className="flex-1 overflow-y-auto p-4">
+                                <div className="flex-1 overflow-y-auto p-2 sm:p-4">
                                     {messageRequestStatus?.hasRequest && !messageRequestStatus?.isSender ? (
                                         <div className="bg-blue-50 p-4 rounded-lg mb-4">
                                             <p className="text-blue-700 mb-2">
@@ -784,12 +821,12 @@ const MessagesPage = () => {
                                 </div>
 
                                 {/* Message Input */}
-                                <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200">
+                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200">
                                     {attachedFile && (
-                                        <div className="mb-2 p-2 bg-gray-50 rounded-lg flex items-center justify-between">
+                                        <div className="mb-2 p-1.5 sm:p-2 bg-gray-50 rounded-lg flex items-center justify-between">
                                             <div className="flex items-center space-x-2">
-                                                <File className="w-4 h-4 text-gray-500" />
-                                                <span className="text-sm text-gray-600">
+                                                <File className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
+                                                <span className="text-xs sm:text-sm text-gray-600">
                                                     {attachedFile.name} ({formatFileSize(attachedFile.size)})
                                                 </span>
                                             </div>
@@ -812,7 +849,7 @@ const MessagesPage = () => {
                                                     ? "Waiting for message request response..."
                                                     : "Type a message..."
                                             }
-                                            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                             disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
                                         />
                                         <input
@@ -826,37 +863,37 @@ const MessagesPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
-                                            className={`px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ${
+                                            className={`p-1.5 sm:p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ${
                                                 uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage) ? 'opacity-50 cursor-not-allowed' : ''
                                             }`}
                                             disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
                                         >
-                                            <Paperclip size={20} />
+                                            <Paperclip size={18} className="sm:w-5 sm:h-5" />
                                         </button>
                                         <button
                                             type="submit"
                                             disabled={(!newMessage.trim() && !attachedFile) || uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
-                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                            className="p-1.5 sm:p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                                         >
                                             {uploadingFile ? (
                                                 <>
-                                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                                    <span>Sending...</span>
+                                                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                    <span className="text-xs sm:text-sm">Sending...</span>
                                                 </>
                                             ) : (
-                                                <Send size={20} />
+                                                <Send size={18} className="sm:w-5 sm:h-5" />
                                             )}
                                         </button>
                                     </div>
                                 </form>
                             </>
                         ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 p-8">
+                            <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 p-4 sm:p-8">
                                 <div className="mb-4">
-                                    <MessageSquare size={48} className="mx-auto text-gray-400" />
+                                    <MessageSquare size={36} className="mx-auto text-gray-400 sm:w-12 sm:h-12" />
                                 </div>
-                                <h2 className="text-xl font-medium mb-2">Your Messages</h2>
-                                <p className="text-sm max-w-md">
+                                <h2 className="text-lg sm:text-xl font-medium mb-2">Your Messages</h2>
+                                <p className="text-xs sm:text-sm max-w-md">
                                     Send private messages to your connections. Start a conversation by selecting a user from the left or searching for someone specific.
                                 </p>
                             </div>
