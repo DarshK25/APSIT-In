@@ -26,7 +26,7 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 						onError={(e) => {
 							e.target.outerHTML = `
 								<div class="w-24 h-24 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center mb-4">
-									<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+									<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
 										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 										<circle cx="12" cy="7" r="4" />
 									</svg>
@@ -35,7 +35,7 @@ const UserCard = ({ user, onConnect, onRemove, connectionStatus }) => {
 					/>
 				) : (
 					<div className="w-24 h-24 rounded-full bg-gray-900 dark:bg-dark-hover ring-2 ring-gray-100 dark:ring-dark-border flex items-center justify-center mb-4">
-						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
 							<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 							<circle cx="12" cy="7" r="4" />
 						</svg>
@@ -105,7 +105,7 @@ const FriendRequest = ({ request, onAccept, onReject, isConnection = false }) =>
 								onError={(e) => {
 									e.target.outerHTML = `
 										<div class="w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-700 ring-2 ring-gray-100 dark:ring-dark-hover flex items-center justify-center">
-											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+											<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
 												<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 												<circle cx="12" cy="7" r="4" />
 											</svg>

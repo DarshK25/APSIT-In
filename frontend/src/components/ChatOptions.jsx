@@ -66,22 +66,22 @@ const ChatOptions = ({ selectedUser, onClose }) => {
     };
 
     return (
-        <div className="absolute right-0 top-16 w-48 bg-white dark:bg-dark-card rounded-lg shadow-lg py-2 z-50 border border-gray-200 dark:border-dark-border">
-            <div className="px-4 py-2 border-b border-gray-100 dark:border-dark-border">
-                <h3 className="font-medium text-gray-900 dark:text-dark-text-primary">Details</h3>
+        <div className="absolute right-0 top-16 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50 border border-gray-200 dark:border-gray-700">
+            <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                <h3 className="font-medium text-gray-900 dark:text-gray-100">Details</h3>
             </div>
             
             <button
                 onClick={handleMuteToggle}
-                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors"
+                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
             >
-                <BellOff className="w-5 h-5 text-gray-500 dark:text-dark-text-secondary" />
-                <span className="text-gray-700 dark:text-dark-text-primary">{isMuted ? 'Unmute messages' : 'Mute messages'}</span>
+                <BellOff className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <span className="text-gray-700 dark:text-gray-100">{isMuted ? 'Unmute messages' : 'Mute messages'}</span>
             </button>
 
             <button
                 onClick={handleReport}
-                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors text-red-600 dark:text-red-500"
+                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-red-600 dark:text-red-400"
             >
                 <Flag className="w-5 h-5" />
                 <span>Report</span>
@@ -89,7 +89,7 @@ const ChatOptions = ({ selectedUser, onClose }) => {
 
             <button
                 onClick={handleBlock}
-                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors text-red-600 dark:text-red-500"
+                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-red-600 dark:text-red-400"
             >
                 <Ban className="w-5 h-5" />
                 <span>Block</span>
@@ -97,7 +97,7 @@ const ChatOptions = ({ selectedUser, onClose }) => {
 
             <button
                 onClick={handleDeleteChat}
-                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-dark-hover transition-colors text-red-600 dark:text-red-500"
+                className="w-full px-4 py-2 flex items-center space-x-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-red-600 dark:text-red-400"
             >
                 <Trash2 className="w-5 h-5" />
                 <span>Delete Chat</span>

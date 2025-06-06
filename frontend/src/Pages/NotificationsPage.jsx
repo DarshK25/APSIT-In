@@ -55,20 +55,25 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
 
     return (
         <div 
-            className={`flex items-start gap-4 p-4 ${notification.read ? 'bg-white' : 'bg-blue-50'} hover:bg-gray-50 transition-colors cursor-pointer border-b`}
+            className={`flex items-start gap-4 p-4 border-b transition-colors cursor-pointer 
+                ${notification.read 
+                    ? 'bg-white dark:bg-dark-card !important' 
+                    : 'bg-blue-50 dark:bg-blue-900/30'} 
+                hover:bg-gray-50 dark:hover:bg-dark-hover 
+                border-gray-200 dark:border-dark-border`}
             onClick={handleClick}
         >
             <div className="flex-shrink-0">
                 {getNotificationIcon(notification.type)}
             </div>
             <div className="flex-grow">
-                <div className="text-sm text-gray-900">
+                <div className="text-sm text-gray-900 dark:text-gray-100">
                     {notification.sender && (
                         <span className="font-medium">{notification.sender.name}</span>
                     )}
                     <span className="ml-1">{notification.message}</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                 </p>
             </div>
@@ -79,7 +84,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
                             e.stopPropagation();
                             onMarkAsRead(notification._id);
                         }}
-                        className="p-1 hover:bg-gray-100 rounded-full"
+                        className="p-1 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full"
                         title="Mark as read"
                     >
                         <Check className="w-4 h-4 text-blue-500" />
@@ -90,7 +95,7 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
                         e.stopPropagation();
                         onDelete(notification._id);
                     }}
-                    className="p-1 hover:bg-gray-100 rounded-full"
+                    className="p-1 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full"
                     title="Delete notification"
                 >
                     <Trash2 className="w-4 h-4 text-red-500" />
@@ -225,35 +230,35 @@ const NotificationsPage = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-4">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-4 bg-gray-50 dark:bg-dark-bg min-h-screen">
       <div className="hidden lg:block lg:col-span-1">
         <Sidebar user={user} />
       </div>
       <div className="col-span-1 lg:col-span-3">
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-4 border-b flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow">
+          <div className="p-4 border-b border-gray-200 dark:border-dark-border flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <Bell className="w-6 h-6" />
               Notifications
             </h1>
             <div className="flex gap-2">
               <button
                 onClick={fetchNotifications}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full"
                 title="Refresh notifications"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
               <button
                 onClick={handleMarkAllAsRead}
-                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-hover rounded-full"
                 title="Mark all as read"
               >
                 <CheckCircle className="w-5 h-5" />
               </button>
               <button
                 onClick={handleDeleteAll}
-                className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-full"
+                className="p-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-dark-hover rounded-full"
                 title="Clear all notifications"
               >
                 <Trash2 className="w-5 h-5" />
@@ -261,7 +266,7 @@ const NotificationsPage = () => {
             </div>
           </div>
 
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-dark-border">
             {notifications.length > 0 ? (
               notifications.map((notification) => (
                 <NotificationItem
@@ -272,8 +277,8 @@ const NotificationsPage = () => {
                 />
               ))
             ) : (
-              <div className="p-8 text-center text-gray-500">
-                <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
                 <p className="text-lg font-medium">No notifications</p>
                 <p className="text-sm">You're all caught up!</p>
               </div>

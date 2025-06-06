@@ -149,7 +149,7 @@ const Recommendations = ({ currentUser }) => {
                                     e.target.style.display = 'none';
                                     e.target.parentElement.innerHTML = 
                                         `<div class="w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-700 ring-2 ring-gray-100 dark:ring-dark-hover flex items-center justify-center">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                 <circle cx="12" cy="7" r="4" />
                                             </svg>

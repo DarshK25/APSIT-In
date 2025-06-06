@@ -64,7 +64,7 @@ const Sidebar = () => {
                                     e.target.style.display = 'none';
                                     e.target.parentElement.innerHTML = `
                                         <div class="w-24 h-24 rounded-full bg-gray-900 dark:bg-dark-hover border-4 border-white dark:border-dark-card shadow-md hover:ring-2 hover:ring-blue-500 transition-all duration-300 flex items-center justify-center">
-                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                 <circle cx="12" cy="7" r="4" />
                                             </svg>
