@@ -13,7 +13,7 @@ const SharedPostPreview = ({ post }) => {
     if (!post) return null;
     
     return (
-        <div className="border border-gray-200 rounded-xl overflow-hidden mb-2 bg-gray-50">
+        <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden mb-2 bg-gray-50 dark:bg-gray-800">
             {/* Header with profile pic and username */}
             <div className="p-3 flex items-center">
                 {post.author?.profilePicture ? (
@@ -23,20 +23,20 @@ const SharedPostPreview = ({ post }) => {
                         className="w-8 h-8 rounded-full object-cover mr-2" 
                     />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center mr-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-800 dark:bg-gray-700 flex items-center justify-center mr-2">
                         <span className="text-xs text-white font-medium">
                             {post.author?.name?.charAt(0) || "U"}
                         </span>
                     </div>
                 )}
                 <Link to={`/profile/${post.author?.username}`}>
-                    <span className="font-medium text-sm text-gray-500">{post.author?.username || post.author?.name || "Unknown"}</span>
+                    <span className="font-medium text-xs sm:text-sm text-gray-500 dark:text-gray-100">{post.author?.username || post.author?.name || "Unknown"}</span>
                 </Link>
             </div>
             
             {/* Post content - show both image and text if image exists */}
             {post.image && (
-                <div className="w-full bg-black flex items-center justify-center">
+                <div className="w-full bg-black dark:bg-gray-900 flex items-center justify-center">
                     <img 
                         src={post.image} 
                         alt="Post" 
@@ -47,13 +47,13 @@ const SharedPostPreview = ({ post }) => {
             
             {/* Always show text content if it exists */}
             {post.content && (
-                <div className={`p-4 ${post.image ? 'bg-white' : 'bg-white-500'} text-gray-700 font-medium`}>
+                <div className={`p-4 ${post.image ? 'bg-white dark:bg-gray-800' : 'bg-white-500 dark:bg-gray-800'} text-gray-700 dark:text-gray-100 font-medium text-xs sm:text-sm`}>
                     <p>{post.content}</p>
                 </div>
             )}
             
             {/* Footer with stats and link */}
-            <div className="p-3 text-xs text-gray-500 flex justify-between items-center">
+            <div className="p-3 text-xs sm:text-xs text-gray-500 dark:text-gray-400 flex justify-between items-center">
                 <div className="flex items-center gap-1">
                     <span>{post.likes?.length || 0} likes</span>
                     <span>•</span>
@@ -565,36 +565,36 @@ const MessagesPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
                 <div className="p-4 rounded-lg flex flex-col items-center space-y-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                    <p className="text-gray-500 text-sm">Loading messages...</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Loading messages...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="fixed inset-0 bg-gray-50">
+        <div className="fixed inset-0 bg-gray-50 dark:bg-gray-950">
             <div className="h-full max-w-8xl mx-auto p-2 sm:p-4 pt-16 sm:pt-20">
-                <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] bg-white rounded-lg shadow-lg flex">
+                <div className="h-[calc(100vh-4rem)] sm:h-[calc(100vh-5rem)] bg-white dark:bg-gray-900 rounded-lg shadow-lg flex">
                     {/* Conversations List */}
-                    <div className={`${isMobileView && showChat ? 'hidden' : 'w-full sm:w-1/3'} border-r border-gray-200 flex flex-col`}>
-                        <div className="p-2 sm:p-4 border-b border-gray-200 flex-shrink-0">
+                    <div className={`${isMobileView && showChat ? 'hidden' : 'w-full sm:w-1/3'} border-r border-gray-200 dark:border-gray-700 flex flex-col`}>
+                        <div className="p-2 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                             <div className="relative">
                                 <input
                                     type="text"
                                     placeholder="Search messages..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-8 sm:pl-10 pr-4 py-1.5 sm:py-2 text-sm rounded-lg bg-gray-100 border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full pl-8 sm:pl-10 pr-4 py-1.5 sm:py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-800 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                                 />
-                                <Search className="absolute left-2 sm:left-3 top-2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+                                <Search className="absolute left-2 sm:left-3 top-2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400 dark:text-gray-500" />
                             </div>
                         </div>
                         <div className="overflow-y-auto flex-1">
                             {filteredConversations.length === 0 ? (
-                                <div className="p-4 text-center text-gray-500 text-sm">
+                                <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                                     {searchQuery ? 'No conversations found' : 'No messages yet'}
                                 </div>
                             ) : (
@@ -602,12 +602,12 @@ const MessagesPage = () => {
                                     <div
                                         key={conversation.user._id}
                                         onClick={() => handleSelectUser(conversation.user)}
-                                        className={`p-2 sm:p-4 border-b border-gray-100 cursor-pointer ${
+                                        className={`p-2 sm:p-4 border-b border-gray-100 dark:border-gray-700 cursor-pointer ${
                                             selectedUser?._id === conversation.user._id 
-                                                ? 'bg-blue-100' 
+                                                ? 'bg-blue-100 dark:bg-blue-900/30' 
                                                 : conversation.unreadCount > 0
-                                                    ? 'bg-gray-50'
-                                                    : 'hover:bg-gray-50'
+                                                    ? 'bg-gray-50 dark:bg-gray-800/50'
+                                                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
                                         }`}
                                     >
                                         <div className="flex items-center space-x-2 sm:space-x-3">
@@ -620,8 +620,8 @@ const MessagesPage = () => {
                                                         onError={(e) => {
                                                             e.target.style.display = 'none';
                                                             e.target.parentElement.innerHTML = 
-                                                                `<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 flex items-center justify-center">
-                                                                    <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                                                `<div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
+                                                                    <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                                         <circle cx="12" cy="7" r="4" />
                                                                     </svg>
@@ -629,7 +629,7 @@ const MessagesPage = () => {
                                                         }}
                                                     />
                                                 ) : (
-                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
                                                         <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                             <circle cx="12" cy="7" r="4" />
@@ -637,7 +637,7 @@ const MessagesPage = () => {
                                                     </div>
                                                 )}
                                                 {conversation.unreadCount > 0 && (
-                                                    <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center">
+                                                    <div className="absolute bottom-0 right-0 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-500 border-2 border-white dark:border-gray-800 flex items-center justify-center">
                                                         <span className="text-[10px] sm:text-[11px] text-white font-bold">
                                                             {conversation.unreadCount}
                                                         </span>
@@ -648,15 +648,15 @@ const MessagesPage = () => {
                                                 <div className="flex justify-between items-start">
                                                     <h3 className={`text-sm sm:text-base ${
                                                         conversation.unreadCount > 0
-                                                            ? 'text-black font-bold' 
-                                                            : 'text-gray-800 font-medium'
+                                                            ? 'text-black dark:text-gray-100 font-bold' 
+                                                            : 'text-gray-800 dark:text-gray-100 font-medium'
                                                     }`}>
                                                         {conversation.user.name}
                                                     </h3>
                                                     <span className={`text-[10px] sm:text-xs ${
                                                         conversation.unreadCount > 0
-                                                            ? 'text-black font-semibold' 
-                                                            : 'text-gray-500'
+                                                            ? 'text-black dark:text-gray-100 font-semibold' 
+                                                            : 'text-gray-500 dark:text-gray-400'
                                                     }`}>
                                                         {conversation.lastMessage && format(new Date(conversation.lastMessage.createdAt), 'MMM d')}
                                                     </span>
@@ -664,8 +664,8 @@ const MessagesPage = () => {
                                                 {conversation.lastMessage && (
                                                     <p className={`text-xs sm:text-sm truncate ${
                                                         conversation.unreadCount > 0
-                                                            ? 'text-black font-semibold' 
-                                                            : 'text-gray-500'
+                                                            ? 'text-black dark:text-gray-100 font-semibold' 
+                                                            : 'text-gray-500 dark:text-gray-400'
                                                     }`}>
                                                         {conversation.lastMessage.metaContent || conversation.lastMessage.content}
                                                     </p>
@@ -684,7 +684,7 @@ const MessagesPage = () => {
                             <>
                                 {/* Chat Header */}
                                 <div 
-                                    className="p-2 sm:p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
+                                    className="p-2 sm:p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                                     onClick={() => handleNavigateToProfile(selectedUser.username)}
                                 >
                                     <div className="flex items-center justify-between">
@@ -695,13 +695,13 @@ const MessagesPage = () => {
                                                         e.stopPropagation();
                                                         handleBackToList();
                                                     }}
-                                                    className="p-1 hover:bg-gray-100 rounded-full transition-colors mr-1"
+                                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors mr-1"
                                                 >
-                                                    <ArrowLeft className="w-5 h-5 text-gray-600" />
+                                                    <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                                                 </button>
                                             )}
                                             {(!selectedUser.profilePicture || showProfileFallback) ? (
-                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 flex items-center justify-center">
+                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-900 dark:bg-gray-700 flex items-center justify-center">
                                                     <svg width="16" height="16" sm:width="20" sm:height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                                                         <circle cx="12" cy="7" r="4" />
@@ -716,8 +716,8 @@ const MessagesPage = () => {
                                                 />
                                             )}
                                             <div>
-                                                <h3 className="text-sm sm:text-base font-medium">{selectedUser.name}</h3>
-                                                <p className="text-xs sm:text-sm text-gray-500">
+                                                <h3 className="text-sm sm:text-base font-medium text-gray-900 dark:text-gray-100">{selectedUser.name}</h3>
+                                                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                                     {selectedUser.headline || 'APSIT Student'}
                                                 </p>
                                             </div>
@@ -728,9 +728,9 @@ const MessagesPage = () => {
                                                     e.stopPropagation();
                                                     setShowOptions(!showOptions);
                                                 }}
-                                                className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                                className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                                             >
-                                                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                                                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400" />
                                             </button>
                                             {showOptions && (
                                                 <ChatOptions
@@ -745,8 +745,8 @@ const MessagesPage = () => {
                                 {/* Messages */}
                                 <div className="flex-1 overflow-y-auto p-2 sm:p-4">
                                     {messageRequestStatus?.hasRequest && !messageRequestStatus?.isSender ? (
-                                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                                            <p className="text-blue-700 mb-2">
+                                        <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
+                                            <p className="text-blue-700 dark:text-blue-300 mb-2">
                                                 {selectedUser.name} wants to start a conversation with you
                                             </p>
                                             <div className="flex space-x-2">
@@ -765,8 +765,8 @@ const MessagesPage = () => {
                                             </div>
                                         </div>
                                     ) : messageRequestStatus?.hasRequest && messageRequestStatus?.isSender ? (
-                                        <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                                            <p className="text-blue-700">
+                                        <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
+                                            <p className="text-blue-700 dark:text-blue-300">
                                                 Waiting for {selectedUser.name} to accept your message request
                                             </p>
                                         </div>
@@ -780,10 +780,10 @@ const MessagesPage = () => {
                                             }`}
                                         >
                                             <div
-                                                className={`max-w-[70%] rounded-lg p-3 ${
+                                                className={`max-w-[80%] rounded-lg p-3 ${
                                                     message.sender._id === user._id
-                                                        ? 'bg-blue-500 text-white'
-                                                        : 'bg-gray-100'
+                                                        ? 'bg-gray-800 text-white'
+                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                                                 }`}
                                             >
                                                 {message.fileUrl && (
@@ -809,7 +809,7 @@ const MessagesPage = () => {
                                                     className={`text-xs mt-1 ${
                                                         message.sender._id === user._id
                                                             ? 'text-blue-100'
-                                                            : 'text-gray-500'
+                                                            : 'text-gray-500 dark:text-gray-400'
                                                     }`}
                                                 >
                                                     {format(new Date(message.createdAt), 'HH:mm')}
@@ -821,19 +821,19 @@ const MessagesPage = () => {
                                 </div>
 
                                 {/* Message Input */}
-                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200">
+                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200 dark:border-gray-700">
                                     {attachedFile && (
-                                        <div className="mb-2 p-1.5 sm:p-2 bg-gray-50 rounded-lg flex items-center justify-between">
+                                        <div className="mb-2 p-1.5 sm:p-2 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-between">
                                             <div className="flex items-center space-x-2">
-                                                <File className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" />
-                                                <span className="text-xs sm:text-sm text-gray-600">
+                                                <File className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500 dark:text-gray-400" />
+                                                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                                                     {attachedFile.name} ({formatFileSize(attachedFile.size)})
                                                 </span>
                                             </div>
                                             <button
                                                 type="button"
                                                 onClick={handleRemoveAttachment}
-                                                className="text-gray-500 hover:text-red-500"
+                                                className="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400"
                                             >
                                                 ×
                                             </button>
@@ -849,7 +849,7 @@ const MessagesPage = () => {
                                                     ? "Waiting for message request response..."
                                                     : "Type a message..."
                                             }
-                                            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                                             disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
                                         />
                                         <input
@@ -863,7 +863,7 @@ const MessagesPage = () => {
                                         <button
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
-                                            className={`p-1.5 sm:p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors ${
+                                            className={`p-1.5 sm:p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors ${
                                                 uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage) ? 'opacity-50 cursor-not-allowed' : ''
                                             }`}
                                             disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
@@ -888,11 +888,11 @@ const MessagesPage = () => {
                                 </form>
                             </>
                         ) : (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 p-4 sm:p-8">
+                            <div className="flex-1 flex flex-col items-center justify-center text-center text-gray-500 dark:text-gray-400 p-4 sm:p-8">
                                 <div className="mb-4">
-                                    <MessageSquare size={36} className="mx-auto text-gray-400 sm:w-12 sm:h-12" />
+                                    <MessageSquare size={36} className="mx-auto text-gray-400 dark:text-gray-500 sm:w-12 sm:h-12" />
                                 </div>
-                                <h2 className="text-lg sm:text-xl font-medium mb-2">Your Messages</h2>
+                                <h2 className="text-lg sm:text-xl font-medium mb-2 text-gray-900 dark:text-gray-100">Your Messages</h2>
                                 <p className="text-xs sm:text-sm max-w-md">
                                     Send private messages to your connections. Start a conversation by selecting a user from the left or searching for someone specific.
                                 </p>
