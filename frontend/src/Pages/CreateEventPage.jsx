@@ -247,7 +247,7 @@ const CreateEventPage = () => {
 
     return (
         <div className="max-w-4xl mx-auto py-8 px-4">
-            <h1 className="text-2xl font-bold mb-6">Create New Event</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Event</h1>
             
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Club Selection */}
@@ -260,7 +260,7 @@ const CreateEventPage = () => {
                 )}
 
                 {/* Image Upload */}
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6">
                     <div className="flex flex-col items-center">
                         <input
                             type="file"
@@ -282,13 +282,13 @@ const CreateEventPage = () => {
                                 />
                             ) : (
                                 <div className="flex flex-col items-center">
-                                    <Upload className="w-12 h-12 text-gray-400" />
-                                    <p className="mt-2 text-sm text-gray-500">
+                                    <Upload className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                                         Click to upload event image
                                     </p>
                                 </div>
                             )}
-                            <p className="text-xs text-gray-500 mt-2">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                 PNG, JPG, GIF up to 10MB
                             </p>
                         </label>
@@ -298,7 +298,7 @@ const CreateEventPage = () => {
                 {/* Basic Information */}
                 <div className="grid grid-cols-1 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Event Title
                         </label>
                         <input
@@ -307,12 +307,12 @@ const CreateEventPage = () => {
                             value={formData.title}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Description
                         </label>
                         <textarea
@@ -321,12 +321,12 @@ const CreateEventPage = () => {
                             onChange={handleChange}
                             required
                             rows="4"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Department
                         </label>
                         <select
@@ -334,7 +334,7 @@ const CreateEventPage = () => {
                             value={formData.department}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         >
                             <option value="">Select department</option>
                             {departments.map(dept => (
@@ -345,7 +345,7 @@ const CreateEventPage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Date
                             </label>
                             <input
@@ -355,12 +355,12 @@ const CreateEventPage = () => {
                                 onChange={handleChange}
                                 required
                                 min={new Date().toISOString().split('T')[0]}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Time
                             </label>
                             <input
@@ -369,13 +369,13 @@ const CreateEventPage = () => {
                                 value={formData.time}
                                 onChange={handleChange}
                                 required
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Location
                         </label>
                         <input
@@ -384,14 +384,14 @@ const CreateEventPage = () => {
                             value={formData.location}
                             onChange={handleChange}
                             required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             placeholder="Event venue or online meeting link"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Maximum Attendees
                             </label>
                             <input
@@ -400,12 +400,12 @@ const CreateEventPage = () => {
                                 value={formData.maxAttendees}
                                 onChange={handleChange}
                                 min="1"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                 Registration Deadline
                             </label>
                             <input
@@ -415,13 +415,13 @@ const CreateEventPage = () => {
                                 onChange={handleChange}
                                 required
                                 min={new Date().toISOString().slice(0, 16)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Registration Form Link (Optional)
                         </label>
                         <input
@@ -429,13 +429,13 @@ const CreateEventPage = () => {
                             name="registrationFormLink"
                             value={formData.registrationFormLink}
                             onChange={handleChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             placeholder="External registration form URL (if any)"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Requirements (Optional)
                         </label>
                         <textarea
@@ -443,7 +443,7 @@ const CreateEventPage = () => {
                             value={formData.requirements}
                             onChange={handleChange}
                             rows="3"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             placeholder="Any specific requirements for participants..."
                         />
                     </div>
@@ -453,14 +453,14 @@ const CreateEventPage = () => {
                     <button
                         type="button"
                         onClick={() => navigate('/events')}
-                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+                        className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800"
                     >
                         {loading ? 'Creating...' : 'Create Event'}
                     </button>

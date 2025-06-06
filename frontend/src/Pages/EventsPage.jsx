@@ -131,17 +131,16 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
     };
 
     return (
-        <div className="relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 h-full flex flex-col">
             {/* Club Profile Header */}
             {event.organizer && (
                 <div 
                     onClick={handleNavigateToClub}
-                    className="p-4 border-b border-gray-200 flex items-center space-x-3 cursor-pointer hover:bg-gray-50"
+                    className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                     {(!event.organizer.profilePicture || showClubIcon) ? (
-                        <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center">
-                            {/* Club icon SVG (Trophy or Users) */}
-                            <Trophy size={24} color="white" />
+                        <div className="w-10 h-10 rounded-full bg-gray-900 dark:bg-gray-600 flex items-center justify-center">
+                            <Users size={24} color="white" />
                         </div>
                     ) : (
                         <img
@@ -152,11 +151,11 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                         />
                     )}
                     <div className="flex-grow">
-                        <h4 className="font-medium text-gray-900">{event.organizer.name}</h4>
-                        <p className="text-sm text-gray-500">{event.organizer.headline || 'Club at APSIT'}</p>
+                        <h4 className="font-medium text-gray-900 dark:text-white">{event.organizer.name}</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{event.organizer.headline || 'Club at APSIT'}</p>
                     </div>
                     {event.organizer.members?.length > 0 && (
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                             {event.organizer.members.length} members
                         </div>
                     )}
@@ -171,7 +170,7 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                         className="w-full h-48 object-cover"
                     />
                 ) : (
-                    <div className="h-48 bg-gradient-to-r from-blue-500 to-blue-600" />
+                    <div className="h-48 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700" />
                 )}
                 {canManage && (
                     <div className="absolute top-2 right-2">
@@ -181,23 +180,23 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                                     e.stopPropagation();
                                     setShowMenu(!showMenu);
                                 }}
-                                className="p-1 rounded-full bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900"
+                                className="p-1 rounded-full bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                             >
                                 <MoreVertical size={20} />
                             </button>
                             
                             {showMenu && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50">
                                     <button
                                         onClick={handleEdit}
-                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300"
                                     >
                                         <Edit size={16} />
                                         Edit Event
                                     </button>
                                     <button
                                         onClick={handleDelete}
-                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center gap-2"
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center gap-2"
                                     >
                                         <Trash size={16} />
                                         Delete Event
@@ -210,10 +209,10 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
             </div>
 
             <div className="p-4 flex flex-col flex-grow">
-                <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">{event.title}</h3>
                 
                 <div className="mb-4">
-                    <p className={`text-gray-600 ${isExpanded ? '' : 'line-clamp-2'}`}>
+                    <p className={`text-gray-600 dark:text-gray-300 ${isExpanded ? '' : 'line-clamp-2'}`}>
                         {event.description}
                     </p>
                     {event.description && event.description.length > 100 && (
@@ -222,7 +221,7 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                                 e.stopPropagation();
                                 setIsExpanded(!isExpanded);
                             }}
-                            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                            className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                         >
                             {isExpanded ? 'Show Less' : 'Show More'}
                         </button>
@@ -230,27 +229,27 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                 </div>
                 
                 <div className="space-y-2 mt-auto">
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-500" />
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm">{event.date ? format(new Date(event.date), 'MMM d, yyyy') : 'Date not specified'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <Clock className="w-4 h-4 text-gray-500" />
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm">{event.time || 'Time not specified'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <MapPin className="w-4 h-4 text-gray-500" />
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm">{event.location || 'Location not specified'}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                        <Users className="w-4 h-4 text-gray-500" />
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                        <Users className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         <span className="text-sm">
                             {event.category || ''} - {event.department || ''}
                             {!event.registrationFormLink && event.maxAttendees && ` (${(event.attendees && event.attendees.length) || 0}/${event.maxAttendees})`}
                         </span>
                     </div>
                     {event.registrationDeadline && (
-                        <div className="pl-6 text-xs text-red-500 font-medium">
+                        <div className="pl-6 text-xs text-red-500 dark:text-red-400 font-medium">
                             Registration closes: {format(new Date(event.registrationDeadline), 'MMM d, yyyy HH:mm')}
                         </div>
                     )}
@@ -265,8 +264,8 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                             onClick={e => e.stopPropagation()}
                             className={`w-full block px-4 py-2 rounded-md text-center ${
                                 registrationStatus.allowed
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'
+                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 cursor-not-allowed'
                             }`}
                             style={{ pointerEvents: registrationStatus.allowed ? 'auto' : 'none' }}
                         >
@@ -281,8 +280,8 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
                             disabled={!registrationStatus.allowed || isLoading}
                             className={`w-full px-4 py-2 rounded-md ${
                                 registrationStatus.allowed
-                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white'
+                                    : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 cursor-not-allowed'
                             }`}
                         >
                             {isLoading ? (
@@ -302,19 +301,19 @@ const EventCard = ({ event, user, onDelete, onEdit, adminEmails = [] }) => {
 };
 
 // Filter Component
-const FilterSection = ({ filters, setFilters, categories, departments }) => {
+const FilterSection = ({ filters, setFilters, categories, departments, isMobile = false }) => {
     return (
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+        <div className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md mb-6 ${isMobile ? 'w-full' : ''}`}>
             <div className="flex items-center gap-2 mb-4">
-                <Filter className="w-5 h-5 text-gray-500" />
-                <h3 className="font-semibold">Filters</h3>
+                <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
                     <select 
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         value={filters.category || ''}
                         onChange={(e) => setFilters({...filters, category: e.target.value})}
                     >
@@ -326,9 +325,9 @@ const FilterSection = ({ filters, setFilters, categories, departments }) => {
                 </div>
                 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
                     <select 
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         value={filters.department || ''}
                         onChange={(e) => setFilters({...filters, department: e.target.value})}
                     >
@@ -340,9 +339,9 @@ const FilterSection = ({ filters, setFilters, categories, departments }) => {
                 </div>
                 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                     <select 
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         value={filters.status || ''}
                         onChange={(e) => setFilters({...filters, status: e.target.value})}
                     >
@@ -356,7 +355,7 @@ const FilterSection = ({ filters, setFilters, categories, departments }) => {
             
             <div className="mt-4 flex justify-end">
                 <button 
-                    className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
                     onClick={() => setFilters({})}
                 >
                     Clear Filters
@@ -377,6 +376,7 @@ const EventsPage = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [categories, setCategories] = useState([]);
     const [departments, setDepartments] = useState([]);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
     const navigate = useNavigate();
 
     // Admin check based on email
@@ -488,19 +488,19 @@ const EventsPage = () => {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-                <h1 className="text-3xl font-bold mb-4 md:mb-0">Events</h1>
+                <h1 className="text-3xl font-bold mb-4 md:mb-0 text-gray-900 dark:text-white">Events</h1>
                 
                 {isAdmin && (
                     <button
                         onClick={handleCreateEvent}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-2"
+                        className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 flex items-center gap-2"
                     >
                         <Plus size={18} /> Create Event
                     </button>
                 )}
             </div>
             
-            {/* Search Bar */}
+            {/* Search Bar with Mobile Filters */}
             <form onSubmit={handleSearch} className="mb-6">
                 <div className="relative">
                     <input
@@ -508,30 +508,57 @@ const EventsPage = () => {
                         placeholder="Search events..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full p-3 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-3 pl-10 pr-24 md:pr-10 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
+                    
+                    {/* Mobile Filter Button */}
+                    <button 
+                        type="button"
+                        onClick={() => setShowMobileFilters(!showMobileFilters)}
+                        className="md:hidden absolute right-3 top-1/2 transform -translate-y-1/2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center gap-1"
+                    >
+                        <Filter size={16} />
+                        Filters
+                    </button>
+
+                    {/* Desktop Search Button */}
                     <button 
                         type="submit"
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-600 text-white px-3 py-1 rounded-md hover:bg-blue-700"
+                        className="hidden md:block absolute right-3 top-1/2 transform -translate-y-1/2 bg-blue-600 dark:bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600"
                     >
                         Search
                     </button>
                 </div>
+
+                {/* Mobile Filters Dropdown */}
+                {showMobileFilters && (
+                    <div className="md:hidden mt-4">
+                        <FilterSection 
+                            filters={filters} 
+                            setFilters={setFilters} 
+                            categories={categories}
+                            departments={departments}
+                            isMobile={true}
+                        />
+                    </div>
+                )}
             </form>
             
-            {/* Filters */}
-            <FilterSection 
-                filters={filters} 
-                setFilters={setFilters} 
-                categories={categories}
-                departments={departments}
-            />
+            {/* Desktop Filters */}
+            <div className="hidden md:block">
+                <FilterSection 
+                    filters={filters} 
+                    setFilters={setFilters} 
+                    categories={categories}
+                    departments={departments}
+                />
+            </div>
             
             {/* Events Grid */}
             {loading ? (
                 <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 dark:border-blue-400"></div>
                 </div>
             ) : events.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -547,17 +574,17 @@ const EventsPage = () => {
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-12 bg-white rounded-lg shadow-md">
-                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No events found</h3>
-                    <p className="text-gray-500">Try adjusting your filters or search query</p>
+                <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">No events found</h3>
+                    <p className="text-gray-500 dark:text-gray-400">Try adjusting your filters or search query</p>
                 </div>
             )}
             
             {/* Edit Event Modal */}
             <Modal isOpen={isEditModalOpen} onClose={handleCloseEditModal}>
                 {editingEvent && (
-                    <div className="p-6">
-                        <h2 className="text-2xl font-bold mb-4">Edit Event</h2>
+                    <div className="p-6 bg-white dark:bg-gray-800">
+                        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Edit Event</h2>
                         <EditEventPage 
                             event={editingEvent}
                             onSuccess={() => {

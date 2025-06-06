@@ -187,7 +187,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
 
     return (
         <div className={isModal ? '' : 'container mx-auto p-4 max-w-2xl'}>
-            {!isModal && <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Event</h1>}
+            {!isModal && <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Edit Event</h1>}
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Club Selection */}
@@ -201,11 +201,11 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
 
                 {/* Image Upload */}
                 <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Event Image
                     </label>
                     <div className="flex items-center space-x-4">
-                        <div className="relative w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
+                        <div className="relative w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                             {imagePreview ? (
                                 <img
                                     src={imagePreview}
@@ -214,7 +214,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                                 />
                             ) : (
                                 <div className="flex items-center justify-center w-full h-full">
-                                    <Upload className="w-8 h-8 text-gray-400" />
+                                    <Upload className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                                 </div>
                             )}
                             <input
@@ -225,7 +225,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                         </div>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                             Click to upload or drag and drop<br />
                             SVG, PNG, JPG or GIF (max. 10MB)
                         </div>
@@ -234,7 +234,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
 
                 {/* Title */}
                 <div>
-                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Title
                     </label>
                     <input
@@ -244,13 +244,13 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                         value={formData.title}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     />
                 </div>
 
                 {/* Description */}
                 <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Description
                     </label>
                     <textarea
@@ -260,14 +260,14 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                         onChange={handleChange}
                         required
                         rows={4}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     />
                 </div>
 
                 {/* Date and Time */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Date
                         </label>
                         <div className="mt-1 relative rounded-md shadow-sm">
@@ -278,12 +278,12 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                                 value={formData.date}
                                 onChange={handleChange}
                                 required
-                                className="block w-full pr-10 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                className="block w-full pr-10 rounded-md border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="time" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="time" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Time
                         </label>
                         <div className="mt-1 relative rounded-md shadow-sm">
@@ -294,7 +294,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                                 value={formData.time}
                                 onChange={handleChange}
                                 required
-                                className="block w-full pr-10 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                className="block w-full pr-10 rounded-md border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
                     </div>
@@ -302,7 +302,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
 
                 {/* Location */}
                 <div>
-                    <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="location" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Location
                     </label>
                     <div className="mt-1 relative">
@@ -313,15 +313,15 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                             value={formData.location}
                             onChange={handleChange}
                             required
-                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
-                        <MapPin className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+                        <MapPin className="absolute right-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
                     </div>
                 </div>
 
                 {/* Department */}
                 <div>
-                    <label htmlFor="department" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Department
                     </label>
                     <select
@@ -330,7 +330,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                         value={formData.department}
                         onChange={handleChange}
                         required
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                     >
                         <option value="">Select a department</option>
                         {departments.map(dept => (
@@ -342,7 +342,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                 {/* Max Attendees and Registration Deadline */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="maxAttendees" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="maxAttendees" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Maximum Attendees
                         </label>
                         <input
@@ -352,11 +352,11 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                             value={formData.maxAttendees}
                             onChange={handleChange}
                             min="1"
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                     </div>
                     <div>
-                        <label htmlFor="registrationDeadline" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="registrationDeadline" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Registration Deadline
                         </label>
                         <input
@@ -366,14 +366,14 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                             value={formData.registrationDeadline}
                             onChange={handleChange}
                             required
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         />
                     </div>
                 </div>
 
                 {/* Requirements */}
                 <div>
-                    <label htmlFor="requirements" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Requirements (Optional)
                     </label>
                     <textarea
@@ -382,7 +382,7 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                         value={formData.requirements}
                         onChange={handleChange}
                         rows={3}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         placeholder="List any requirements or prerequisites for the event..."
                     />
                 </div>
@@ -391,14 +391,14 @@ const EditEventPage = ({ event: initialEvent, onSuccess, isModal = false }) => {
                     <button
                         type="button"
                         onClick={() => isModal ? onSuccess() : navigate('/events')}
-                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-blue-300"
+                        className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800"
                     >
                         {loading ? 'Updating...' : 'Update Event'}
                     </button>
