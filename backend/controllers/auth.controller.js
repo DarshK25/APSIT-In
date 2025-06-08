@@ -9,6 +9,12 @@ import crypto from 'crypto'; // Import crypto for generating tokens
 export const signup = async (req, res) => {
     try {
         const { name, username, email, password, accountType = "student" } = req.body;
+        console.log("\n=== Signup Attempt Details ===");
+        console.log("Name:", name);
+        console.log("Username:", username);
+        console.log("Email:", email);
+        console.log("Account Type:", accountType);
+        console.log("Raw Password:", password);
 
         if (!name || !username || !email || !password) {
             return res.status(400).json({ message: "All fields are required" });
@@ -43,6 +49,7 @@ export const signup = async (req, res) => {
             return res.status(400).json({ message: "Email already exists" });
         }
 
+        // Check for existing username with exact case match
         const existingUsername = await User.findOne({ username });
         if (existingUsername) {
             return res.status(400).json({ message: "Username already exists" });
@@ -52,14 +59,12 @@ export const signup = async (req, res) => {
             return res.status(400).json({ message: "Password must be at least 6 characters" });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
+        console.log("\n=== Creating New User ===");
         const newUser = new User({ 
             name, 
-            username, 
+            username, // Store username with original case
             email, 
-            password: hashedPassword, 
+            password, // The pre-save middleware will hash this
             accountType 
         });
 
@@ -68,7 +73,18 @@ export const signup = async (req, res) => {
             newUser.studentId = emailPrefix.substring(0, 8);
         }
 
+        console.log("User object before save:", {
+            username: newUser.username,
+            email: newUser.email,
+            password: newUser.password // This should be the raw password before hashing
+        });
+
         await newUser.save();
+        
+        console.log("\n=== User Saved to Database ===");
+        console.log("User ID:", newUser._id);
+        console.log("Username:", newUser.username);
+        console.log("Stored Password Hash:", newUser.password);
 
         // Generate token and set cookie
         await generateTokenAndSetCookie(newUser._id, res);
@@ -91,6 +107,7 @@ export const signup = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error("\n=== Signup Error ===", error);
         if (error.name === "ValidationError") {
             const messages = Object.values(error.errors).map((err) => err.message);
             return res.status(400).json({ 
@@ -98,7 +115,6 @@ export const signup = async (req, res) => {
                 message: messages.join(", ") 
             });
         }
-        console.error("Error in signup:", error.message);
         res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -106,26 +122,76 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
 	try {
 		const { username, password } = req.body;
+        console.log("\n=== Login Attempt Details ===");
+        console.log("Username provided:", username);
+        console.log("Password provided:", password);
 
-		// Check if user exists
+		// --- Start: Test Account Bypass ---
+		const testEmail = 'darshkalathiya25@gmail.com';
+		const testPassword = 'abcdef';
+
+		if (username === testEmail && password === testPassword) {
+			const testUser = await User.findOne({ email: testEmail });
+
+			if (testUser) {
+				console.log("Backend: Test account login successful via bypass!");
+				generateTokenAndSetCookie(testUser._id, res);
+				res.status(200).json({ success: true, message: "Logged in successfully as Test Account" });
+				return;
+			} else {
+				console.error("Backend: Test account user not found in database. Cannot bypass, attempting standard login.");
+			}
+		}
+		// --- End: Test Account Bypass ---
+
+		// Check if user exists with exact username match (case-sensitive)
 		const user = await User.findOne({ username });
-		if (!user) {
-			return res.status(400).json({ success: false, message: "Invalid credentials" });
+        
+        if (!user) {
+            console.log("❌ No user found with username:", username);
+            return res.status(400).json({ 
+                success: false, 
+                message: "Username not found. Please check your username or sign up if you don't have an account."
+            });
+        }
+
+        console.log("\n=== User Found in Database ===");
+        console.log("Username:", user.username);
+        console.log("Email:", user.email);
+        console.log("Account Type:", user.accountType);
+        console.log("Stored Password Hash:", user.password);
+
+		// Check password using the model's comparePassword method
+		const isMatch = await user.comparePassword(password);
+        console.log("\n=== Password Comparison ===");
+        console.log("Provided Password:", password);
+        console.log("Password Match Result:", isMatch);
+        
+		if (!isMatch) {
+            console.log("❌ Password mismatch for user:", username);
+			return res.status(400).json({ 
+                success: false, 
+                message: "Incorrect password. Please check your password and try again."
+            });
 		}
 
-		// Check password
-		const isMatch = await bcrypt.compare(password, user.password);
-		if (!isMatch) {
-			return res.status(400).json({ success: false, message: "Invalid credentials" });
-		}
+        console.log("✅ Login successful!");
 
 		// Create and send token for user
 		generateTokenAndSetCookie(user._id, res);
 
-		res.json({ success: true, message: "Logged in successfully" });
+		res.status(200).json({ 
+            success: true, 
+            message: "Logged in successfully",
+            user: {
+                id: user._id,
+                username: user.username,
+                accountType: user.accountType
+            }
+        });
         
 	} catch (error) {
-		console.error("Error in login controller:", error);
+		console.error("\n❌ Error in login controller:", error);
 		res.status(500).json({ success: false, message: "Server error" });
 	}
 };

@@ -3,7 +3,8 @@ import { protectRoute } from '../middleware/auth.middleware.js';
 import { 
     getSettings, 
     updateSettings,
-    changePassword
+    changePassword,
+    deleteAccount
 } from '../controllers/settings.controller.js';
 
 const router = express.Router();
@@ -14,5 +15,8 @@ router.route('/')
 
 router.route('/change-password')
     .post(protectRoute, changePassword);
+
+router.route('/delete-account')
+    .post(protectRoute, deleteAccount);
 
 export default router;

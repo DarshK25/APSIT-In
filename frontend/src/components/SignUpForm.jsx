@@ -100,7 +100,7 @@ const SignUpForm = () => {
                 placeholder="Full name"
                 value={formData.name}
                 onChange={handleChange}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 required
                 maxLength={50}
             />
@@ -110,7 +110,7 @@ const SignUpForm = () => {
                 placeholder="Username"
                 value={formData.username}
                 onChange={handleChange}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 required
                 pattern="^[a-zA-Z0-9._]{3,30}$"
                 title="Username can contain letters, numbers, dots and underscores (3-30 characters)"
@@ -122,7 +122,7 @@ const SignUpForm = () => {
                 placeholder="College Email"
                 value={formData.email}
                 onChange={handleChange}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 required
             />
             <input
@@ -131,7 +131,7 @@ const SignUpForm = () => {
                 placeholder="Password (6+ characters)"
                 value={formData.password}
                 onChange={handleChange}
-                className="input input-bordered w-full"
+                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 required
                 minLength={6}
                 maxLength={50}
@@ -139,13 +139,13 @@ const SignUpForm = () => {
             
             <div className="form-control">
                 <label className="label">
-                    <span className="label-text">Account Type</span>
+                    <span className="label-text dark:text-gray-300">Account Type</span>
                 </label>
                 <select 
                     name="accountType"
                     value={formData.accountType}
                     onChange={handleChange}
-                    className="select select-bordered"
+                    className="select select-bordered dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                 >
                     <option value="student">Student</option>
                     <option value="faculty">Faculty</option>
@@ -156,7 +156,7 @@ const SignUpForm = () => {
             <button 
                 type="submit" 
                 disabled={isLoading} 
-                className="btn btn-primary w-full text-white"
+                className="btn btn-primary w-full text-white dark:bg-blue-600 dark:hover:bg-blue-700"
             >
                 {isLoading ? <Loader className="size-5 animate-spin" /> : "Agree & Join"}
             </button>

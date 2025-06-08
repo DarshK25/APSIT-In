@@ -18,7 +18,7 @@ const staggerContainer = {
 
 const LandingPage = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen dark:bg-gray-900">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:60px_60px]" />
@@ -39,7 +39,7 @@ const LandingPage = () => {
               <div className="space-x-4">
                 <Link
                   to="/signup"
-                  className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors inline-flex items-center"
+                  className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors inline-flex items-center dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
                 >
                   Get Started <ArrowRight className="ml-2" size={20} />
                 </Link>
@@ -70,7 +70,7 @@ const LandingPage = () => {
 
       {/* Stats Section */}
       <motion.div 
-        className="bg-white py-16"
+        className="bg-white dark:bg-gray-800 py-16"
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -79,20 +79,20 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-gray-600">Active Students</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</div>
+              <div className="text-gray-600 dark:text-gray-300">Active Students</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">200+</div>
-              <div className="text-gray-600">Alumni Network</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">200+</div>
+              <div className="text-gray-600 dark:text-gray-300">Alumni Network</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">20+</div>
-              <div className="text-gray-600">Study Groups</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">20+</div>
+              <div className="text-gray-600 dark:text-gray-300">Study Groups</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">10+</div>
-              <div className="text-gray-600">Events Organized</div>
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">10+</div>
+              <div className="text-gray-600 dark:text-gray-300">Events Organized</div>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ const LandingPage = () => {
 
       {/* Features Section */}
       <motion.div 
-        className="py-24 bg-gray-50"
+        className="py-24 bg-gray-50 dark:bg-gray-900"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -108,8 +108,8 @@ const LandingPage = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Why Choose APSIT-In?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 dark:text-white">Why Choose APSIT-In?</h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Join the most comprehensive professional network for APSIT students and alumni. 
               Connect, learn, and grow together.
             </p>
@@ -122,42 +122,42 @@ const LandingPage = () => {
             viewport={{ once: true }}
           >
             <motion.div 
-              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
               variants={fadeInUp}
             >
-              <Users className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Professional Network</h3>
-              <p className="text-gray-600">
+              <Users className="w-12 h-12 text-blue-600 dark:text-blue-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Professional Network</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Connect with fellow students, alumni, and industry professionals from APSIT.
               </p>
             </motion.div>
             <motion.div 
-              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
               variants={fadeInUp}
             >
-              <GraduationCap className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Academic Support</h3>
-              <p className="text-gray-600">
+              <GraduationCap className="w-12 h-12 text-blue-600 dark:text-blue-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Academic Support</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Join study groups, share resources, and collaborate on academic projects.
               </p>
             </motion.div>
             <motion.div 
-              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
               variants={fadeInUp}
             >
-              <MessageSquare className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Knowledge Sharing</h3>
-              <p className="text-gray-600">
+              <MessageSquare className="w-12 h-12 text-blue-600 dark:text-blue-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Knowledge Sharing</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Share experiences, projects, and insights with your network.
               </p>
             </motion.div>
             <motion.div 
-              className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
               variants={fadeInUp}
             >
-              <Bell className="w-12 h-12 text-blue-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Stay Updated</h3>
-              <p className="text-gray-600">
+              <Bell className="w-12 h-12 text-blue-600 dark:text-blue-400 mb-4" />
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Stay Updated</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Get notified about events, opportunities, and updates from your network.
               </p>
             </motion.div>
@@ -167,7 +167,7 @@ const LandingPage = () => {
 
       {/* How It Works Section */}
       <motion.div 
-        className="py-24 bg-white"
+        className="py-24 bg-white dark:bg-gray-800"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -175,8 +175,8 @@ const LandingPage = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 dark:text-white">How It Works</h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Get started with APSIT-In in three simple steps
             </p>
           </div>
@@ -191,11 +191,11 @@ const LandingPage = () => {
               className="text-center"
               variants={fadeInUp}
             >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-blue-600">1</span>
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">1</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Create Your Profile</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Create Your Profile</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Sign up and create your professional profile with your academic and professional details.
               </p>
             </motion.div>
@@ -203,11 +203,11 @@ const LandingPage = () => {
               className="text-center"
               variants={fadeInUp}
             >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-blue-600">2</span>
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">2</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Connect with Peers</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Connect with Peers</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Find and connect with fellow students, alumni, and industry professionals.
               </p>
             </motion.div>
@@ -215,11 +215,11 @@ const LandingPage = () => {
               className="text-center"
               variants={fadeInUp}
             >
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-blue-600">3</span>
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">3</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Grow Together</h3>
-              <p className="text-gray-600">
+              <h3 className="text-xl font-semibold mb-2 dark:text-white">Grow Together</h3>
+              <p className="text-gray-600 dark:text-gray-300">
                 Share opportunities, learn from others, and advance your career together.
               </p>
             </motion.div>
@@ -229,7 +229,7 @@ const LandingPage = () => {
 
       {/* Campus Life Section */}
       <motion.div 
-        className="py-24 bg-gray-50"
+        className="py-24 bg-gray-50 dark:bg-gray-900"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
@@ -237,8 +237,8 @@ const LandingPage = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Campus Life</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4 dark:text-white">Campus Life</h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Experience the vibrant community life at APSIT
             </p>
           </div>
@@ -314,7 +314,7 @@ const LandingPage = () => {
           </p>
           <Link
             to="/signup"
-            className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors inline-flex items-center"
+            className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors inline-flex items-center dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             Create Your Profile <ArrowRight className="ml-2" size={20} />
           </Link>

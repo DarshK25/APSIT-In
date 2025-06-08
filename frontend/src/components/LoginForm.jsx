@@ -122,7 +122,7 @@ const LoginForm = () => {
 						placeholder="Username"
 						value={username}
 						onChange={(e) => setUsername(e.target.value)}
-						className="input input-bordered w-full"
+						className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
 						required
 					/>
 					<div className="relative">
@@ -131,24 +131,24 @@ const LoginForm = () => {
 							placeholder="Password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							className="input input-bordered w-full pr-10"
+							className="input input-bordered w-full pr-10 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
 							required
 						/>
 						<button
 							type="button"
-							className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500"
+							className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400"
 							onClick={() => setShowPassword(prev => !prev)}
 							tabIndex={-1}
 						>
 							{showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
 						</button>
 					</div>
-					<button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
+					<button type="submit" className="btn btn-primary w-full dark:bg-blue-600 dark:hover:bg-blue-700" disabled={isLoading}>
 						{isLoading ? <Loader className="size-5 animate-spin" /> : "Login"}
 					</button>
 					<button
 						type="button"
-						className="text-sm text-blue-600 hover:underline mt-2 text-center w-full"
+						className="text-sm text-blue-600 hover:underline mt-2 text-center w-full dark:text-blue-400"
 						onClick={() => setShowForgotPassword(true)}
 					>
 						Forgot Password?
@@ -165,15 +165,15 @@ const LoginForm = () => {
 								placeholder="Enter your email"
 								value={forgotEmail}
 								onChange={(e) => setForgotEmail(e.target.value)}
-								className="input input-bordered w-full"
+								className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
 								required
 							/>
-							<button type="submit" className="btn btn-primary w-full" disabled={forgotLoading}>
+							<button type="submit" className="btn btn-primary w-full dark:bg-blue-600 dark:hover:bg-blue-700" disabled={forgotLoading}>
 								{forgotLoading ? <Loader className="size-5 animate-spin" /> : "Send Reset Code"}
 							</button>
 							<button
 								type="button"
-								className="text-sm text-blue-600 hover:underline mt-2 text-center w-full"
+								className="text-sm text-blue-600 hover:underline mt-2 text-center w-full dark:text-blue-400"
 								onClick={() => setShowForgotPassword(false)}
 							>
 								Back to Login
@@ -187,7 +187,7 @@ const LoginForm = () => {
 								placeholder="Reset Code"
 								value={resetCode}
 								onChange={(e) => setResetCode(e.target.value)}
-								className="input input-bordered w-full"
+								className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
 								required
 							/>
 							<input
@@ -195,7 +195,7 @@ const LoginForm = () => {
 								placeholder="New Password"
 								value={newPassword}
 								onChange={(e) => setNewPassword(e.target.value)}
-								className="input input-bordered w-full"
+								className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
 								required
 								minLength="6"
 							/>
@@ -204,15 +204,15 @@ const LoginForm = () => {
 								placeholder="Confirm New Password"
 								value={confirmNewPassword}
 								onChange={(e) => setConfirmNewPassword(e.target.value)}
-								className="input input-bordered w-full"
+								className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
 								required
 							/>
-							<button type="submit" className="btn btn-primary w-full" disabled={resetLoading}>
+							<button type="submit" className="btn btn-primary w-full dark:bg-blue-600 dark:hover:bg-blue-700" disabled={resetLoading}>
 								{resetLoading ? <Loader className="size-5 animate-spin" /> : "Reset Password"}
 							</button>
 							<button
 								type="button"
-								className="text-sm text-blue-600 hover:underline mt-2 text-center w-full"
+								className="text-sm text-blue-600 hover:underline mt-2 text-center w-full dark:text-blue-400"
 								onClick={() => setShowResetPasswordFields(false) // Go back to email request form
 								}
 							>

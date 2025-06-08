@@ -2,6 +2,11 @@ import Settings from '../models/settings.model.js';
 import User from '../models/user.model.js';
 import sendMail from '../lib/sendMail.js';
 import bcrypt from 'bcryptjs';
+import Post from '../models/post.model.js';
+import Comment from '../models/comment.model.js';
+import Connection from '../models/connection.model.js';
+import Notification from '../models/notification.model.js';
+import Message from '../models/message.model.js';
 
 export const getSettings = async (req, res) => {
     try {
@@ -76,3 +81,63 @@ export const changePassword = async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 };
+
+export const deleteAccount = async(req, res) => {
+    try {
+        const { currentPassword } = req.body;
+        const user = await User.findById(req.user._id).select('+password');
+        
+        if(!user) {
+            return res.status(404).json({success: false, error: 'User not found.'});
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if(!isMatch) {
+            return res.status(401).json({success: false, error: 'Current password is incorrect.'});
+        }
+
+        // Delete user's posts
+        await Post.deleteMany({ author: user._id });
+
+        // Delete user's comments
+        await Comment.deleteMany({ author: user._id });
+
+        // Delete user's connections
+        await Connection.deleteMany({ 
+            $or: [
+                { sender: user._id },
+                { receiver: user._id }
+            ]
+        });
+
+        // Delete user's notifications
+        await Notification.deleteMany({
+            $or: [
+                { recipient: user._id },
+                { sender: user._id }
+            ]
+        });
+
+        // Delete user's messages
+        await Message.deleteMany({
+            $or: [
+                { sender: user._id },
+                { receiver: user._id }
+            ]
+        });
+
+        // Finally, delete the user account
+        await User.findByIdAndDelete(user._id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Account deleted successfully.'
+        });
+    } catch (error) {
+        console.error('Error in Deleting Account: ', error);
+        res.status(500).json({
+            success: false, 
+            error: 'An error occurred while deleting your account. Please try again.'
+        });
+    }
+}

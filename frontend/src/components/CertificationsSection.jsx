@@ -312,26 +312,28 @@ const CertificationsSection = ({ userData, isOwnProfile, onSave }) => {
             {!showAddForm && !editingCertification && (certifications.length > 0 ? (
                 <div className="space-y-3 sm:space-y-4">
                     {certifications.map(cert => (
-                        <div key={cert._id} className="p-3 sm:p-4 border border-gray-200 dark:border-dark-border rounded-lg bg-white dark:bg-dark-hover flex items-start justify-between group">
-                            <div className="flex items-start space-x-3 sm:space-x-4">
-                                {cert.imageUrl && (
-                                    <img src={cert.imageUrl} alt={cert.title} className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-md flex-shrink-0" />
-                                )}
-                                <div>
-                                    <h3 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm sm:text-base">{cert.title}</h3>
-                                    <p className="text-gray-600 dark:text-dark-text-secondary text-xs sm:text-sm">{cert.issuer}</p>
-                                    {cert.date && (
-                                        <p className="text-gray-500 dark:text-dark-text-muted text-xs mt-0.5 sm:mt-1">Date: {new Date(cert.date).toLocaleDateString()}</p>
-                                    )}
-                                    {cert.credentialId && (
-                                        <p className="text-gray-500 dark:text-dark-text-muted text-xs">Credential ID: {cert.credentialId}</p>
-                                    )}
-                                    {cert.credentialUrl && (
-                                        <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs block mt-0.5 sm:mt-1 dark:text-primary-light">
-                                            Show Credential
-                                        </a>
-                                    )}
+                        <div key={cert._id} className="p-3 sm:p-4 border border-gray-200 dark:border-dark-border rounded-lg bg-white dark:bg-[#121212] flex items-start justify-between group">
+                            {/* Image Column */}
+                            {cert.imageUrl && (
+                                <div className="flex-shrink-0  sm:mr-4">
+                                    <img src={cert.imageUrl} alt={cert.title} className="w-20 h-24 object-cover rounded-md" />
                                 </div>
+                            )}
+                            {/* Text Details Column */}
+                            <div className="flex-grow">
+                                <h3 className="font-semibold text-gray-900 dark:text-dark-text-primary text-sm sm:text-base">{cert.title}</h3>
+                                <p className="text-gray-600 dark:text-dark-text-secondary text-xs sm:text-sm">{cert.issuer}</p>
+                                {cert.date && (
+                                    <p className="text-gray-500 dark:text-dark-text-muted text-xs mt-0.5 sm:mt-1">Date: {new Date(cert.date).toLocaleDateString()}</p>
+                                )}
+                                {cert.credentialId && (
+                                    <p className="text-gray-500 dark:text-dark-text-muted text-xs">Credential ID: {cert.credentialId}</p>
+                                )}
+                                {cert.credentialUrl && (
+                                    <a href={cert.credentialUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs block mt-0.5 sm:mt-1 dark:text-primary-light">
+                                        Show Credential
+                                    </a>
+                                )}
                             </div>
                             {isOwnProfile && (
                                 <div className="flex space-x-1 sm:space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">

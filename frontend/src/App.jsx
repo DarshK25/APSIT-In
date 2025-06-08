@@ -23,138 +23,148 @@ const App = () => {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <Layout>
-          <OnboardingToast />
-          <Toaster 
-            position="top-center" 
-            reverseOrder={false} 
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: '#fff',
-                color: '#333',
-                padding: '16px',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              },
-              success: {
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Layout>
+            <OnboardingToast />
+            <Toaster 
+              position="top-center" 
+              reverseOrder={false} 
+              toastOptions={{
                 duration: 3000,
-                iconTheme: {
-                  primary: '#10B981',
-                  secondary: '#fff',
+                style: {
+                  background: '#1f2937',
+                  color: '#f3f4f6',
+                  padding: '16px',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
                 },
-              },
-              error: {
-                duration: 4000,
-                iconTheme: {
-                  primary: '#EF4444',
-                  secondary: '#fff',
+                success: {
+                  duration: 3000,
+                  style: {
+                    background: '#065F46',
+                    color: '#fff',
+                  },
+                  iconTheme: {
+                    primary: '#fff',
+                    secondary: '#065F46',
+                  },
                 },
-              },
-            }}
-          />
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
-            
-            {/* Events Routes */}
-            <Route
-              path="/events"
-              element={
-                <ProtectedRoute>
-                  <EventsPage />
-                </ProtectedRoute>
-              }
+                error: {
+                  duration: 4000,
+                  style: {
+                    background: '#B91C1C',
+                    color: '#fff',
+                  },
+                  iconTheme: {
+                    primary: '#fff',
+                    secondary: '#B91C1C',
+                  },
+                },
+              }}
             />
-            <Route
-              path="/events/create"
-              element={
-                <EventProtectedRoute>
-                  <CreateEventPage />
-                </EventProtectedRoute>
-              }
-            />
-            <Route
-              path="/events/:id"
-              element={
-                <ProtectedRoute>
-                  <EventDetailsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/events/:id/edit"
-              element={
-                <EventProtectedRoute>
-                  <EditEventPage />
-                </EventProtectedRoute>
-              }
-            />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              
+              {/* Events Routes */}
+              <Route
+                path="/events"
+                element={
+                  <ProtectedRoute>
+                    <EventsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/events/create"
+                element={
+                  <EventProtectedRoute>
+                    <CreateEventPage />
+                  </EventProtectedRoute>
+                }
+              />
+              <Route
+                path="/events/:id"
+                element={
+                  <ProtectedRoute>
+                    <EventDetailsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/events/:id/edit"
+                element={
+                  <EventProtectedRoute>
+                    <EditEventPage />
+                  </EventProtectedRoute>
+                }
+              />
 
-            {/* Protected Routes */}
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/messages"
-              element={
-                <ProtectedRoute>
-                  <MessagesPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile/:username"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/network"
-              element={
-                <ProtectedRoute>
-                  <NetworkPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes */}
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/messages"
+                element={
+                  <ProtectedRoute>
+                    <MessagesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/:username"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/network"
+                element={
+                  <ProtectedRoute>
+                    <NetworkPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Catch all route - redirect to home if logged in, otherwise to landing */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
+              {/* Catch all route - redirect to home if logged in, otherwise to landing */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </div>
       </AuthProvider>
     </Router>
   );

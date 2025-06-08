@@ -240,6 +240,44 @@ const userSchema = new mongoose.Schema({
 // Add index for club members to improve query performance
 userSchema.index({ 'members.userId': 1 });
 
+// Pre-save middleware to hash password before saving
+userSchema.pre('save', async function(next) {
+    console.log("\n=== Pre-save Middleware ===");
+    console.log("Is password modified?", this.isModified('password'));
+    
+    if (!this.isModified('password')) {
+        console.log("Password not modified, skipping hashing");
+        return next();
+    }
+    
+    try {
+        console.log("Original password before hashing:", this.password);
+        const salt = await bcrypt.genSalt(10);
+        console.log("Generated salt:", salt);
+        this.password = await bcrypt.hash(this.password, salt);
+        console.log("Hashed password:", this.password);
+        next();
+    } catch (error) {
+        console.error("Error in password hashing:", error);
+        next(error);
+    }
+});
+
+// Method to compare password
+userSchema.methods.comparePassword = async function(candidatePassword) {
+    console.log("\n=== Comparing Passwords ===");
+    console.log("Candidate password:", candidatePassword);
+    console.log("Stored hash:", this.password);
+    try {
+        const isMatch = await bcrypt.compare(candidatePassword, this.password);
+        console.log("Password match result:", isMatch);
+        return isMatch;
+    } catch (error) {
+        console.error("Error comparing passwords:", error);
+        throw error;
+    }
+};
+
 // Virtual for profile completion percentage
 userSchema.virtual('profileCompletion').get(function() {
   const requiredFields = {
@@ -255,24 +293,6 @@ userSchema.virtual('profileCompletion').get(function() {
 
   return Math.round((completedFields.length / requiredFields.length) * 100);
 });
-
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Method to compare password
-userSchema.methods.matchPassword = async function(enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
 
 const User = mongoose.model("User", userSchema);
 export default User;

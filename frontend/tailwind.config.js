@@ -27,6 +27,7 @@ export default {
             secondary: '#cbd5e1',
             muted: '#94a3b8',
           },
+          bg: '#1a202c',
         },
       },
     },

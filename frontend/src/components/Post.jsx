@@ -227,8 +227,8 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
         const confirmDelete = () => {
             return new Promise((resolve) => {
                 toast.custom((t) => (
-                    <div className="bg-white p-4 rounded-lg shadow-lg">
-                        <p className="text-gray-800 mb-4">Are you sure you want to delete this post?</p>
+                    <div className="bg-white dark:bg-dark-card p-4 rounded-lg shadow-lg">
+                        <p className="text-gray-800 dark:text-dark-text-primary mb-4">Are you sure you want to delete this post?</p>
                         <div className="flex justify-end space-x-2">
                             <button
                                 onClick={() => {
@@ -324,8 +324,8 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
         const confirmDelete = () => {
             return new Promise((resolve) => {
                 toast.custom((t) => (
-                    <div className="bg-white p-4 rounded-lg shadow-lg">
-                        <p className="text-gray-800 mb-4">Are you sure you want to delete this comment?</p>
+                    <div className="bg-white dark:bg-dark-card p-4 rounded-lg shadow-lg">
+                        <p className="text-gray-800 dark:text-dark-text-primary mb-4">Are you sure you want to delete this comment?</p>
                         <div className="flex justify-end space-x-2">
                             <button
                                 onClick={() => {
@@ -417,8 +417,8 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
         const confirmDelete = () => {
             return new Promise((resolve) => {
                 toast.custom((t) => (
-                    <div className="bg-white p-4 rounded-lg shadow-lg">
-                        <p className="text-gray-800 mb-4">Are you sure you want to delete this reply?</p>
+                    <div className="bg-white dark:bg-dark-card p-4 rounded-lg shadow-lg">
+                        <p className="text-gray-800 dark:text-dark-text-primary mb-4">Are you sure you want to delete this reply?</p>
                         <div className="flex justify-end space-x-2">
                             <button
                                 onClick={() => {

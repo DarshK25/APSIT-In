@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
+            console.log('Attempting login with username:', username);
             const response = await axios.post(
                 'http://localhost:3000/api/v1/auth/login',
                 { username, password },
@@ -65,10 +66,13 @@ export const AuthProvider = ({ children }) => {
             );
             
             if (response.data.success) {
+                // Fetch user data after successful login response
                 const userResponse = await axios.get('http://localhost:3000/api/v1/auth/me', {
                     withCredentials: true
                 });
                 setUser(userResponse.data.data);
+                console.log('Frontend: Logged in successfully (fetched).');
+
                 toast.success('Logged in successfully');
                 navigate('/home', { replace: true });
                 return true;
@@ -76,7 +80,23 @@ export const AuthProvider = ({ children }) => {
             return false;
         } catch (error) {
             console.error('Login failed:', error);
-            const errorMessage = error.response?.data?.message || 'Login failed';
+            let errorMessage = 'Login failed';
+            
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                // that falls out of the range of 2xx
+                console.error('Error response:', error.response.data);
+                errorMessage = error.response.data.message || 'Invalid credentials';
+            } else if (error.request) {
+                // The request was made but no response was received
+                console.error('No response received:', error.request);
+                errorMessage = 'No response from server. Please try again.';
+            } else {
+                // Something happened in setting up the request that triggered an Error
+                console.error('Error setting up request:', error.message);
+                errorMessage = 'Error setting up request. Please try again.';
+            }
+            
             toast.error(errorMessage);
             return false;
         }
@@ -120,13 +140,42 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateUserAccountType = async (newType) => {
+        if (!user || user.email !== 'darshkalathiya25@gmail.com') {
+            throw new Error('Unauthorized');
+        }
+
+        try {
+            const response = await axios.put(`${API_URL}/api/v1/auth/update-account-type`, {
+                accountType: newType
+            }, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.data.success) {
+                setUser(prev => ({
+                    ...prev,
+                    accountType: newType
+                }));
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error updating account type:', error);
+            throw error;
+        }
+    };
+
     const value = {
         user,
         setUser,
         loading,
         login,
         logout,
-        signup
+        signup,
+        updateUserAccountType
     };
 
     return (

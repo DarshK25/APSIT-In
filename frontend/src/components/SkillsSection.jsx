@@ -100,7 +100,7 @@ const SkillsSection = ({ userData, isOwnProfile, onSave }) => {
                     skills.map((skill, index) => (
                         <div
                             key={index}
-                            className="group relative bg-gray-100 dark:bg-dark-hover px-3 py-1.5 rounded-full text-sm text-gray-700 dark:text-dark-text-secondary"
+                            className="group relative bg-gray-100 dark:bg-dark-hover px-3 py-1.5 rounded-full text-sm text-gray-700 dark:text-dark-text-secondary flex items-center justify-center"
                         >
                             {skill}
                             {isOwnProfile && (

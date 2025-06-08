@@ -112,18 +112,18 @@ const Sidebar = () => {
                     <div className={`${user.accountType === 'student' ? 'grid grid-cols-2 gap-4' : 'flex justify-center'} mt-4 text-center`}>
                         {user.accountType === 'student' ? (
                             <>
-                                <div className="bg-gray-50 dark:bg-dark-hover rounded-lg p-3">
+                                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
                                     <p className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">{user.connections?.length || 0}</p>
                                     <p className="text-xs text-gray-500 dark:text-dark-text-muted">Total Connections</p>
                                 </div>
-                                <div className="bg-gray-50 dark:bg-dark-hover rounded-lg p-3">
+                                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
                                     <p className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary">
                                         {user.yearOfStudy === 'First Year' ? 'FE' : 
                                          user.yearOfStudy === 'Second Year' ? 'SE' : 
                                          user.yearOfStudy === 'Third Year' ? 'TE' : 
                                          user.yearOfStudy === 'Fourth Year' ? 'BE' : user.yearOfStudy}
                                     </p>
-                                    <p className="text-xs text-gray-500">Year</p>
+                                    <p className="text-xs text-gray-400">Year</p>
                                 </div>
                             </>
                         ) : (

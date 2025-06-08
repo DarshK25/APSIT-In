@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Toast Variables */
+:root {
+  --toast-bg: #fff;
+  --toast-text: #333;
+  --toast-success-bg: #059669;
+  --toast-success-text: #fff;
+  --toast-success-icon: #fff;
+  --toast-error-bg: #EF4444;
+  --toast-error-text: #fff;
+  --toast-error-icon: #fff;
+}
+
+.dark {
+  --toast-bg: #1f2937;
+  --toast-text: #f3f4f6;
+  --toast-success-bg: #065F46;
+  --toast-success-text: #fff;
+  --toast-success-icon: #fff;
+  --toast-error-bg: #B91C1C;
+  --toast-error-text: #fff;
+  --toast-error-icon: #fff;
+}

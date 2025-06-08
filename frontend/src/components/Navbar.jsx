@@ -179,7 +179,7 @@ const Navbar = () => {
 
                         {/* Search Bar - Desktop */}
                         {user && (
-                            <div className="hidden md:block flex-1 max-w-2xl mx-8">
+                            <div className="flex-1 max-w-xl mx-2 md:mx-8">
                                 <div className="relative">
                                     <input
                                         type="text"
@@ -264,9 +264,7 @@ const Navbar = () => {
                                         >
                                             <item.icon size={20} />
                                             {item.badge > 0 && (
-                                                <span className='absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center'>
-                                                    {item.badge}
-                                                </span>
+                                                <span className='absolute -top-1 -right-1 bg-red-500 rounded-full w-2 h-2'></span>
                                             )}
                                         </Link>
                                     ))}
@@ -382,11 +380,9 @@ const Navbar = () => {
                                                     <item.icon size={20} />
                                                     <span>{item.label}</span>
                                                     {item.badge > 0 && (
-                                                        <span className='ml-auto bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center'>
-                                                            {item.badge}
-                                        </span>
-                                )}
-                            </Link>
+                                                        <span className='ml-auto bg-red-500 rounded-full w-2 h-2'></span>
+                                                    )}
+                                                </Link>
                                             ))}
                                             <div className="pt-4 border-t border-gray-200 dark:border-dark-border">
                                                 <Link
@@ -396,7 +392,7 @@ const Navbar = () => {
                                                 >
                                                     <User size={20} />
                                                     <span>Profile</span>
-                            </Link>
+                                                </Link>
                                                 <Link
                                                     to="/settings"
                                                     onClick={() => setIsSidebarOpen(false)}
@@ -404,7 +400,7 @@ const Navbar = () => {
                                                 >
                                                     <Settings size={20} />
                                                     <span>Settings</span>
-                            </Link>
+                                                </Link>
                                                 <button
                                                     onClick={() => {
                                                         setIsSidebarOpen(false);
@@ -415,8 +411,8 @@ const Navbar = () => {
                                                     <LogOut size={20} />
                                                     <span>Logout</span>
                                                 </button>
-                        </div>
-                         </div>
+                                            </div>
+                                        </div>
                                     ) : (
                                         <div className="flex flex-col gap-2 p-4">
                                             <Link
@@ -434,12 +430,12 @@ const Navbar = () => {
                                                 Sign Up
                                             </Link>
                                         </div>
-                     )}
-                </div>
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     </>
-            )}
+                )}
             </AnimatePresence>
         </>
     );
