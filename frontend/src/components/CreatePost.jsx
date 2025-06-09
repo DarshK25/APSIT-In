@@ -25,7 +25,7 @@ export const CreatePost = ({ onPost }) => {
       }
 
       const newPost = await postService.createPost(formData);
-      console.log('New post created:', newPost); // Debug log
+      // console.log('New post created:', newPost); // Debug log
       onPost(newPost);
       setContent('');
       setImage(null);

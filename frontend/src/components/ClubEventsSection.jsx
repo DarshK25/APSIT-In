@@ -78,7 +78,7 @@ const ClubEventsSection = ({ userData, isOwnProfile, onSave }) => {
       if (userData._id) {
         // Try to get all events and filter them
         try {
-          console.log("Fetching all events");
+          // console.log("Fetching all events");
           const allEventsResponse = await eventService.getAllEvents();
           if (allEventsResponse.success && allEventsResponse.data) {
             // Filter events for this specific club
@@ -88,7 +88,7 @@ const ClubEventsSection = ({ userData, isOwnProfile, onSave }) => {
               return organizerId === userData._id || 
                      (typeof organizerId === 'object' && organizerId.toString() === userData._id);
             });
-            console.log("Filtered club events:", clubEvents);
+          //  console.log("Filtered club events:", clubEvents);
             setEvents(clubEvents);
             return;
           }

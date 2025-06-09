@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { getUserRecommendations, sendConnectionRequest } from "../api/userService";
 
 const Recommendations = ({ currentUser }) => {
-    console.log("Recommendations component rendering.");
+    // console.log("Recommendations component rendering.");
     const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -33,7 +33,7 @@ const Recommendations = ({ currentUser }) => {
             }
             
             const newRecommendations = response.data || [];
-            console.log("Received new recommendations:", newRecommendations.length, "items");
+            // console.log("Received new recommendations:", newRecommendations.length, "items");
             
             if (pageNumber === 1) {
                 setInitialRecommendations(newRecommendations);

@@ -2,50 +2,11 @@ import axios from "axios";
 import axiosInstance from './axiosConfig';
 import { toast } from 'react-hot-toast';
 
-const API_URL = "http://localhost:3000/api/v1";
-const AUTH_URL = `${API_URL}/auth`;
-const USER_URL = `${API_URL}/users`;
-
-// Create axios instance with default config
-const api = axios.create({
-    baseURL: API_URL,
-    timeout: 30000, // Increase timeout to 30 seconds
-    headers: {
-        'Content-Type': 'application/json'
-    }
-});
-
-// Add request interceptor to include auth token
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-// Add response interceptor to handle errors
-api.interceptors.response.use(
-    (response) => response.data,
-    (error) => {
-        if (error.code === 'ECONNABORTED') {
-            console.error('Request timeout:', error);
-            return Promise.reject(new Error('Request timed out. Please try again.'));
-        }
-        return Promise.reject(error);
-    }
-);
-
 class UserService {
   async getCurrentUser() {
     try {
       const response = await axiosInstance.get('/auth/me');
-      return response.data.data; // Access the data property of the response
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching current user:", error);
       if (error.response?.status === 401) {
@@ -214,12 +175,12 @@ export const getUnreadCounts = async () => {
 export const getUserPosts = async (username) => {
     try {
       const response = await axiosInstance.get(`/users/${username}/posts`);
-      return response.data.posts; // ✅ Make sure this is posts, not just response.data
+      return response.data.posts;
     } catch (error) {
       console.error("Error fetching user posts:", error);
       throw error.response?.data || error.message;
     }
-  };
+};
   
 // Certification API calls
 export const addCertification = async (certificationData) => {

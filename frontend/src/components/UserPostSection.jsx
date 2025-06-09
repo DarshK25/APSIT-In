@@ -73,7 +73,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
       try {
         setIsLoadingComments(true);
         const commentData = await getCommentsByPostId(post._id);
-        console.log("Fetched comments:", commentData);
+        // console.log("Fetched comments:", commentData);
         setComments(commentData || []);
       } catch (error) {
         console.error("Error fetching comments:", error);
@@ -514,7 +514,7 @@ const UserPostSection = ({ username, accountType, isOwnProfile }) => {
         };
       }));
       
-      console.log("Formatted posts:", formattedPosts);
+      // console.log("Formatted posts:", formattedPosts);
       setPosts(formattedPosts);
     } catch (error) {
       console.error('Error fetching posts:', error);

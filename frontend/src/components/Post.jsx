@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import * as postService from '../api/postService';
 import * as commentService from '../api/commentService';
 import connectionService from '../api/connectionService';
-import axios from 'axios';
+import axiosInstance from '../api/axiosConfig';
 import { FaHeart, FaRegHeart, FaTrash, FaEdit, FaLink, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { MessageCircle, Share2, User as UserIcon, Reply } from 'lucide-react';
 import PropTypes from 'prop-types';
@@ -36,14 +36,14 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
     // Create a stable memo to track comments with replies
     const commentsWithReplies = useMemo(() => {
         // Add debugging to check what's coming from the backend
-        console.log("Post comments on load:", post.comments);
+        // console.log("Post comments on load:", post.comments);
         
         return post.comments
             .filter(comment => {
                 // More detailed check for replies
                 const hasReplies = comment.replies && Array.isArray(comment.replies) && comment.replies.length > 0;
                 if (comment.replies) {
-                    console.log(`Comment ${comment._id} has ${comment.replies.length} replies`, comment.replies);
+                    // console.log(`Comment ${comment._id} has ${comment.replies.length} replies`, comment.replies);
                 }
                 return hasReplies;
             })
@@ -64,7 +64,7 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
                 );
                 
                 if (hasEmptyRepliesField) {
-                    console.log("Fetching full post to get replies");
+                    // console.log("Fetching full post to get replies");
                     const fullPost = await postService.getPost(post._id);
                     if (fullPost) {
                         // Preserve the author data
@@ -131,14 +131,12 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
     const handleShare = async () => {
         try {
             setIsLoadingConnections(true);
-            console.log('Fetching connections...');
+            // console.log('Fetching connections...');
             
             // Direct API call to get connections
-            const response = await axios.get('http://localhost:3000/api/v1/connections', {
-                withCredentials: true
-            });
+            const response = await axiosInstance.get('/connections');
             
-            console.log('Connections fetched:', response.data);
+            // console.log('Connections fetched:', response.data);
             setConnections(response.data);
             setShowShareDialog(true);
         } catch (error) {
@@ -152,18 +150,16 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
     const handleShareToConnections = async () => {
         try {
             setIsSharing(true);
-            console.log('Sharing post with connections:', selectedConnections);
+            // console.log('Sharing post with connections:', selectedConnections);
             
             // Share post to selected connections via messages
             await Promise.all(selectedConnections.map(async (connectionId) => {
-                console.log('Sharing with connection:', connectionId);
+                // console.log('Sharing with connection:', connectionId);
                 
                 // Direct API call to share post
-                await axios.post('http://localhost:3000/api/v1/messages/share-post', {
+                await axiosInstance.post('/messages/share-post', {
                     recipientId: connectionId,
                     postId: post._id
-                }, {
-                    withCredentials: true
                 });
             }));
             
@@ -539,7 +535,7 @@ const Post = ({ post, onUpdate, onDelete, user: currentUser }) => {
 
     // Log the author data to debug missing name issue
     useEffect(() => {
-        console.log("Post author data:", post.author);
+        // console.log("Post author data:", post.author);
     }, [post.author]);
     
     // Safely access the author name or username

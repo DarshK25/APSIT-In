@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { toast } from 'react-hot-toast';
 import { Moon, Sun, Bell, Shield, Eye, EyeOff, Globe, Lock, Mail, Trash2 } from 'lucide-react';
-
-const API_URL = 'http://localhost:3000';
+import axiosInstance from '../api/axiosConfig';
 
 const Settings = () => {
     const { user, logout, setUser } = useAuth();
@@ -51,9 +49,7 @@ const Settings = () => {
     const fetchSettings = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${API_URL}/api/v1/settings`, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.get('/settings');
             if (response.data.success) {
                 setSettings(response.data.data);
             }
@@ -68,11 +64,7 @@ const Settings = () => {
     const handleSettingChange = async (setting, value) => {
         setSaving(true);
         try {
-            const response = await axios.put(
-                `${API_URL}/api/v1/settings`,
-                { [setting]: value },
-                { withCredentials: true }
-            );
+            const response = await axiosInstance.put('/settings', { [setting]: value });
             if (response.data.success) {
                 setSettings(prev => ({ ...prev, [setting]: value }));
                 toast.success('Settings updated successfully');
@@ -116,14 +108,10 @@ const Settings = () => {
                             confirmToastId = null;
                             try {
                                 setSaving(true);
-                                const response = await axios.post(
-                                    `${API_URL}/api/v1/settings/change-password`,
-                                    {
-                                        currentPassword: passwordData.currentPassword,
-                                        newPassword: passwordData.newPassword
-                                    },
-                                    { withCredentials: true }
-                                );
+                                const response = await axiosInstance.post('/settings/change-password', {
+                                    currentPassword: passwordData.currentPassword,
+                                    newPassword: passwordData.newPassword
+                                });
                                 if (response.data.success) {
                                     toast.success('Password changed successfully', {
                                         icon: '🔒',
@@ -187,10 +175,8 @@ const Settings = () => {
 
         try {
             setIsDeleting(true);
-            const response = await axios.post(`${API_URL}/api/v1/users/delete-account`, {
+            const response = await axiosInstance.post('/users/delete-account', {
                 password: deletePassword
-            }, {
-                withCredentials: true
             });
 
             if (response.data.success) {
@@ -215,11 +201,7 @@ const Settings = () => {
 
         try {
             setSaving(true);
-            const response = await axios.put(
-                `${API_URL}/api/v1/auth/update-account-type`,
-                { accountType: newType },
-                { withCredentials: true }
-            );
+            const response = await axiosInstance.put('/auth/update-account-type', { accountType: newType });
 
             if (response.data.success) {
                 // Update local user state

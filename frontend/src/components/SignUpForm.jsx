@@ -56,23 +56,23 @@ const SignUpForm = () => {
     };
 
     const validateEmail = (email, accountType) => {
-        console.log("Validating email:", email, "for account type:", accountType);
+        // console.log("Validating email:", email, "for account type:", accountType);
         email = email.toLowerCase();
-        console.log("Email after toLowerCase:", email);
+        // console.log("Email after toLowerCase:", email);
 
         // Allow admin email to bypass validation
         if (email === 'darshkalathiya25@gmail.com') {
-            console.log("Admin email bypass triggered.");
+            // console.log("Admin email bypass triggered.");
             return true;
         }
 
         if (!email.endsWith('@apsit.edu.in')) {
-            console.log("Email does not end with @apsit.edu.in");
+            // console.log("Email does not end with @apsit.edu.in");
             return false;
         }
         
         const prefix = email.split('@')[0];
-        console.log("Email prefix:", prefix);
+        // console.log("Email prefix:", prefix);
         switch(accountType) {
             case 'student':
                 return /^\d{8}$/.test(prefix);

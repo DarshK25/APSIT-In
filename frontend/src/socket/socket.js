@@ -1,44 +1,40 @@
 import { io } from 'socket.io-client';
 
-let socket;
+let socket = null;
 
-export const initSocket = (user) => {
-  if (!user) return;
+export const initSocket = () => {
+    if (!socket) {
+        socket = io(import.meta.env.VITE_API_URL, {
+            withCredentials: true,
+            transports: ['websocket'],
+            autoConnect: true
+        });
 
-  if (socket) {
-    socket.disconnect();
-  }
+        socket.on('connect', () => {
+            console.log('Socket connected');
+        });
 
-  socket = io('http://localhost:3000', {
-    withCredentials: true
-  });
+        socket.on('connect_error', (error) => {
+            console.error('Socket connection error:', error);
+        });
 
-  socket.on('connect', () => {
-    console.log('Socket connected');
-    socket.emit('setup', user._id);
-  });
-
-  socket.on('connected', () => {
-    console.log('Socket setup completed');
-  });
-
-  socket.on('connect_error', (error) => {
-    console.error('Socket connection error:', error);
-  });
-
-  return socket;
+        socket.on('disconnect', (reason) => {
+            console.log('Socket disconnected:', reason);
+        });
+    }
+    return socket;
 };
 
 export const getSocket = () => {
-  if (!socket) {
-    throw new Error('Socket not initialized. Call initSocket first.');
-  }
-  return socket;
+    if (!socket) {
+        return initSocket();
+    }
+    return socket;
 };
 
 export const disconnectSocket = () => {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
+    if (socket) {
+        socket.disconnect();
+        socket = null;
+    }
 }; 

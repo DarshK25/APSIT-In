@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { Bell, Home, LogOut, User, Users, Calendar, Search, MessageSquare, GraduationCap, Settings, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useCallback, useRef } from "react";
-import axios from "axios";
+import axiosInstance from '../api/axiosConfig';
 import { motion, AnimatePresence } from "framer-motion";
 
 const Navbar = () => {
@@ -30,10 +30,8 @@ const Navbar = () => {
         if (!user) return;
         
         try {
-            const response = await axios.get('http://localhost:3000/api/v1/users/unread-counts', {
-                withCredentials: true
-            });
-            console.log('Unread counts response:', response.data); // Debug log
+            const response = await axiosInstance.get('/users/unread-counts');
+            // console.log('Unread counts response:', response.data); // Debug log
             if (response.data.success) {
                 // Ensure counts are numbers and not null/undefined, and subtract 1 from connection requests if count is greater than 1
                 const connectionCount = Number(response.data.data.unreadConnectionRequestsCount || 0);
@@ -43,7 +41,7 @@ const Navbar = () => {
                     unreadMessagesCount: Math.max(0, Number(response.data.data.unreadMessagesCount || 0)),
                     unreadEventsCount: Math.max(0, Number(response.data.data.unreadEventsCount || 0))
                 };
-                console.log('Processed unread counts:', counts); // Debug log
+                // console.log('Processed unread counts:', counts); // Debug log
                 setUnreadCounts(counts);
             }
         } catch (error) {
@@ -123,9 +121,7 @@ const Navbar = () => {
         setShowSearchDropdown(true);
 
         try {
-            const response = await axios.get(`http://localhost:3000/api/v1/users/search?query=${query}`, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.get(`/users/search?query=${query}`);
             setSearchResults(response.data.data || []);
         } catch (error) {
             console.error('Search failed:', error);

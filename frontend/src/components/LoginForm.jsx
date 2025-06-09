@@ -3,9 +3,7 @@ import { Loader, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3000'; // Assuming your backend runs on 3000
+import axiosInstance from '../api/axiosConfig';
 
 const LoginForm = () => {
 	const navigate = useNavigate();
@@ -62,7 +60,7 @@ const LoginForm = () => {
 		e.preventDefault();
 		setForgotLoading(true);
 		try {
-			const response = await axios.post(`${API_URL}/api/v1/auth/forgot-password`, {
+			const response = await axiosInstance.post('/auth/forgot-password', {
 				email: forgotEmail
 			});
 			if (response.data.success) {
@@ -89,7 +87,7 @@ const LoginForm = () => {
 
 		setResetLoading(true);
 		try {
-			const response = await axios.post(`${API_URL}/api/v1/auth/reset-password`, {
+			const response = await axiosInstance.post('/auth/reset-password', {
 				token: resetCode,
 				newPassword: newPassword
 			});
@@ -213,8 +211,7 @@ const LoginForm = () => {
 							<button
 								type="button"
 								className="text-sm text-blue-600 hover:underline mt-2 text-center w-full dark:text-blue-400"
-								onClick={() => setShowResetPasswordFields(false) // Go back to email request form
-								}
+								onClick={() => setShowResetPasswordFields(false)}
 							>
 								Back
 							</button>

@@ -121,8 +121,8 @@ const ProfilePage = () => {
         const type = getAccountType(profileData);
         setAccountType(type);
         
-        console.log('Profile Data:', profileData);
-        console.log('Account Type:', type);
+        // console.log('Profile Data:', profileData);
+        // console.log('Account Type:', type);
       } catch (error) {
         console.error("Failed to fetch profile:", error);
         setError(error.message || "Failed to load profile. Please try again later.");

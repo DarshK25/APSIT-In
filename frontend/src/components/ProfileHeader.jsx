@@ -7,6 +7,7 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { FaEdit } from "react-icons/fa";
+import axiosInstance from '../api/axiosConfig';
 
 const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccountType }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -111,38 +112,18 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
   // Check connection status
   useEffect(() => {
     const checkConnectionStatus = async () => {
-      if (!isOwnProfile && userData?._id && currentUser) {
-        try {
-          // First check if the user is in current user's connections
-          if (currentUser.connections?.includes(userData._id)) {
-            setConnectionStatus('connected');
-            return;
-          }
-
-          // Then check for pending requests
-          const response = await axios.get(`http://localhost:3000/api/v1/connections/status/${userData._id}`, {
-            withCredentials: true
-          });
-
-          if (response.data.status === 'connected') {
-            setConnectionStatus('connected');
-          } else if (response.data.status === 'pending') {
-            setConnectionStatus('pending');
-          } else if (response.data.status === 'received') {
-            setConnectionStatus('received');
-            setPendingRequestId(response.data.requestId);
-          } else {
-            setConnectionStatus('none');
-          }
-        } catch (error) {
-          console.error("Error checking connection status:", error);
-          setConnectionStatus('none');
+      try {
+        const response = await axiosInstance.get(`/connections/status/${userData._id}`);
+        if (response.data.success) {
+          setConnectionStatus(response.data.data);
         }
+      } catch (error) {
+        console.error('Error checking connection status:', error);
       }
     };
 
     checkConnectionStatus();
-  }, [userData?._id, isOwnProfile, currentUser]);
+  }, [userData._id]);
 
   const handleImageUpload = async (event, imageType) => {
     const file = event.target.files[0];
@@ -190,24 +171,24 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
 
   const handleAcceptRequest = async () => {
     try {
-      await axios.put(`http://localhost:3000/api/v1/connections/accept/${pendingRequestId}`, {}, {
-        withCredentials: true
-      });
+      await axiosInstance.put(`/connections/accept/${pendingRequestId}`);
       setConnectionStatus('connected');
-      toast.success('Connection request accepted!');
+      setPendingRequestId(null);
+      toast.success('Connection request accepted');
     } catch (error) {
+      console.error('Error accepting connection request:', error);
       toast.error('Failed to accept connection request');
     }
   };
 
   const handleRejectRequest = async () => {
     try {
-      await axios.put(`http://localhost:3000/api/v1/connections/reject/${pendingRequestId}`, {}, {
-        withCredentials: true
-      });
-      setConnectionStatus('none');
+      await axiosInstance.put(`/connections/reject/${pendingRequestId}`);
+      setConnectionStatus('not_connected');
+      setPendingRequestId(null);
       toast.success('Connection request rejected');
     } catch (error) {
+      console.error('Error rejecting connection request:', error);
       toast.error('Failed to reject connection request');
     }
   };
@@ -296,7 +277,7 @@ const ProfileHeader = ({ userData, isOwnProfile, onSave, accountType: propAccoun
             alt="Profile Banner"
             className="absolute inset-0 w-full h-full object-cover"
             onError={() => {
-              console.log('Banner image failed to load. Setting bannerImageLoadError to true.');
+              // console.log('Banner image failed to load. Setting bannerImageLoadError to true.');
               setBannerImageLoadError(true);
             }}
           />

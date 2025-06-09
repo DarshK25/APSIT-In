@@ -16,31 +16,37 @@ import { connectDB } from "./lib/db.js";
 import { initSocket } from './socket/socket.js';
 import { createServer } from "http";
 import { createUploadsDir } from './utils/createUploadsDir.js';
-import mongoose from 'mongoose';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Create uploads directory if it doesn't exist
 createUploadsDir();
 
 // Enable CORS for all routes
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'], // frontend URLs
-  credentials: true, // Allow credentials (cookies, authorization headers)
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://apsitin.onrender.com'] 
+    : true, // Allow all origins in development
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 };
-app.use(cors(corsOptions));  // Move this before routes
+app.use(cors(corsOptions));
 
 // Body parser middleware
-app.use(express.json({ limit: '50mb' })); // Increase payload limit
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
-// Routes
+// API Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/posts", postRoutes);
@@ -52,8 +58,19 @@ app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/clubs", clubRoutes);
 app.use("/api/v1/settings", settingsRoutes);
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+// Serve uploaded files statically in development
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/uploads', express.static('uploads'));
+}
+
+// Serve frontend build files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

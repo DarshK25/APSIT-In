@@ -8,6 +8,8 @@ import toast from 'react-hot-toast';
 import ChatOptions from '../components/ChatOptions';
 import { getUnreadCounts } from '../api/userService';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axiosConfig';
+import { initSocket, getSocket, disconnectSocket } from '../socket/socket';
 
 const SharedPostPreview = ({ post }) => {
     if (!post) return null;
@@ -102,9 +104,7 @@ const MessagesPage = () => {
                 } else {
                     // If not in conversations, fetch user data
                     try {
-                        const response = await axios.get(`http://localhost:3000/api/v1/users/${userId}`, {
-                            withCredentials: true
-                        });
+                        const response = await axiosInstance.get(`/users/${userId}`);
                         if (response.data.success) {
                             setSelectedUser(response.data.data);
                             // Add this user to conversations list
@@ -115,8 +115,8 @@ const MessagesPage = () => {
                             }, ...prev]);
                         }
                     } catch (error) {
-                        console.error('Failed to fetch user:', error);
-                        toast.error('Failed to load user data');
+                        console.error('Error fetching user:', error);
+                        toast.error('Failed to load user details');
                     }
                 }
             }
@@ -137,67 +137,23 @@ const MessagesPage = () => {
             if (!selectedUser) return;
 
             try {
-                // First check if users are connected
-                const connectionResponse = await axios.get(
-                    `http://localhost:3000/api/v1/connections/status/${selectedUser._id}`,
-                    { withCredentials: true }
-                );
-                
-                const isConnected = connectionResponse.data.status === 'connected';
-                
-                if (!isConnected) {
-                    // Check if there's a pending message request
-                    const messageRequestResponse = await axios.get(
-                        `http://localhost:3000/api/v1/messages/request-status/${selectedUser._id}`,
-                        { withCredentials: true }
-                    );
-                    
-                    if (messageRequestResponse.data.hasRequest) {
-                        setIsMessageRequestPending(true);
-                        setHasSentMessageRequest(true);
-                    } else {
-                        setIsMessageRequestPending(false);
-                    }
-                }
-
-                const response = await axios.get(
-                    `http://localhost:3000/api/v1/messages/${selectedUser._id}`,
-                    { withCredentials: true }
-                );
-
+                const response = await axiosInstance.get(`/messages/${selectedUser._id}`);
                 if (response.data.success) {
-                    const newMessages = response.data.data;
-                    setMessages(prevMessages => {
-                        if (isInitialFetch || 
-                            newMessages.length !== prevMessages.length || 
-                            newMessages[newMessages.length - 1]?._id !== prevMessages[prevMessages.length - 1]?._id) {
-                            if (isInitialFetch) {
-                                setTimeout(scrollToBottom, 100);
-                            } else if (newMessages.length > prevMessages.length) {
-                                setTimeout(scrollToBottom, 100);
-                            }
-                            return newMessages;
-                        }
-                        return prevMessages;
-                    });
+                    const messages = response.data.data;
+                    setMessages(messages);
                     
-                    if (isInitialFetch || response.data.data.length > messages.length) {
-                        await axios.post(
-                            `http://localhost:3000/api/v1/messages/${selectedUser._id}/read`,
-                            {},
-                            { withCredentials: true }
-                        );
+                    // Mark messages as read
+                    if (messages.length > 0) {
+                        await axiosInstance.post(`/messages/${selectedUser._id}/read`);
+                    }
+                    
+                    if (isInitialFetch) {
+                        setTimeout(scrollToBottom, 100);
                     }
                 }
             } catch (error) {
-                console.error('Failed to fetch messages:', error);
-                if (error.response?.status === 404) {
-                    // Handle user not found
-                    toast.error("User not found");
-                    setSelectedUser(null);
-                } else if (isInitialFetch) {
-                    toast.error('Failed to load messages');
-                }
+                console.error('Error fetching messages:', error);
+                toast.error('Failed to load messages');
             }
         };
 
@@ -226,12 +182,8 @@ const MessagesPage = () => {
                 const urlUserId = params.get('user');
 
                 const [conversationsResponse, connectionsResponse] = await Promise.all([
-                    axios.get('http://localhost:3000/api/v1/messages/conversations', {
-                        withCredentials: true
-                    }),
-                    axios.get('http://localhost:3000/api/v1/connections', {
-                        withCredentials: true
-                    })
+                    axiosInstance.get('/messages/conversations'),
+                    axiosInstance.get('/connections')
                 ]);
 
                 if (conversationsResponse.data.success) {
@@ -277,10 +229,7 @@ const MessagesPage = () => {
                         } else {
                             // If not in conversations, fetch the user data
                             try {
-                                const userResponse = await axios.get(
-                                    `http://localhost:3000/api/v1/users/${urlUserId}`,
-                                    { withCredentials: true }
-                                );
+                                const userResponse = await axiosInstance.get(`/users/${urlUserId}`);
                                 
                                 if (userResponse.data.success) {
                                     const userData = userResponse.data.data;
@@ -304,10 +253,8 @@ const MessagesPage = () => {
                     }
                 }
             } catch (error) {
-                console.error('Failed to fetch conversations:', error);
-                if (isInitialFetch) {
-                    toast.error('Failed to load conversations');
-                }
+                console.error('Error fetching conversations and connections:', error);
+                toast.error('Failed to load conversations');
             } finally {
                 if (isInitialFetch) {
                     setLoading(false);
@@ -343,16 +290,13 @@ const MessagesPage = () => {
 
             try {
                 setIsLoadingStatus(true);
-                const response = await axios.get(
-                    `http://localhost:3000/api/v1/messages/request-status/${selectedUser._id}`,
-                    { withCredentials: true }
-                );
+                const response = await axiosInstance.get('/messages/request-status');
                 
                 if (response.data.success) {
                     setMessageRequestStatus(response.data.data);
                 }
             } catch (error) {
-                console.error('Failed to check message request status:', error);
+                console.error('Error checking message request status:', error);
                 toast.error('Failed to check message status');
             } finally {
                 setIsLoadingStatus(false);
@@ -417,74 +361,19 @@ const MessagesPage = () => {
         try {
             setUploadingFile(true);
 
-            // Check if users are connected
-            const isConnected = user.connections.includes(selectedUser._id);
-            
-            if (!isConnected && !messageRequestStatus?.canMessage) {
-                // Send message request
-                const formData = new FormData();
-                if (attachedFile) formData.append('file', attachedFile);
+            const formData = new FormData();
+            if (newMessage.trim()) {
                 formData.append('content', newMessage.trim());
-                formData.append('recipientId', selectedUser._id);
-
-                const response = await axios.post(
-                    'http://localhost:3000/api/v1/messages/request',
-                    formData,
-                    {
-                        withCredentials: true,
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    }
-                );
-
-                if (response.data.success) {
-                    setMessageRequestStatus({
-                        hasRequest: true,
-                        isSender: true,
-                        canMessage: false,
-                        requestId: response.data.data._id
-                    });
-                    toast.success('Message request sent!');
-                    setNewMessage('');
-                    setAttachedFile(null);
-                    if (fileInputRef.current) {
-                        fileInputRef.current.value = '';
-                    }
-                    return;
-                }
             }
-
-            // If connected or request accepted, send normal message
-            let response;
             if (attachedFile) {
-                const formData = new FormData();
                 formData.append('file', attachedFile);
-                formData.append('recipientId', selectedUser._id);
-                if (newMessage.trim()) {
-                    formData.append('content', newMessage.trim());
-                }
-
-                response = await axios.post(
-                    'http://localhost:3000/api/v1/messages/send-file',
-                    formData,
-                    {
-                        withCredentials: true,
-                        headers: {
-                            'Content-Type': 'multipart/form-data'
-                        }
-                    }
-                );
-            } else {
-                response = await axios.post(
-                    'http://localhost:3000/api/v1/messages/send',
-                    {
-                        recipientId: selectedUser._id,
-                        content: newMessage.trim()
-                    },
-                    { withCredentials: true }
-                );
             }
+
+            const response = await axiosInstance.post(`/messages/${selectedUser._id}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
 
             if (response.data.success) {
                 setMessages([...messages, response.data.data]);
@@ -496,8 +385,8 @@ const MessagesPage = () => {
                 scrollToBottom();
             }
         } catch (error) {
-            console.error('Failed to send message:', error);
-            toast.error(error.response?.data?.message || 'Failed to send message');
+            console.error('Error sending message:', error);
+            toast.error('Failed to send message');
         } finally {
             setUploadingFile(false);
         }
@@ -505,47 +394,29 @@ const MessagesPage = () => {
 
     const handleAcceptRequest = async (requestId) => {
         try {
-            const response = await axios.put(
-                `http://localhost:3000/api/v1/messages/request/accept/${requestId}`,
-                {},
-                { withCredentials: true }
-            );
-
+            const response = await axiosInstance.post(`/messages/requests/${requestId}/accept`);
             if (response.data.success) {
-                setMessageRequestStatus({
-                    canMessage: true,
-                    hasRequest: false
-                });
-                
-                // Add the initial message to the chat
-                if (response.data.data.initialMessage) {
-                    setMessages([response.data.data.initialMessage]);
-                }
-                
-                toast.success('Message request accepted!');
+                toast.success('Message request accepted');
+                setMessageRequestStatus(null);
+                // Refresh conversations
+                await fetchConversationsAndConnections();
             }
         } catch (error) {
-            console.error('Failed to accept message request:', error);
-            toast.error('Failed to accept message request');
+            console.error('Error accepting request:', error);
+            toast.error('Failed to accept request');
         }
     };
 
     const handleRejectRequest = async (requestId) => {
         try {
-            await axios.put(
-                `http://localhost:3000/api/v1/messages/request/reject/${requestId}`,
-                {},
-                { withCredentials: true }
-            );
-
-            setMessageRequestStatus({
-                canMessage: false,
-                hasRequest: false
-            });
-            toast.success('Message request rejected');
+            const response = await axiosInstance.post(`/messages/requests/${requestId}/reject`);
+            if (response.data.success) {
+                toast.success('Message request rejected');
+                setMessageRequestStatus(null);
+            }
         } catch (error) {
-            console.error('Failed to reject message request:', error);
-            toast.error('Failed to reject message request');
+            console.error('Error rejecting request:', error);
+            toast.error('Failed to reject request');
         }
     };
 

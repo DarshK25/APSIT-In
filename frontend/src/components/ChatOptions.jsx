@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MoreVertical, BellOff, Flag, Ban, Trash2 } from 'lucide-react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosConfig';
 import toast from 'react-hot-toast';
 
 const ChatOptions = ({ selectedUser, onClose }) => {
@@ -8,10 +8,9 @@ const ChatOptions = ({ selectedUser, onClose }) => {
 
     const handleMuteToggle = async () => {
         try {
-            await axios.post(
-                `http://localhost:3000/api/v1/messages/mute/${selectedUser._id}`,
-                { muted: !isMuted },
-                { withCredentials: true }
+            await axiosInstance.post(
+                `/messages/mute/${selectedUser._id}`,
+                { muted: !isMuted }
             );
             setIsMuted(!isMuted);
             toast.success(isMuted ? 'Chat unmuted' : 'Chat muted');
@@ -23,10 +22,8 @@ const ChatOptions = ({ selectedUser, onClose }) => {
 
     const handleReport = async () => {
         try {
-            await axios.post(
-                `http://localhost:3000/api/v1/messages/report/${selectedUser._id}`,
-                {},
-                { withCredentials: true }
+            await axiosInstance.post(
+                `/messages/report/${selectedUser._id}`
             );
             toast.success('User reported successfully');
             onClose();
@@ -38,10 +35,8 @@ const ChatOptions = ({ selectedUser, onClose }) => {
 
     const handleBlock = async () => {
         try {
-            await axios.post(
-                `http://localhost:3000/api/v1/messages/block/${selectedUser._id}`,
-                {},
-                { withCredentials: true }
+            await axiosInstance.post(
+                `/messages/block/${selectedUser._id}`
             );
             toast.success('User blocked successfully');
             onClose();
@@ -53,9 +48,8 @@ const ChatOptions = ({ selectedUser, onClose }) => {
 
     const handleDeleteChat = async () => {
         try {
-            await axios.delete(
-                `http://localhost:3000/api/v1/messages/chat/${selectedUser._id}`,
-                { withCredentials: true }
+            await axiosInstance.delete(
+                `/messages/chat/${selectedUser._id}`
             );
             toast.success('Chat deleted successfully');
             onClose();

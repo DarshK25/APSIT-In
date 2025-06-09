@@ -76,12 +76,12 @@ export const Feed = () => {
             }
 
             // Log the FormData contents for debugging
-            for (let pair of formData.entries()) {
-                console.log(pair[0] + ': ' + pair[1]);
-            }
+            // for (let pair of formData.entries()) {
+            //     console.log(pair[0] + ': ' + pair[1]);
+            // }
 
             const newPost = await postService.createPost(formData);
-            console.log('New post response:', newPost); // Debug log
+            // console.log('New post response:', newPost); // Debug log
 
             // Ensure we have all the required data populated
             const formattedPost = {
@@ -131,11 +131,11 @@ export const Feed = () => {
             }
 
             // Log file details for debugging
-            console.log('Selected file:', {
-                name: file.name,
-                type: file.type,
-                size: file.size
-            });
+            // console.log('Selected file:', {
+            //     name: file.name,
+            //     type: file.type,
+            //     size: file.size
+            // });
 
             setSelectedImage(file);
             setImagePreview(URL.createObjectURL(file));

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Edit, X, User, Crown, Shield, UserPlus, Search } from "lucide-react";
 import toast from "react-hot-toast";
-import axios from "axios";
+import axiosInstance from "../api/axiosConfig";
 import clubService from "../api/clubService";
 
 const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
@@ -82,9 +82,8 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
             }
             
             // Make API call to fetch user details in batch
-            const response = await axios.post('http://localhost:3000/api/v1/users/batch', 
-                { userIds: memberIds },
-                { withCredentials: true }
+            const response = await axiosInstance.post('/users/batch', 
+                { userIds: memberIds }
             );
             
             // Check if response has expected format
@@ -154,9 +153,7 @@ const ClubMembersSection = ({ userData, isOwnProfile, onSave }) => {
         setIsSearching(true);
         try {
             // First try with 'query' parameter (correct according to backend)
-            const response = await axios.get(`http://localhost:3000/api/v1/users/search?query=${query}`, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.get(`/users/search?query=${query}`);
             
             if (response.data && response.data.success && Array.isArray(response.data.data)) {
                 // Filter out users who are already in pending members

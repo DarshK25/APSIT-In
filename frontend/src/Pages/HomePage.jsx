@@ -96,7 +96,7 @@ const HomePage = () => {
     return () => clearInterval(refreshInterval);
   }, [navigate]); // Depend only on navigate for initial fetch and interval setup
 
-  console.log('HomePage render state: isLoading=', isLoading, ', error=', error, ', user=', !!user); // Log state before rendering
+  // console.log('HomePage render state: isLoading=', isLoading, ', error=', error, ', user=', !!user); // Log state before rendering
 
   // Render loading spinner or error display while data is being fetched or if there's an error
   if (isLoading) {

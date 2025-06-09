@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 // Configure axios to suppress 401 errors in the console
-axios.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   response => response,
   error => {
     // Suppress 401 errors in the console
@@ -36,9 +36,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/api/v1/auth/me', {
-                    withCredentials: true
-                });
+                const response = await axiosInstance.get('/auth/me');
                 if (response.data.data) {
                     setUser(response.data.data);
                 }
@@ -58,73 +56,67 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            console.log('Attempting login with username:', username);
-            const response = await axios.post(
-                'http://localhost:3000/api/v1/auth/login',
+            // console.log('Attempting login with username:', username);
+            const response = await axiosInstance.post(
+                '/auth/login',
                 { username, password },
-                { withCredentials: true }
+                {
+                    timeout: 10000,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                }
             );
             
             if (response.data.success) {
-                // Fetch user data after successful login response
-                const userResponse = await axios.get('http://localhost:3000/api/v1/auth/me', {
-                    withCredentials: true
-                });
-                setUser(userResponse.data.data);
-                console.log('Frontend: Logged in successfully (fetched).');
-
-                // Show special message for test account
-                if (userResponse.data.data.email === 'darshkalathiya25@gmail.com') {
-                    toast.success('Logged in successfully');
-                    // Show special test account message after a short delay
-                    setTimeout(() => {
-                        toast.custom((t) => (
-                            <div className="bg-blue-100 dark:bg-blue-800 rounded-lg p-4 shadow-lg border border-blue-200 dark:border-blue-700">
-                                <div className="flex items-start">
-                                    <div className="flex-shrink-0">
-                                        <svg className="h-5 w-5 text-blue-500 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div className="ml-3">
-                                        <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                            Test Account Features
-                                        </h3>
-                                        <div className="mt-2 text-sm text-blue-800 dark:text-blue-200">
-                                            <p>You can switch between different account types (Student, Faculty, Club) in the Settings page.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ), {
-                            duration: 8000,
-                            position: 'top-center',
-                        });
-                    }, 1000);
-                } else {
-                    toast.success('Logged in successfully');
+                // Store the token in localStorage
+                if (response.data.token) {
+                    localStorage.setItem('token', response.data.token);
                 }
                 
-                navigate('/home', { replace: true });
-                return true;
+                // Set user data from login response if available
+                if (response.data.data) {
+                    setUser(response.data.data);
+                    // console.log('Frontend: Logged in successfully.');
+                    toast.success('Logged in successfully');
+                    navigate('/home', { replace: true });
+                    return true;
+                }
+                
+                // If user data not in login response, fetch it
+                try {
+                    const userResponse = await axiosInstance.get('/auth/me', {
+                        timeout: 5000 // Shorter timeout for user data fetch
+                    });
+                    if (userResponse.data.success) {
+                        setUser(userResponse.data.data);
+                        // console.log('Frontend: Logged in successfully (fetched).');
+                        toast.success('Logged in successfully');
+                        navigate('/home', { replace: true });
+                        return true;
+                    }
+                } catch (userError) {
+                    console.error('Error fetching user data:', userError);
+                    // Don't show error toast here as we already have the token
+                    // Just proceed with navigation
+                    navigate('/home', { replace: true });
+                    return true;
+                }
             }
             return false;
         } catch (error) {
             console.error('Login failed:', error);
             let errorMessage = 'Login failed';
             
-            if (error.response) {
-                // The request was made and the server responded with a status code
-                // that falls out of the range of 2xx
-                console.error('Error response:', error.response.data);
+            if (error.code === 'ECONNABORTED') {
+                errorMessage = 'Login request timed out. Please try again.';
+            } else if (error.code === 'ECONNRESET') {
+                errorMessage = 'Connection lost. Please check your internet connection and try again.';
+            } else if (error.response) {
                 errorMessage = error.response.data.message || 'Invalid credentials';
             } else if (error.request) {
-                // The request was made but no response was received
-                console.error('No response received:', error.request);
                 errorMessage = 'No response from server. Please try again.';
             } else {
-                // Something happened in setting up the request that triggered an Error
-                console.error('Error setting up request:', error.message);
                 errorMessage = 'Error setting up request. Please try again.';
             }
             
@@ -135,9 +127,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await axios.post('http://localhost:3000/api/v1/auth/logout', {}, {
-                withCredentials: true
-            });
+            await axiosInstance.post('/auth/logout');
             setUser(null);
             toast.success('Logged out successfully');
             navigate('/');
@@ -149,16 +139,13 @@ export const AuthProvider = ({ children }) => {
 
     const signup = async (userData) => {
         try {
-            const response = await axios.post(
-                'http://localhost:3000/api/v1/auth/signup',
-                userData,
-                { withCredentials: true }
+            const response = await axiosInstance.post(
+                '/auth/signup',
+                userData
             );
             
             if (response.data.success) {
-                const userResponse = await axios.get('http://localhost:3000/api/v1/auth/me', {
-                    withCredentials: true
-                });
+                const userResponse = await axiosInstance.get('/auth/me');
                 setUser(userResponse.data.data);
                 toast.success('Account created successfully');
                 navigate('/profile');
@@ -177,12 +164,8 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            const response = await axios.put(`${API_URL}/api/v1/auth/update-account-type`, {
+            const response = await axiosInstance.put('/auth/update-account-type', {
                 accountType: newType
-            }, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('token')}`
-                }
             });
 
             if (response.data.success) {
