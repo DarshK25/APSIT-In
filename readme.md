@@ -141,9 +141,6 @@ cd frontend
 npm run dev
 ```
 
-## 📝 API Documentation
-The API documentation is available at `/api/v1/docs` when running the server locally.
-
 ## 🤝 Contributing
 Contributions are welcome! Please feel free to submit a Pull Request.
 
