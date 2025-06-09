@@ -33,7 +33,7 @@ createUploadsDir();
 // Enable CORS for all routes
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://apsitin.onrender.com', 'https://apsitin-frontend.onrender.com'] 
+    ? 'https://apsitin.onrender.com'  // Only allow production URL
     : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
