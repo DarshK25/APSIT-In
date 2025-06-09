@@ -290,7 +290,7 @@ const MessagesPage = () => {
 
             try {
                 setIsLoadingStatus(true);
-                const response = await axiosInstance.get('/messages/request-status');
+                const response = await axiosInstance.get(`/messages/request-status/${selectedUser._id}`);
                 
                 if (response.data.success) {
                     setMessageRequestStatus(response.data.data);
@@ -361,19 +361,28 @@ const MessagesPage = () => {
         try {
             setUploadingFile(true);
 
-            const formData = new FormData();
-            if (newMessage.trim()) {
-                formData.append('content', newMessage.trim());
-            }
+            let response;
             if (attachedFile) {
-                formData.append('file', attachedFile);
-            }
-
-            const response = await axiosInstance.post(`/messages/${selectedUser._id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
+                // If there's a file, use the send-file endpoint
+                const formData = new FormData();
+                formData.append('recipientId', selectedUser._id);
+                if (newMessage.trim()) {
+                    formData.append('content', newMessage.trim());
                 }
-            });
+                formData.append('file', attachedFile);
+
+                response = await axiosInstance.post('/messages/send-file', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+            } else {
+                // If it's just text, use the send endpoint
+                response = await axiosInstance.post('/messages/send', {
+                    recipientId: selectedUser._id,
+                    content: newMessage.trim()
+                });
+            }
 
             if (response.data.success) {
                 setMessages([...messages, response.data.data]);
