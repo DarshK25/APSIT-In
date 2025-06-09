@@ -84,14 +84,14 @@ export const changePassword = async (req, res) => {
 
 export const deleteAccount = async(req, res) => {
     try {
-        const { currentPassword } = req.body;
+        const { password } = req.body;
         const user = await User.findById(req.user._id).select('+password');
         
         if(!user) {
             return res.status(404).json({success: false, error: 'User not found.'});
         }
 
-        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if(!isMatch) {
             return res.status(401).json({success: false, error: 'Current password is incorrect.'});
         }

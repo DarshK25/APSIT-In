@@ -1,6 +1,7 @@
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { getSuggestedConnections, getPublicProfile, updateProfile, searchUsers, getUnreadCounts, getUserPosts, getUsersByBatch, addCertification, updateCertification, deleteCertification } from "../controllers/user.controller.js";
+import { deleteAccount } from "../controllers/settings.controller.js";
 import Connection from "../models/connection.model.js";
 import User from "../models/user.model.js";
 const router = express.Router();
@@ -18,6 +19,8 @@ router.get("/:username/posts", protectRoute, getUserPosts);
 router.post("/certifications", protectRoute, addCertification);
 router.put("/certifications/:certificationId", protectRoute, updateCertification);
 router.delete("/certifications/:certificationId", protectRoute, deleteCertification);
+
+router.post("/delete-account", protectRoute, deleteAccount);
 
 router.get("/debug/connections", protectRoute, async (req, res) => {
     try {
