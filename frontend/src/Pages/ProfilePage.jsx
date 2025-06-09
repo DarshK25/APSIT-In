@@ -254,128 +254,93 @@ const ProfilePage = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-6 bg-gray-50 dark:bg-dark-secondary">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
           {/* Left Column - Main Profile Content */}
-          <div className="col-span-1 md:col-span-8">
-            <div className="relative z-[1]">
-              <ProfileHeader
-                userData={visibleProfileData}
-                isOwnProfile={isOwnProfile}
-                onSave={handleProfileUpdate}
-                accountType={accountType}
-              />
-            </div>
-            
-            <div className="space-y-4 md:space-y-6 mt-4 md:mt-6">
-              {/* About Section - Always visible */}
-              <AboutSection
-                userData={visibleProfileData}
-                isOwnProfile={isOwnProfile}
-                onSave={handleProfileUpdate}
-              />
+          <div className="col-span-1 md:col-span-8 space-y-4 md:space-y-6">
+            <ProfileHeader 
+              userData={visibleProfileData} 
+              isOwnProfile={isOwnProfile}
+              onSave={handleProfileUpdate}
+              accountType={accountType} // Pass accountType to header if it needs it
+            />
 
-              {/* Skills Section - Always visible */}
-              <SkillsSection
-                userData={visibleProfileData}
-                isOwnProfile={isOwnProfile}
-                onSave={handleProfileUpdate}
-              />
-              
-              {/* Education - for students and faculty only */}
-              {!isClub && shouldShowSection('education') && (
+            <AboutSection 
+              userData={visibleProfileData} 
+              isOwnProfile={isOwnProfile}
+              onSave={handleProfileUpdate}
+            />
+
+            {/* Student/Faculty Specific Sections */}
+            {(isStudent || isFaculty) && (
+              <>
                 <EducationSection
                   userData={visibleProfileData}
                   isOwnProfile={isOwnProfile}
                   onSave={handleProfileUpdate}
                 />
-              )}
-
-              {/* Experience - for students and faculty only */}
-              {!isClub && shouldShowSection('experience') && (
                 <ExperienceSection
                   userData={visibleProfileData}
                   isOwnProfile={isOwnProfile}
                   onSave={handleProfileUpdate}
                 />
-              )}
-
-              {/* Projects - for all account types */}
-              {shouldShowSection('projects') && (
+                <SkillsSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
                 <ProjectsSection
                   userData={visibleProfileData}
                   isOwnProfile={isOwnProfile}
                   onSave={handleProfileUpdate}
                 />
-              )}
-
-              {/* Certifications - for all account types */}
-              {shouldShowSection('certifications') && (
                 <CertificationsSection
                   userData={visibleProfileData}
                   isOwnProfile={isOwnProfile}
                   onSave={handleProfileUpdate}
                 />
-              )}
+              </>
+            )}
 
-              {/* Faculty specific sections */}
-              {isFaculty && (
-                <>
-                  <FacultyInfoSection
-                    userData={visibleProfileData}
-                    isOwnProfile={isOwnProfile}
-                    onSave={handleProfileUpdate}
-                  />
-                  <SubjectsSection
-                    userData={visibleProfileData}
-                    isOwnProfile={isOwnProfile}
-                    onSave={handleProfileUpdate}
-                  />
-                </>
-              )}
-              
-              {/* Club specific sections */}
-              {isClub && (
-                <>
-                  <ClubEventsSection
-                    userData={visibleProfileData}
-                    isOwnProfile={isOwnProfile}
-                    onSave={handleProfileUpdate}
-                  />
-                  <ClubMemberSection
-                    userData={visibleProfileData}
-                    isOwnProfile={isOwnProfile}
-                    onSave={handleProfileUpdate}
-                  />
-                </>
-              )}
-              
-              {/* User Posts - for all account types */}
-              {userData.username && (
-                <div className="rounded-lg shadow-sm border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card overflow-hidden">
-                  <UserPostSection
-                    username={userData.username}
-                    accountType={accountType}
-                    isOwnProfile={isOwnProfile}
-                  />
-                </div>
-              )}
-              
-              {!canViewFullProfile && (
-                <div className="rounded-lg shadow-sm p-4 md:p-6 text-center bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-text-primary mb-2">Connect to see more</h3>
-                  <p className="text-gray-600 dark:text-dark-text-secondary mb-4">
-                    Connect with {userData.name} to see their full profile and activity.
-                  </p>
-                  <button
-                    onClick={() => navigate(`/profile/${userData.username}`)}
-                    className="px-4 md:px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors duration-200"
-                  >
-                    Connect
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* Faculty specific sections */}
+            {isFaculty && (
+              <>
+                <FacultyInfoSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+                <SubjectsSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              </>
+            )}
+
+            {/* Club specific sections */}
+            {isClub && (
+              <>
+                <ClubEventsSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+                <ClubMemberSection
+                  userData={visibleProfileData}
+                  isOwnProfile={isOwnProfile}
+                  onSave={handleProfileUpdate}
+                />
+              </>
+            )}
+
+            {/* User Posts - for all account types */}
+            <UserPostSection
+              username={username}
+              accountType={accountType}
+              isOwnProfile={isOwnProfile}
+            />
+
           </div>
 
-          {/* Right Column - Additional Info */}
+          {/* Right Column - Recommendations, etc. */}
           <div className="col-span-1 md:col-span-4 space-y-4 md:space-y-6">
             {isOwnProfile && calculateProfileCompletion(userData, accountType) < 100 && (
               <div className="rounded-lg shadow-sm p-4 md:p-6 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border">

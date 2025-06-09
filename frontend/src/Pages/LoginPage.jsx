@@ -31,6 +31,24 @@ const LoginPage = () => {
 							</Link>
 						</div>
 					</div>
+
+					{/* Test User Information */}
+					<div className="mt-8 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+						<h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+							Want to try APSIT-In?
+						</h3>
+						<div className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+							<p>Use our test account to explore the platform:</p>
+							<div className="bg-gray-100 dark:bg-gray-600 p-2 rounded">
+								<p><span className="font-medium">Username:</span> testuser</p>
+								<p><span className="font-medium">Password:</span> abcdef</p>
+							</div>
+							<p className="text-xs text-gray-500 dark:text-gray-400 italic">
+								Note: All activities performed using the test account will be recorded and monitored.
+								Please use responsibly.
+							</p>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

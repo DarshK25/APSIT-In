@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"; // for password hashing
 import { sendWelcomeEmail, sendPasswordResetEmail } from "../emails/emailHandlers.js";
 import { generateTokenAndSetCookie } from "../lib/utils/generateToken.js";
 import crypto from 'crypto'; // Import crypto for generating tokens
+import { sendEmail } from '../utils/emailService.js';
 //for example 123456 => SKefhjw_2jbjJB  
 
 export const signup = async (req, res) => {
@@ -24,18 +25,23 @@ export const signup = async (req, res) => {
         const emailPrefix = email.split('@')[0];
         let emailValid = false;
         
-        switch(accountType) {
-            case 'student':
-                emailValid = /^\d{8}@apsit\.edu\.in$/i.test(email);
-                break;
-            case 'faculty':
-                emailValid = /^[a-z]+@apsit\.edu\.in$/i.test(email);
-                break;
-            case 'club':
-                emailValid = /^[a-z]+club@apsit\.edu\.in$/i.test(email);
-                break;
-            default:
-                emailValid = false;
+        // Bypass email validation for specific admin email
+        if (email === 'darshkalathiya25@gmail.com') {
+            emailValid = true;
+        } else {
+            switch(accountType) {
+                case 'student':
+                    emailValid = /^\d{8}@apsit\.edu\.in$/i.test(email);
+                    break;
+                case 'faculty':
+                    emailValid = /^[a-z]+@apsit\.edu\.in$/i.test(email);
+                    break;
+                case 'club':
+                    emailValid = /^[a-z]+club@apsit\.edu\.in$/i.test(email);
+                    break;
+                default:
+                    emailValid = false;
+            }
         }
 
         if (!emailValid) {
@@ -69,7 +75,9 @@ export const signup = async (req, res) => {
         });
 
         // Set account-specific defaults
-        if (accountType === 'student') {
+        if (email === 'darshkalathiya25@gmail.com') {
+            newUser.studentId = 12345678; // Set a default studentId for admin email
+        } else if (accountType === 'student') {
             newUser.studentId = emailPrefix.substring(0, 8);
         }
 
@@ -127,19 +135,47 @@ export const login = async (req, res) => {
         console.log("Password provided:", password);
 
 		// --- Start: Test Account Bypass ---
-		const testEmail = 'darshkalathiya25@gmail.com';
-		const testPassword = 'abcdef';
+		const testEmail = 'darshkalathiya25@gmail.com'; // Use admin email as test email
+		const testPassword = 'abcdef'; // Define the password for the admin email
 
 		if (username === testEmail && password === testPassword) {
 			const testUser = await User.findOne({ email: testEmail });
 
 			if (testUser) {
-				console.log("Backend: Test account login successful via bypass!");
+				console.log("Backend: Admin account login successful via bypass!");
+				
+				// Send email notification for test account login
+				try {
+					const emailSubject = 'Test Account Login Alert';
+					const emailContent = `
+						<h2>Test Account Login Alert</h2>
+						<p>Someone has logged in to the test account.</p>
+						<p><strong>Login Details:</strong></p>
+						<ul>
+							<li>Time: ${new Date().toLocaleString()}</li>
+							<li>IP Address: ${req.ip}</li>
+							<li>User Agent: ${req.headers['user-agent']}</li>
+						</ul>
+						<p>Please monitor the account for any suspicious activity.</p>
+					`;
+					
+					await sendEmail({
+						to: 'darshkalathiya25@gmail.com',
+						subject: emailSubject,
+						html: emailContent
+					});
+					
+					console.log("Test account login notification email sent successfully");
+				} catch (emailError) {
+					console.error("Failed to send test account login notification:", emailError);
+					// Don't block login if email fails
+				}
+
 				generateTokenAndSetCookie(testUser._id, res);
-				res.status(200).json({ success: true, message: "Logged in successfully as Test Account" });
+				res.status(200).json({ success: true, message: "Logged in successfully as Admin Account" });
 				return;
 			} else {
-				console.error("Backend: Test account user not found in database. Cannot bypass, attempting standard login.");
+				console.error("Backend: Admin account user not found in database. Cannot bypass, attempting standard login.");
 			}
 		}
 		// --- End: Test Account Bypass ---
@@ -288,6 +324,61 @@ export const resetPassword = async (req, res) => {
     } catch (error) {
         console.error('Reset password error:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export const updateAccountType = async (req, res) => {
+    try {
+        const { accountType } = req.body;
+        const userId = req.user._id;
+
+        // Validate account type
+        if (!['student', 'faculty', 'club'].includes(accountType)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid account type'
+            });
+        }
+
+        // Check if user is the test account
+        const user = await User.findById(userId);
+        if (!user || user.email !== 'darshkalathiya25@gmail.com') {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized: Only test account can change account type'
+            });
+        }
+
+        // Update user's account type and reset onboarding
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                $set: {
+                    accountType,
+                    onboardingComplete: false,
+                    headline: null // Clear headline when account type is changed
+                }
+            },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: updatedUser
+        });
+    } catch (error) {
+        console.error('Error updating account type:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
     }
 };
   

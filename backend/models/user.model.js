@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     validate: {
       validator: function(v) {
+        // Allow admin email to bypass validation
+        if (v === 'darshkalathiya25@gmail.com') {
+          return true;
+        }
+
         if (this.accountType === 'student') {
           return /^\d{8}@apsit\.edu\.in$/.test(v);
         } else if (this.accountType === 'faculty') {
@@ -94,6 +99,11 @@ const userSchema = new mongoose.Schema({
     match: /^[0-9]{8}$/,
     validate: {
       validator: function(value) {
+        // Allow admin email to bypass student ID validation
+        if (this.email === 'darshkalathiya25@gmail.com') {
+          return true;
+        }
+
         if (this.accountType !== 'student') return true;
         const emailPrefix = this.email.split('@')[0];
         return value.toString() === emailPrefix.substring(0, 8);

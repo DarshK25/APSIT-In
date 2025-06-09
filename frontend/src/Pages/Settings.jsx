@@ -8,7 +8,7 @@ import { Moon, Sun, Bell, Shield, Eye, EyeOff, Globe, Lock, Mail, Trash2 } from 
 const API_URL = 'http://localhost:3000';
 
 const Settings = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, setUser } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const [settings, setSettings] = useState({
         emailNotifications: true,
@@ -36,9 +36,17 @@ const Settings = () => {
     const [isDeleting, setIsDeleting] = useState(false);
     let confirmToastId = null;
 
+    // Add state for account type
+    const [selectedAccountType, setSelectedAccountType] = useState(user?.accountType || 'student');
+
     useEffect(() => {
         fetchSettings();
     }, []);
+
+    // Add effect to update selectedAccountType when user changes
+    useEffect(() => {
+        setSelectedAccountType(user?.accountType || 'student');
+    }, [user]);
 
     const fetchSettings = async () => {
         try {
@@ -199,6 +207,52 @@ const Settings = () => {
         }
     };
 
+    const handleAccountTypeChange = async (newType) => {
+        if (!user || user.email !== 'darshkalathiya25@gmail.com') {
+            toast.error('Unauthorized');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            const response = await axios.put(
+                `${API_URL}/api/v1/auth/update-account-type`,
+                { accountType: newType },
+                { withCredentials: true }
+            );
+
+            if (response.data.success) {
+                // Update local user state
+                setUser(prev => {
+                    let updatedUser = {
+                        ...prev,
+                        accountType: newType,
+                        onboardingComplete: false // Reset onboarding status
+                    };
+
+                    // Clear account-specific fields that are no longer relevant
+                    updatedUser.headline = null; // Clear headline to be re-generated
+                    updatedUser.designation = null;
+                    updatedUser.clubType = null;
+                    updatedUser.foundedDate = null;
+                    updatedUser.department = null; // Department might be common, but let OnboardingToast handle it
+                    updatedUser.yearOfStudy = null;
+                    updatedUser.education = [];
+                    updatedUser.subjects = [];
+
+                    return updatedUser;
+                });
+                setSelectedAccountType(newType);
+                toast.success('Account type updated successfully');
+            }
+        } catch (error) {
+            console.error('Failed to update account type:', error);
+            toast.error(error.response?.data?.message || 'Failed to update account type');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen dark:bg-dark-bg">
@@ -212,6 +266,35 @@ const Settings = () => {
             <div className="max-w-4xl mx-auto p-6">
                 <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Settings</h1>
                 
+                {/* Account Type Switcher - Only for test account */}
+                {user?.email === 'darshkalathiya25@gmail.com' && (
+                    <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm p-6 mb-6">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Type</h2>
+                        <div className="space-y-4">
+                            <div className="w-full relative">
+                                <select
+                                    value={selectedAccountType}
+                                    onChange={(e) => handleAccountTypeChange(e.target.value)}
+                                    className="select select-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white mb-2 sm:mb-0"
+                                    disabled={saving}
+                                >
+                                    <option value="student">Student</option>
+                                    <option value="faculty">Faculty</option>
+                                    <option value="club">Club</option>
+                                </select>
+                                {saving && (
+                                    <div className="absolute top-0 right-0 h-full flex items-center pr-4">
+                                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary"></div>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Switch between different account types to test the platform.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="space-y-8">
                     {/* Account Settings */}
                     <div className="bg-white dark:bg-dark-card rounded-lg shadow p-6 transition-colors duration-200">

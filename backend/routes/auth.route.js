@@ -1,6 +1,6 @@
 import express from "express";
 import user from "../models/user.model.js";
-import { signup, login, logout, getMe, forgotPassword, resetPassword } from "../controllers/auth.controller.js"; // Import the getMe controller
+import { signup, login, logout, getMe, forgotPassword, resetPassword, updateAccountType } from "../controllers/auth.controller.js"; // Import the getMe controller
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
@@ -18,5 +18,7 @@ router.post("/forgot-password", forgotPassword);
 
 // Route for resetting password with token
 router.post("/reset-password", resetPassword);
+
+router.put("/update-account-type", protectRoute, updateAccountType);
 
 export default router;

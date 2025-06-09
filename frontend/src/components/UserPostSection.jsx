@@ -870,7 +870,7 @@ const UserPostSection = ({ username, accountType, isOwnProfile }) => {
   ), [replyContent, user.profilePicture, user.name, handleReplyContentChange, handleReply]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 border border-gray-200 dark:border-dark-border rounded-lg bg-white dark:bg-dark-card shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-text-primary">Posts</h2>
         {isOwnProfile && user && !showPostForm && (
@@ -945,7 +945,7 @@ const UserPostSection = ({ username, accountType, isOwnProfile }) => {
           <div className="text-center py-8 text-gray-500 dark:text-dark-text-muted">
             <p>No posts yet.</p>
             {isOwnProfile && user && (
-              <p className="mt-2 text-sm">Be the first one to post something!</p>
+              <p className="mt-2 text-sm">You don't have any posts. Share something!</p>
             )}
           </div>
         )}

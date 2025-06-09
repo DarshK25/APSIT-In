@@ -3,62 +3,59 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { updateUserProfile, getUserProfile } from '../api/userService';
 import { GraduationCap, Briefcase, Users } from 'lucide-react';
-import { Dialog, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 
-const OnboardingToast = () => {
+const OnboardingToastContent = ({ t }) => {
     const { user, setUser } = useAuth();
-    const [isOpen, setIsOpen] = useState(false);
     
     const currentYear = new Date().getFullYear();
-    
-    // Determine account type based on email pattern
-    const accountType = user?.email?.endsWith('club@apsit.edu.in') 
-        ? 'club' 
-        : /^\d{8}@apsit\.edu\.in$/.test(user?.email) 
-            ? 'student' 
-            : 'faculty';
 
+    // Determine initial account type for the form (it should already be set by now)
+    const initialAccountType = user?.accountType || 'student';
+
+    const [selectedAccountType, setSelectedAccountType] = useState(initialAccountType);
     const [formData, setFormData] = useState({
         department: user?.department || '',
-        ...(accountType === 'student' && {
-            startYear: currentYear,
-            graduationYear: currentYear + 4
+        ...(initialAccountType === 'student' && {
+            startYear: user?.education?.[0]?.startYear || currentYear,
+            graduationYear: user?.education?.[0]?.endYear || currentYear + 4
         }),
-        ...(accountType === 'faculty' && {
+        ...(initialAccountType === 'faculty' && {
             designation: user?.designation || '',
             department: user?.department || ''
         }),
-        ...(accountType === 'club' && {
+        ...(initialAccountType === 'club' && {
             clubType: user?.clubType || '',
-            foundedDate: user?.foundedDate || new Date().toISOString().split('T')[0]
+            foundedDate: user?.foundedDate ? new Date(user.foundedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         })
     });
 
-    // Single useEffect to check if onboarding is needed
+    // Reset form data when account type changes (will be triggered by user prop change)
     useEffect(() => {
-        if (!user) return;
-
-        // If onboarding is already complete, don't show the toast
-        if (user.onboardingComplete) {
-            setIsOpen(false);
-            return;
+        // Update selectedAccountType if the user object's accountType changes
+        if (user?.accountType && user.accountType !== selectedAccountType) {
+            setSelectedAccountType(user.accountType);
         }
 
-        // Check required fields based on account type
-        switch (accountType) {
-            case 'student':
-                setIsOpen(!user.department || !user.yearOfStudy);
-                break;
-            case 'faculty':
-                setIsOpen(!user.department || !user.designation);
-                break;
-            case 'club':
-                setIsOpen(!user.clubType);
-                break;
-            default:
-                setIsOpen(false);
-        }
-    }, [user, accountType]);
+        // Reset formData based on the new account type
+        setFormData({
+            department: user?.department || '',
+            designation: user?.designation || '',
+            clubType: user?.clubType || '',
+            foundedDate: user?.foundedDate ? new Date(user.foundedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            ...(user?.accountType === 'student' && {
+                startYear: user?.education?.[0]?.startYear || currentYear,
+                graduationYear: user?.education?.[0]?.endYear || currentYear + 4
+            }),
+            ...(user?.accountType === 'faculty' && {
+                designation: user?.designation || '',
+                department: user?.department || ''
+            }),
+            ...(user?.accountType === 'club' && {
+                clubType: user?.clubType || '',
+                foundedDate: user?.foundedDate ? new Date(user.foundedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            })
+        });
+    }, [user, selectedAccountType, currentYear]);
 
     const departments = [
         'Computer Engineering',
@@ -91,8 +88,7 @@ const OnboardingToast = () => {
         try {
             let profileData = {};
             
-            if (accountType === 'student') {
-                // Validate student data
+            if (selectedAccountType === 'student') {
                 const duration = formData.graduationYear - formData.startYear;
                 if (duration !== 4) {
                     toast.error('Engineering duration must be 4 years');
@@ -114,9 +110,11 @@ const OnboardingToast = () => {
                         endYear: formData.graduationYear
                     }],
                     yearOfStudy: currentYearOfStudy,
-                    onboardingComplete: true
+                    onboardingComplete: true,
+                    accountType: selectedAccountType,
+                    headline: `Student at APSIT`
                 };
-            } else if (accountType === 'faculty') {
+            } else if (selectedAccountType === 'faculty') {
                 if (!formData.designation) {
                     toast.error('Please select your designation');
                     return;
@@ -130,9 +128,10 @@ const OnboardingToast = () => {
                     department: formData.department,
                     designation: formData.designation,
                     headline: `${formData.designation} at APSIT`,
-                    onboardingComplete: true
+                    onboardingComplete: true,
+                    accountType: selectedAccountType
                 };
-            } else if (accountType === 'club') {
+            } else if (selectedAccountType === 'club') {
                 if (!formData.clubType) {
                     toast.error('Please select club type');
                     return;
@@ -142,19 +141,18 @@ const OnboardingToast = () => {
                     clubType: formData.clubType,
                     foundedDate: formData.foundedDate,
                     headline: `${formData.clubType.charAt(0).toUpperCase() + formData.clubType.slice(1)} Club at APSIT`,
-                    onboardingComplete: true
+                    onboardingComplete: true,
+                    accountType: selectedAccountType
                 };
             }
 
-            // Update the profile
             await updateUserProfile(profileData);
             
-            // Fetch the updated user data to ensure we have the latest state
             const updatedUserData = await getUserProfile();
             
             if (updatedUserData) {
                 setUser(updatedUserData);
-                setIsOpen(false);
+                toast.dismiss(t.id);
                 toast.success('Profile updated successfully');
             }
         } catch (error) {
@@ -187,179 +185,205 @@ const OnboardingToast = () => {
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <Transition
-            show={isOpen}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-        >
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="flex min-h-full items-center justify-center p-4 text-center">
-                    <TransitionChild
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0 scale-95"
-                        enterTo="opacity-100 scale-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100 scale-100"
-                        leaveTo="opacity-0 scale-95"
-                    >
-                        <div className="w-full max-w-md transform overflow-hidden rounded-lg bg-white dark:bg-dark-card p-6 text-left align-middle shadow-xl transition-all">
-                            <DialogTitle
-                                as="h3"
-                                className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 min-w-[320px] max-w-lg w-full z-[100] relative">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Complete Your Profile</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                Please provide the required details to complete your profile.
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {selectedAccountType === 'student' && (
+                    <>
+                        <div>
+                            <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Department
+                            </label>
+                            <select
+                                id="department"
+                                name="department"
+                                value={formData.department}
+                                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                required
                             >
-                                Complete Your {accountType.charAt(0).toUpperCase() + accountType.slice(1)} Profile
-                            </DialogTitle>
-                            <div className="mt-2">
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                    {accountType === 'student' 
-                                        ? 'Please provide your educational details to continue.'
-                                        : accountType === 'faculty'
-                                            ? 'Please provide your professional details to continue.'
-                                            : 'Please provide your club details to continue.'}
-                                </p>
-                            </div>
-                            
-                            <form onSubmit={handleSubmit}>
-                                <div className="space-y-4">
-                                    {/* Common field for students and faculty */}
-                                    {(accountType === 'student' || accountType === 'faculty') && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Department
-                                            </label>
-                                            <select
-                                                value={formData.department}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                                                required={accountType === 'student' || accountType === 'faculty'}
-                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            >
-                                                <option value="">Select Department</option>
-                                                {departments.map(dept => (
-                                                    <option key={dept} value={dept}>{dept}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    {/* Student-specific fields */}
-                                    {accountType === 'student' && (
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Start Year
-                                                </label>
-                                                <select
-                                                    value={formData.startYear}
-                                                    onChange={(e) => setFormData(prev => ({
-                                                        ...prev,
-                                                        startYear: parseInt(e.target.value),
-                                                        graduationYear: parseInt(e.target.value) + 4
-                                                    }))}
-                                                    required
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                >
-                                                    {Array.from({ length: 5 }, (_, i) => currentYear - 3 + i).map(year => (
-                                                        <option key={year} value={year}>{year}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Graduation Year
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    value={formData.graduationYear}
-                                                    readOnly
-                                                    className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Faculty-specific field */}
-                                    {accountType === 'faculty' && (
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Designation
-                                            </label>
-                                            <select
-                                                value={formData.designation}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, designation: e.target.value }))}
-                                                required
-                                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            >
-                                                <option value="">Select Designation</option>
-                                                {facultyDesignations.map(designation => (
-                                                    <option key={designation} value={designation}>{designation}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-
-                                    {/* Club-specific fields */}
-                                    {accountType === 'club' && (
-                                        <>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Club Type
-                                                </label>
-                                                <select
-                                                    value={formData.clubType}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, clubType: e.target.value }))}
-                                                    required
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                >
-                                                    <option value="">Select Club Type</option>
-                                                    {clubTypes.map(type => (
-                                                        <option key={type} value={type}>
-                                                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Founded Date
-                                                </label>
-                                                <input
-                                                    type="date"
-                                                    value={formData.foundedDate}
-                                                    onChange={(e) => setFormData(prev => ({ ...prev, foundedDate: e.target.value }))}
-                                                    max={new Date().toISOString().split('T')[0]}
-                                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    className={`w-full mt-6 px-4 py-2 rounded-md text-white transition-colors duration-200 ${
-                                        accountType === 'student' ? 'bg-blue-600 hover:bg-blue-700' :
-                                        accountType === 'faculty' ? 'bg-green-600 hover:bg-green-700' :
-                                        'bg-purple-600 hover:bg-purple-700'
-                                    }`}
-                                >
-                                    Save and Continue
-                                </button>
-                            </form>
+                                <option value="">Select Department</option>
+                                {departments.map(dept => (
+                                    <option key={dept} value={dept}>{dept}</option>
+                                ))}
+                            </select>
                         </div>
-                    </TransitionChild>
-                </div>
-            </div>
-        </Transition>
+                        <div className="flex space-x-4">
+                            <div className="flex-1">
+                                <label htmlFor="startYear" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Start Year
+                                </label>
+                                <input
+                                    type="number"
+                                    id="startYear"
+                                    name="startYear"
+                                    value={formData.startYear}
+                                    onChange={(e) => setFormData(prev => ({
+                                        ...prev,
+                                        startYear: parseInt(e.target.value),
+                                        graduationYear: parseInt(e.target.value) + 4 // Automatically calculate graduation year
+                                    }))}
+                                    className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                    required
+                                    min={currentYear - 10} // Adjust as needed
+                                    max={currentYear}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label htmlFor="graduationYear" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Graduation Year
+                                </label>
+                                <input
+                                    type="number"
+                                    id="graduationYear"
+                                    name="graduationYear"
+                                    value={formData.graduationYear}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, graduationYear: parseInt(e.target.value) }))}
+                                    className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                    required
+                                    min={currentYear}
+                                    max={currentYear + 5} // Adjust as needed
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {selectedAccountType === 'faculty' && (
+                    <>
+                        <div>
+                            <label htmlFor="designation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Designation
+                            </label>
+                            <select
+                                id="designation"
+                                name="designation"
+                                value={formData.designation}
+                                onChange={(e) => setFormData(prev => ({ ...prev, designation: e.target.value }))}
+                                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                required
+                            >
+                                <option value="">Select Designation</option>
+                                {facultyDesignations.map(designation => (
+                                    <option key={designation} value={designation}>{designation}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Department
+                            </label>
+                            <select
+                                id="department"
+                                name="department"
+                                value={formData.department}
+                                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+                                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                required
+                            >
+                                <option value="">Select Department</option>
+                                {departments.map(dept => (
+                                    <option key={dept} value={dept}>{dept}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </>
+                )}
+
+                {selectedAccountType === 'club' && (
+                    <>
+                        <div>
+                            <label htmlFor="clubType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Club Type
+                            </label>
+                            <select
+                                id="clubType"
+                                name="clubType"
+                                value={formData.clubType}
+                                onChange={(e) => setFormData(prev => ({ ...prev, clubType: e.target.value }))}
+                                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                required
+                            >
+                                <option value="">Select Club Type</option>
+                                {clubTypes.map(type => (
+                                    <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Founded Date
+                            </label>
+                            <input
+                                type="date"
+                                id="foundedDate"
+                                name="foundedDate"
+                                value={formData.foundedDate}
+                                onChange={(e) => setFormData(prev => ({ ...prev, foundedDate: e.target.value }))}
+                                className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                required
+                                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                            />
+                        </div>
+                    </>
+                )}
+
+                <button
+                    type="submit"
+                    className="btn btn-primary w-full text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+                >
+                    Complete Profile
+                </button>
+            </form>
+        </div>
     );
+};
+
+const OnboardingToast = () => {
+    const { user } = useAuth();
+
+    useEffect(() => {
+        if (!user) return;
+
+        let shouldShow = false;
+
+        // Show toast if onboarding is not complete AND either:
+        // 1. User just signed up (no previous onboarding data)
+        // 2. Test user changed account type
+        if (!user.onboardingComplete) {
+            const isTestUser = user.email === 'darshkalathiya25@gmail.com';
+            const hasNoPreviousData = !user.department && !user.designation && !user.clubType;
+            
+            if (hasNoPreviousData || isTestUser) {
+                shouldShow = true;
+            }
+        }
+
+        if (shouldShow) {
+            toast.custom((t) => (
+                <OnboardingToastContent t={t} />
+            ), {
+                duration: Infinity,
+                position: 'top-center',
+                className: 'w-full max-w-lg mx-auto',
+                style: {
+                    padding: '0',
+                    background: 'transparent',
+                    boxShadow: 'none',
+                }
+            });
+        } else {
+            // If onboarding is complete, ensure all toasts are dismissed
+            toast.dismiss();
+        }
+    }, [user]);
+
+    return null;
 };
 
 export default OnboardingToast;

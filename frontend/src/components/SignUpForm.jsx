@@ -10,11 +10,42 @@ const SignUpForm = () => {
         username: "",
         email: "",
         password: "",
-        accountType: "student"
+        accountType: "student", // Default to student
+        // New fields for conditional rendering
+        department: "",
+        designation: "",
+        clubType: "",
+        foundedDate: "" // For club accounts
     });
     const [isLoading, setIsLoading] = useState(false);
     const { signup } = useAuth();
     const navigate = useNavigate();
+
+    // Define options for dropdowns
+    const departments = [
+        'Computer Engineering',
+        'Information Technology',
+        'Computer Science & Engineering: Data Science',
+        'Computer Science & Engineering: Artificial Intelligence & Machine Learning',
+        'Civil Engineering',
+        'Mechanical Engineering'
+    ];
+
+    const facultyDesignations = [
+        'Professor',
+        'Associate Professor', 
+        'Assistant Professor',
+        'HOD',
+        'Principal',
+        'Visiting Faculty'
+    ];
+
+    const clubTypes = [
+        'technical',
+        'cultural',
+        'sports',
+        'other'
+    ];
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -25,10 +56,23 @@ const SignUpForm = () => {
     };
 
     const validateEmail = (email, accountType) => {
+        console.log("Validating email:", email, "for account type:", accountType);
         email = email.toLowerCase();
-        if (!email.endsWith('@apsit.edu.in')) return false;
+        console.log("Email after toLowerCase:", email);
+
+        // Allow admin email to bypass validation
+        if (email === 'darshkalathiya25@gmail.com') {
+            console.log("Admin email bypass triggered.");
+            return true;
+        }
+
+        if (!email.endsWith('@apsit.edu.in')) {
+            console.log("Email does not end with @apsit.edu.in");
+            return false;
+        }
         
         const prefix = email.split('@')[0];
+        console.log("Email prefix:", prefix);
         switch(accountType) {
             case 'student':
                 return /^\d{8}$/.test(prefix);
@@ -70,15 +114,47 @@ const SignUpForm = () => {
             return;
         }
 
+        // Additional validation based on account type
+        if (formData.accountType === 'faculty') {
+            if (!formData.designation) {
+                toast.error('Please select your designation');
+                return;
+            }
+            if (!formData.department) {
+                toast.error('Please select your department');
+                return;
+            }
+        } else if (formData.accountType === 'club') {
+            if (!formData.clubType) {
+                toast.error('Please select club type');
+                return;
+            }
+            if (!formData.foundedDate) {
+                toast.error('Please select a founded date');
+                return;
+            }
+        }
+
         setIsLoading(true);
         try {
-            const success = await signup({
+            const dataToSend = {
                 name: formData.name.trim(),
                 username: formData.username.trim().toLowerCase(),
                 email: formData.email.trim().toLowerCase(),
                 password: formData.password,
                 accountType: formData.accountType
-            });
+            };
+
+            // Add conditional fields to dataToSend
+            if (formData.accountType === 'faculty') {
+                dataToSend.designation = formData.designation;
+                dataToSend.department = formData.department;
+            } else if (formData.accountType === 'club') {
+                dataToSend.clubType = formData.clubType;
+                dataToSend.foundedDate = formData.foundedDate;
+            }
+            
+            const success = await signup(dataToSend);
             
             if (success) {
                 toast.success('Account created successfully!');
@@ -152,6 +228,85 @@ const SignUpForm = () => {
                     <option value="club">Club</option>
                 </select>
             </div>
+
+            {formData.accountType === 'faculty' && (
+                <>
+                    <div>
+                        <label htmlFor="designation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Designation
+                        </label>
+                        <select
+                            id="designation"
+                            name="designation"
+                            value={formData.designation}
+                            onChange={handleChange}
+                            className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            required
+                        >
+                            <option value="">Select Designation</option>
+                            {facultyDesignations.map(designation => (
+                                <option key={designation} value={designation}>{designation}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Department
+                        </label>
+                        <select
+                            id="department"
+                            name="department"
+                            value={formData.department}
+                            onChange={handleChange}
+                            className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            required
+                        >
+                            <option value="">Select Department</option>
+                            {departments.map(dept => (
+                                <option key={dept} value={dept}>{dept}</option>
+                            ))}
+                        </select>
+                    </div>
+                </>
+            )}
+
+            {formData.accountType === 'club' && (
+                <>
+                    <div>
+                        <label htmlFor="clubType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Club Type
+                        </label>
+                        <select
+                            id="clubType"
+                            name="clubType"
+                            value={formData.clubType}
+                            onChange={handleChange}
+                            className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            required
+                        >
+                            <option value="">Select Club Type</option>
+                            {clubTypes.map(type => (
+                                <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Founded Date
+                        </label>
+                        <input
+                            type="date"
+                            id="foundedDate"
+                            name="foundedDate"
+                            value={formData.foundedDate}
+                            onChange={handleChange}
+                            className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            required
+                            max={new Date().toISOString().split('T')[0]} // Prevent future dates
+                        />
+                    </div>
+                </>
+            )}
 
             <button 
                 type="submit" 

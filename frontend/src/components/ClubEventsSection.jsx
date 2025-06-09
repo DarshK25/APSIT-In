@@ -258,316 +258,248 @@ const ClubEventsSection = ({ userData, isOwnProfile, onSave }) => {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-6 mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Club Events</h2>
-        {canManageEvents() && !isEditing && (
-          <button
+    <div className="rounded-lg shadow-sm p-4 md:p-6 bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border">
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Club Events</h2>
+      
+      {isOwnProfile && (
+        <div className="flex justify-end mb-4">
+          <button 
             onClick={handleAddNew}
-            className="flex items-center text-primary hover:text-primary-dark transition duration-300"
+            className="flex items-center text-primary hover:text-primary-dark transition-colors duration-200 text-sm font-semibold dark:text-blue-400 dark:hover:text-blue-300"
           >
-            <Plus size={20} className="mr-1" />
-            Add Event
+            <Plus className="h-4 w-4 mr-1" /> Add Event
           </button>
-        )}
-      </div>
-
-      {/* Event Creation/Editing Form */}
-      {isEditing && canManageEvents() && (
-        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-          <h3 className="font-semibold mb-3">
-            {editingIndex !== null ? "Edit Event" : "Add New Event"}
-          </h3>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Event Title</label>
-              <input
-                type="text"
-                value={currentEvent.title}
-                onChange={(e) => setCurrentEvent(prev => ({ ...prev, title: e.target.value }))}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
-              <textarea
-                value={currentEvent.description}
-                onChange={(e) => setCurrentEvent(prev => ({ ...prev, description: e.target.value }))}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                rows="3"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date</label>
-                <input
-                  type="date"
-                  value={currentEvent.date}
-                  onChange={(e) => setCurrentEvent(prev => ({ ...prev, date: e.target.value }))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Time</label>
-                <input
-                  type="time"
-                  value={currentEvent.time}
-                  onChange={(e) => setCurrentEvent(prev => ({ ...prev, time: e.target.value }))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isOnline"
-                checked={currentEvent.isOnline}
-                onChange={(e) => setCurrentEvent(prev => ({ ...prev, isOnline: e.target.checked }))}
-                className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-              />
-              <label htmlFor="isOnline" className="ml-2 block text-sm text-gray-700">
-                This is an online event
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                {currentEvent.isOnline ? "Online Meeting Link" : "Location"}
-              </label>
-              <input
-                type="text"
-                value={currentEvent.location}
-                onChange={(e) => setCurrentEvent(prev => ({ ...prev, location: e.target.value }))}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                placeholder={currentEvent.isOnline ? "Zoom/Meet link" : "Physical location"}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Registration Link</label>
-              <input
-                type="text"
-                value={currentEvent.registrationLink}
-                onChange={(e) => setCurrentEvent(prev => ({ ...prev, registrationLink: e.target.value }))}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                placeholder="URL for event registration"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Capacity</label>
-              <input
-                type="number"
-                value={currentEvent.capacity}
-                onChange={(e) => setCurrentEvent(prev => ({ ...prev, capacity: e.target.value }))}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                placeholder="Maximum number of participants"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  value={currentEvent.category}
-                  onChange={(e) => setCurrentEvent(prev => ({ ...prev, category: e.target.value }))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                >
-                  <option value={userData.name}>{userData.name}</option>
-                  <option value="Coder's Club">Coder's Club</option>
-                  <option value="AIML Club">AIML Club</option>
-                  <option value="DevOps Club">DevOps Club</option>
-                  <option value="Cybersecurity Club">Cybersecurity Club</option>
-                  <option value="Data Science Club">Data Science Club</option>
-                  <option value="MAC Club">MAC Club</option>
-                  <option value="Student Council">Student Council</option>
-                  <option value="OJUS Team">OJUS Team</option>
-                  <option value="GDG APSIT">GDG APSIT</option>
-                  <option value="NSS Unit">NSS Unit</option>
-                  <option value="IEEE">IEEE</option>
-                  <option value="Antarang">Antarang</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <select
-                  value={currentEvent.department}
-                  onChange={(e) => setCurrentEvent(prev => ({ ...prev, department: e.target.value }))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                >
-                  <option value="Inter-Department">Inter-Department</option>
-                  <option value="Computer Engineering">Computer Engineering</option>
-                  <option value="Information Technology">Information Technology</option>
-                  <option value="CSE (AI & ML)">CSE (AI & ML)</option>
-                  <option value="CSE (DS)">CSE (DS)</option>
-                  <option value="Civil Engineering">Civil Engineering</option>
-                  <option value="Mechanical Engineering">Mechanical Engineering</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Event Image</label>
-              {currentEvent.image ? (
-                <div className="relative mt-2">
-                  <img 
-                    src={currentEvent.image} 
-                    alt="Event" 
-                    className="w-full h-40 object-cover rounded-lg"
-                  />
-                  <button
-                    onClick={() => setCurrentEvent(prev => ({ ...prev, image: "" }))}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark">
-                        <span>Upload an image</span>
-                        <input 
-                          type="file" 
-                          className="sr-only" 
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          disabled={uploadingImage}
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                    {uploadingImage && <p className="text-xs text-primary">Uploading...</p>}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setIsEditing(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition duration-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveEvent}
-                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition duration-300"
-              >
-                Save Event
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* List of Events */}
-      {events.length === 0 && !isEditing ? (
-        <div className="text-center py-6 text-gray-500">
-          {canManageEvents()
-            ? "Add events to showcase your club's activities" 
-            : "This club hasn't added any events yet"}
-        </div>
+      {events.length === 0 ? (
+        <p className="text-gray-600 dark:text-gray-400 text-center py-4">
+          Add events to showcase your club's activities
+        </p>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {events.map((event, index) => (
-            <div key={index} className="border rounded-lg overflow-hidden shadow-sm group">
+            <div key={event._id} className="border border-gray-200 dark:border-dark-border rounded-lg p-4 bg-gray-50 dark:bg-dark-hover shadow-sm flex items-start space-x-4 relative">
               {event.image && (
-                <div className="relative h-48 w-full">
-                  <img 
-                    src={event.image} 
-                    alt={event.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  {canManageEvents() && (
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2">
-                      <button
-                        onClick={() => handleEditEvent(index)}
-                        className="bg-white p-1.5 rounded-full shadow-md text-gray-700 hover:text-primary transition-colors"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(index)}
-                        className="bg-white p-1.5 rounded-full shadow-md text-gray-700 hover:text-red-500 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  )}
+                <img 
+                  src={event.image} 
+                  alt={event.title} 
+                  className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                />
+              )}
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-gray-900 dark:text-white">{event.title}</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">{event.description}</p>
+                
+                <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-1">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>{new Date(event.date).toLocaleDateString()} at {event.time}</span>
+                </div>
+                {event.location && (
+                  <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm mb-1">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    <span>{event.location}</span>
+                  </div>
+                )}
+                {event.capacity && (
+                  <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm">
+                    <Users className="h-4 w-4 mr-2" />
+                    <span>Capacity: {event.capacity}</span>
+                  </div>
+                )}
+
+                {event.registrationLink && (
+                  <a 
+                    href={event.registrationLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-3 text-primary hover:underline text-sm dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    Register Here
+                  </a>
+                )}
+              </div>
+
+              {isOwnProfile && (
+                <div className="absolute top-2 right-2 flex space-x-2">
+                  <button 
+                    onClick={() => handleEditEvent(index)}
+                    className="text-gray-500 hover:text-primary dark:text-gray-400 dark:hover:text-blue-400 transition-colors duration-200"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteEvent(index)}
+                    className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors duration-200"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )}
-              <div className="p-4">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-semibold text-xl">{event.title}</h3>
-                  {!event.image && canManageEvents() && (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditEvent(index)}
-                        className="text-gray-500 hover:text-primary transition-colors"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(index)}
-                        className="text-gray-500 hover:text-red-500 transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    </div>
-                  )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{editingIndex !== null ? 'Edit Event' : 'Add New Event'}</h3>
+            <button 
+              onClick={() => setIsEditing(false)}
+              className="absolute top-4 right-4 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEvent(); }} className="space-y-4">
+              <div>
+                <label htmlFor="event-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+                <input
+                  type="text"
+                  id="event-title"
+                  className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.title}
+                  onChange={(e) => setCurrentEvent({...currentEvent, title: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="event-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <textarea
+                  id="event-description"
+                  className="textarea textarea-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.description}
+                  onChange={(e) => setCurrentEvent({...currentEvent, description: e.target.value})}
+                  rows="3"
+                  required
+                ></textarea>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="event-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                  <input
+                    type="date"
+                    id="event-date"
+                    className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    value={currentEvent.date}
+                    onChange={(e) => setCurrentEvent({...currentEvent, date: e.target.value})}
+                    required
+                  />
                 </div>
-                <p className="text-gray-600 mt-2">{event.description}</p>
-                
-                <div className="mt-4 space-y-2 text-sm text-gray-500">
-                  <div className="flex items-center">
-                    <Calendar size={16} className="mr-2" />
-                    <span>
-                      {new Date(event.date).toLocaleDateString('en-US', { 
-                        weekday: 'short', 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric'
-                      })}
-                    </span>
-                  </div>
-                  
-                  {event.location && (
-                    <div className="flex items-center">
-                      <MapPin size={16} className="mr-2" />
-                      <span>{event.isOnline ? "Online Event" : event.location}</span>
-                    </div>
-                  )}
-                  
-                  {event.capacity && (
-                    <div className="flex items-center">
-                      <Users size={16} className="mr-2" />
-                      <span>Capacity: {event.capacity} participants</span>
-                    </div>
-                  )}
+                <div>
+                  <label htmlFor="event-time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time</label>
+                  <input
+                    type="time"
+                    id="event-time"
+                    className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                    value={currentEvent.time}
+                    onChange={(e) => setCurrentEvent({...currentEvent, time: e.target.value})}
+                    required
+                  />
                 </div>
-                
-                {event.registrationLink && (
-                  <div className="mt-4">
-                    <a
-                      href={event.registrationLink.startsWith('http') ? event.registrationLink : `https://${event.registrationLink}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark transition duration-300"
+              </div>
+              <div>
+                <label htmlFor="event-location" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                <input
+                  type="text"
+                  id="event-location"
+                  className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.location}
+                  onChange={(e) => setCurrentEvent({...currentEvent, location: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="event-image" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Event Image</label>
+                <input
+                  type="file"
+                  id="event-image"
+                  className="file-input file-input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                />
+                {uploadingImage && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Uploading image...</p>}
+                {currentEvent.image && !uploadingImage && (
+                  <div className="mt-2 relative w-24 h-24">
+                    <img src={currentEvent.image} alt="Event Preview" className="w-full h-full object-cover rounded-md" />
+                    <button 
+                      type="button"
+                      onClick={() => setCurrentEvent(prev => ({ ...prev, image: "" }))}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 text-xs"
                     >
-                      Register Now
-                    </a>
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 )}
               </div>
-            </div>
-          ))}
+              <div>
+                <label htmlFor="registration-link" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Registration Link</label>
+                <input
+                  type="url"
+                  id="registration-link"
+                  className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.registrationLink}
+                  onChange={(e) => setCurrentEvent({...currentEvent, registrationLink: e.target.value})}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="is-online"
+                  className="checkbox checkbox-primary dark:checkbox-info"
+                  checked={currentEvent.isOnline}
+                  onChange={(e) => setCurrentEvent({...currentEvent, isOnline: e.target.checked})}
+                />
+                <label htmlFor="is-online" className="text-sm font-medium text-gray-700 dark:text-gray-300">Online Event</label>
+              </div>
+              <div>
+                <label htmlFor="event-capacity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capacity</label>
+                <input
+                  type="number"
+                  id="event-capacity"
+                  className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.capacity}
+                  onChange={(e) => setCurrentEvent({...currentEvent, capacity: e.target.value})}
+                />
+              </div>
+              <div>
+                <label htmlFor="event-category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                <input
+                  type="text"
+                  id="event-category"
+                  className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.category}
+                  onChange={(e) => setCurrentEvent({...currentEvent, category: e.target.value})}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="event-department" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                <input
+                  type="text"
+                  id="event-department"
+                  className="input input-bordered w-full dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                  value={currentEvent.department}
+                  onChange={(e) => setCurrentEvent({...currentEvent, department: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="btn btn-ghost dark:text-gray-300 dark:hover:bg-dark-hover"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="btn btn-primary dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
+                >
+                  {editingIndex !== null ? 'Save Changes' : 'Add Event'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
