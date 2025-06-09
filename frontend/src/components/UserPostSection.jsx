@@ -62,13 +62,13 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
   const [showReplies, setShowReplies] = useState({});
   const [replyContent, setReplyContent] = useState({});
   const [isSubmittingReply, setIsSubmittingReply] = useState({});
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState(post.comments || []);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
-  // Fetch comments when post changes or after actions
+  // Only fetch comments if they're not already in the post prop
   useEffect(() => {
     const fetchComments = async () => {
-      if (!post?._id) return;
+      if (!post?._id || post.comments?.length > 0) return;
       
       try {
         setIsLoadingComments(true);
@@ -84,7 +84,7 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
     };
     
     fetchComments();
-  }, [post._id]);
+  }, [post._id, post.comments]);
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -92,12 +92,13 @@ const CommentSection = ({ post, user, onCommentAdded }) => {
 
     try {
       setIsSubmitting(true);
-      await addComment(post._id, newComment.trim());
-      // Refresh comments after adding a new one
-      const updatedComments = await getCommentsByPostId(post._id);
-      setComments(updatedComments || []);
+      const addedComment = await addComment(post._id, newComment.trim());
+      // Update comments with the new comment
+      setComments(prev => [...prev, addedComment]);
       setNewComment('');
       toast.success('Comment added successfully');
+      // Notify parent component to refresh posts
+      onCommentAdded();
     } catch (error) {
       console.error('Error adding comment:', error);
       toast.error('Failed to add comment');
@@ -494,19 +495,23 @@ const UserPostSection = ({ username, accountType, isOwnProfile }) => {
       const data = await getUserPosts(username);
       
       // Ensure we have all the required data populated
-      const formattedPosts = data.map(post => ({
-        ...post,
-        author: post.author && typeof post.author === 'object' 
-          ? {
-              ...post.author,
-              name: post.author.name || post.author.username || 'Unknown User',
-              username: post.author.username || 'user',
-              profilePicture: post.author.profilePicture || null
-            }
-          : { _id: post.author, name: 'Unknown User', username: 'user', profilePicture: null },
-        likes: post.likes || [],
-        // We'll load comments separately in the CommentSection component using getCommentsByPostId
-        comments: [] // Initialize with empty array as comments will be fetched separately
+      const formattedPosts = await Promise.all(data.map(async post => {
+        // Fetch comments for each post
+        const comments = await getCommentsByPostId(post._id);
+        
+        return {
+          ...post,
+          author: post.author && typeof post.author === 'object' 
+            ? {
+                ...post.author,
+                name: post.author.name || post.author.username || 'Unknown User',
+                username: post.author.username || 'user',
+                profilePicture: post.author.profilePicture || null
+              }
+            : { _id: post.author, name: 'Unknown User', username: 'user', profilePicture: null },
+          likes: post.likes || [],
+          comments: comments || [] // Use the fetched comments
+        };
       }));
       
       console.log("Formatted posts:", formattedPosts);
