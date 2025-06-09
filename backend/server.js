@@ -33,7 +33,7 @@ createUploadsDir();
 // Enable CORS for all routes
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://apsitin.onrender.com'] 
+    ? ['https://apsitin.onrender.com', 'https://apsitin-frontend.onrender.com'] 
     : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -65,10 +65,11 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Serve frontend build files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../frontend/dist')));
+  const frontendPath = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(frontendPath));
   
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+    res.sendFile(path.join(frontendPath, 'index.html'));
   });
 }
 

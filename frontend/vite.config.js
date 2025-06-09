@@ -14,5 +14,15 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    // Ensure the build is optimized for production
+    minify: 'terser',
+    // Generate source maps for production
+    sourcemap: false,
+    // Configure the base URL for production
+    base: '/'
   }
 })

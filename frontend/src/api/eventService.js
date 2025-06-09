@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axiosInstance from './axiosConfig';
 
 const API_URL = `${import.meta.env.VITE_API_URL}/api/v1`;
 
@@ -10,10 +10,7 @@ const eventService = {
         try {
             console.log('Fetching events with params:', queryParams);
             const params = new URLSearchParams(queryParams);
-            const url = `${API_URL}/events?${params}`;
-            console.log('Request URL:', url);
-            
-            const response = await axios.get(url); // Remove withCredentials for public route
+            const response = await axiosInstance.get(`/events?${params}`);
             console.log('Response:', response.data);
             return response.data;
         } catch (error) {
@@ -25,7 +22,7 @@ const eventService = {
     // Get a single event by ID
     getEventById: async (eventId) => {
         try {
-            const response = await axios.get(`${API_URL}/events/${eventId}`);
+            const response = await axiosInstance.get(`/events/${eventId}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching event:', error);
@@ -36,9 +33,7 @@ const eventService = {
     // Get events organized by the current user/club
     getOrganizedEvents: async () => {
         try {
-            const response = await axios.get(`${API_URL}/events/user/organized`, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.get('/events/user/organized');
             return response.data;
         } catch (error) {
             console.error('Error fetching organized events:', error);
@@ -49,9 +44,7 @@ const eventService = {
     // Get events the user is registered for
     getMyEvents: async () => {
         try {
-            const response = await axios.get(`${API_URL}/events/user/registered`, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.get('/events/user/registered');
             return response.data;
         } catch (error) {
             console.error('Error fetching registered events:', error);
@@ -64,8 +57,7 @@ const eventService = {
         try {
             console.log('Sending event data to server:', Object.fromEntries(eventData));
             
-            const response = await axios.post(`${API_URL}/events/create`, eventData, {
-                withCredentials: true,
+            const response = await axiosInstance.post('/events/create', eventData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }
@@ -90,8 +82,7 @@ const eventService = {
             console.log('Updating event with ID:', eventId);
             console.log('Update data being sent:', Object.fromEntries(eventData));
 
-            const response = await axios.put(`${API_URL}/events/${eventId}`, eventData, {
-                withCredentials: true,
+            const response = await axiosInstance.put(`/events/${eventId}`, eventData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 }
@@ -118,9 +109,7 @@ const eventService = {
     // Delete an event (protected route)
     deleteEvent: async (eventId) => {
         try {
-            const response = await axios.delete(`${API_URL}/events/${eventId}`, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.delete(`/events/${eventId}`);
             return response.data;
         } catch (error) {
             console.error('Error deleting event:', error);
@@ -131,9 +120,7 @@ const eventService = {
     // Register for an event
     registerForEvent: async (eventId) => {
         try {
-            const response = await axios.post(`${API_URL}/events/${eventId}/register`, {}, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.post(`/events/${eventId}/register`);
             return response.data;
         } catch (error) {
             console.error('Error registering for event:', error);
@@ -144,9 +131,7 @@ const eventService = {
     // Unregister from an event
     unregisterFromEvent: async (eventId) => {
         try {
-            const response = await axios.post(`${API_URL}/events/${eventId}/unregister`, {}, {
-                withCredentials: true
-            });
+            const response = await axiosInstance.post(`/events/${eventId}/unregister`);
             return response.data;
         } catch (error) {
             console.error('Error unregistering from event:', error);

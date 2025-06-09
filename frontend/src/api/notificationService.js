@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_URL = `${import.meta.env.VITE_API_URL}/api/v1/notifications`;
+import axiosInstance from './axiosConfig';
 
 const notificationService = {
     // Get all notifications for the current user
     getAllNotifications: async () => {
         try {
-            const response = await axios.get(API_URL, { withCredentials: true });
+            const response = await axiosInstance.get('/notifications');
             return response.data;
         } catch (error) {
             throw error.response?.data || error;
@@ -16,10 +14,9 @@ const notificationService = {
     // Mark a notification as read
     markAsRead: async (notificationId) => {
         try {
-            const response = await axios.patch(
-                `${API_URL}/${notificationId}/read`,
-                {},
-                { withCredentials: true }
+            const response = await axiosInstance.patch(
+                `/notifications/${notificationId}/read`,
+                {}
             );
             return response.data;
         } catch (error) {
@@ -30,10 +27,9 @@ const notificationService = {
     // Mark all notifications as read
     markAllAsRead: async () => {
         try {
-            const response = await axios.patch(
-                `${API_URL}/mark-all-read`,
-                {},
-                { withCredentials: true }
+            const response = await axiosInstance.patch(
+                '/notifications/mark-all-read',
+                {}
             );
             return response.data;
         } catch (error) {
@@ -44,9 +40,8 @@ const notificationService = {
     // Delete a notification
     deleteNotification: async (notificationId) => {
         try {
-            const response = await axios.delete(
-                `${API_URL}/${notificationId}`,
-                { withCredentials: true }
+            const response = await axiosInstance.delete(
+                `/notifications/${notificationId}`
             );
             return response.data;
         } catch (error) {
@@ -57,9 +52,8 @@ const notificationService = {
     // Delete all notifications
     deleteAllNotifications: async () => {
         try {
-            const response = await axios.delete(
-                `${API_URL}/clear-all`,
-                { withCredentials: true }
+            const response = await axiosInstance.delete(
+                '/notifications/clear-all'
             );
             return response.data;
         } catch (error) {
