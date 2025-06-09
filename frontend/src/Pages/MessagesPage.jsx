@@ -364,18 +364,18 @@ const MessagesPage = () => {
             let response;
             if (attachedFile) {
                 // If there's a file, use the send-file endpoint
-                const formData = new FormData();
+            const formData = new FormData();
                 formData.append('recipientId', selectedUser._id);
-                if (newMessage.trim()) {
-                    formData.append('content', newMessage.trim());
-                }
+            if (newMessage.trim()) {
+                formData.append('content', newMessage.trim());
+            }
                 formData.append('file', attachedFile);
 
                 response = await axiosInstance.post('/messages/send-file', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
             } else {
                 // If it's just text, use the send endpoint
                 response = await axiosInstance.post('/messages/send', {
