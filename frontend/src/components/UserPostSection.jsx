@@ -1015,7 +1015,11 @@ const UserPostSection = ({ username, accountType, isOwnProfile }) => {
               </div>
             ) : (
               <>
-                <p className="text-gray-800 dark:text-dark-text-primary mb-3">{post.content}</p>
+                {post.content && (
+                  <p className="mt-2 text-gray-800 dark:text-dark-text-primary break-words overflow-hidden">
+                    {post.content}
+                  </p>
+                )}
                 {post.image && (
                   <img
                     src={post.image}

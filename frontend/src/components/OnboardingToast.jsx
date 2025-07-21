@@ -345,43 +345,61 @@ const OnboardingToastContent = ({ t }) => {
 };
 
 const OnboardingToast = () => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
 
+    // Existing logic for onboarding toast
     useEffect(() => {
-        if (!user) return;
+        if (!loading && user && !user.onboardingComplete) {
+            let shouldShow = false;
 
-        let shouldShow = false;
-
-        // Show toast if onboarding is not complete AND either:
-        // 1. User just signed up (no previous onboarding data)
-        // 2. Test user changed account type
-        if (!user.onboardingComplete) {
-            const isTestUser = user.email === 'darshkalathiya25@gmail.com';
-            const hasNoPreviousData = !user.department && !user.designation && !user.clubType;
-            
-            if (hasNoPreviousData || isTestUser) {
+            // Show toast if onboarding is not complete AND either:
+            // 1. User just signed up (no previous onboarding data)
+            // 2. Test user changed account type (this condition is now handled separately below for a dedicated toast)
+            if (!user.department && !user.designation && !user.clubType) {
                 shouldShow = true;
+            } else {
+                const isTestUser = user.email === 'darshkalathiya25@gmail.com';
+                const hasNoPreviousData = !user.department && !user.designation && !user.clubType;
+
+                if (hasNoPreviousData || isTestUser) {
+                    shouldShow = true;
+                }
+            }
+
+            if (shouldShow) {
+                toast.custom((t) => (
+                    <OnboardingToastContent t={t} />
+                ), {
+                    duration: Infinity,
+                    position: 'top-center',
+                    className: 'w-full max-w-lg mx-auto',
+                    style: {
+                        padding: '0',
+                        background: 'transparent',
+                        boxShadow: 'none',
+                    }
+                });
+            } else {
+                // If onboarding is complete, ensure all toasts are dismissed
+                toast.dismiss();
             }
         }
+    }, [user, loading]);
 
-        if (shouldShow) {
+    // New logic for test user privileged account toast
+    useEffect(() => {
+        if (!loading && user && user.email === 'darshkalathiya25@gmail.com') {
             toast.custom((t) => (
-                <OnboardingToastContent t={t} />
+                <div className="bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-sm mx-auto flex items-center justify-center">
+                    <span>Note: For this test account, changing account types (Student, Faculty, Club) requires special privileges.</span>
+                </div>
             ), {
-                duration: Infinity,
+                duration: 6000, // Show for 6 seconds
                 position: 'top-center',
-                className: 'w-full max-w-lg mx-auto',
-                style: {
-                    padding: '0',
-                    background: 'transparent',
-                    boxShadow: 'none',
-                }
+                // No need for style here as it's directly in the custom component
             });
-        } else {
-            // If onboarding is complete, ensure all toasts are dismissed
-            toast.dismiss();
         }
-    }, [user]);
+    }, [user, loading]); // Re-run when user or loading state changes
 
     return null;
 };

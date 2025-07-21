@@ -701,7 +701,7 @@ const MessagesPage = () => {
                                 </div>
 
                                 {/* Message Input */}
-                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200 dark:border-gray-700">
+                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
                                     {attachedFile && (
                                         <div className="mb-2 p-1.5 sm:p-2 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-between">
                                             <div className="flex items-center space-x-2">
@@ -720,8 +720,7 @@ const MessagesPage = () => {
                                         </div>
                                     )}
                                     <div className="flex space-x-2">
-                                        <input
-                                            type="text"
+                                        <textarea
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
                                             placeholder={
@@ -729,8 +728,17 @@ const MessagesPage = () => {
                                                     ? "Waiting for message request response..."
                                                     : "Type a message..."
                                             }
-                                            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                            className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none min-h-[40px] max-h-[120px]"
                                             disabled={uploadingFile || (messageRequestStatus?.hasRequest && !messageRequestStatus?.canMessage)}
+                                            rows={1}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && !e.shiftKey) {
+                                                    e.preventDefault();
+                                                    if (newMessage.trim() || attachedFile) {
+                                                        handleSendMessage(e);
+                                                    }
+                                                }
+                                            }}
                                         />
                                         <input
                                             type="file"
