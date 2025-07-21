@@ -83,6 +83,7 @@ A full-stack social networking platform built for APSIT students, faculty, and c
 - Lazy loading
 - Image optimization
 - Database indexing for frequently accessed queries
+<<<<<<< HEAD
 
 ## 🔄 Real-time Features
 - Live messaging
@@ -150,6 +151,69 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+=======
+
+## 🔄 Real-time Features
+- Live messaging
+- Instant notifications
+- Real-time updates
+
+## 📈 Architecture
+- MVC architecture
+- RESTful API design
+- Modular code organization
+- Separation of concerns
+- Reusable components
+
+## 🛠️ Development Setup
+
+1. Clone the repository
+```bash
+git clone https://github.com/DarshK25/Project-ApsitIn.git
+```
+
+2. Install dependencies
+```bash
+# Install root dependencies
+npm install
+
+# Install frontend dependencies
+cd frontend
+npm install
+```
+
+3. Set up environment variables
+```bash
+# Root .env
+MONGO_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+SMTP_HOST=your_smtp_host
+SMTP_PORT=your_smtp_port
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_password
+
+# Frontend .env
+VITE_API_URL=your_api_url
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
+```
+
+4. Run the development server
+```bash
+# Run backend
+npm run dev
+
+# Run frontend (in a new terminal)
+cd frontend
+npm run dev
+```
+
+## 🤝 Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+>>>>>>> 30218e837bac97821cb5aac1f84711f6214a56d7
 ## 👨‍💻 Author
 - Darsh Kalathiya
 - GitHub: [@DarshK25](https://github.com/DarshK25)
