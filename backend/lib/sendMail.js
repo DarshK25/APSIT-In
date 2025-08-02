@@ -6,22 +6,19 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "darshkalathiya25@gmail.com",
-    // You need to generate an App Password from your Google Account
-    // Go to Google Account > Security > 2-Step Verification > App Passwords
-    // Generate a new App Password for 'Mail' and your app name
-    pass: "prxtbazyxaxbthjs" // Replace this with your App Password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   },
 });
 
 async function sendMail(to, subject, text, html) {
   try {
     const info = await transporter.sendMail({
-      from: '"APSIT-In" <darshkalathiya25@gmail.com>', // sender address with a friendly name
-      to, // list of receivers
-      subject, // Subject line
-      text, // plain text body
-      html, // HTML body
+      from: `"APSIT-In" <${process.env.EMAIL_USER}>`, // sender address with a friendly name
+      to,
+      subject,
+      text,
+      html,
     });
 
     console.log("Message sent: %s", info.messageId);
