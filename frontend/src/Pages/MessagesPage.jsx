@@ -701,7 +701,7 @@ const MessagesPage = () => {
                                 </div>
 
                                 {/* Message Input */}
-                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                <form onSubmit={handleSendMessage} className="p-2 sm:p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
                                     {attachedFile && (
                                         <div className="mb-2 p-1.5 sm:p-2 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center justify-between">
                                             <div className="flex items-center space-x-2">

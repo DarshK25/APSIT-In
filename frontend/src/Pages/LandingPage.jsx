@@ -36,10 +36,10 @@ const LandingPage = () => {
               <p className="text-xl mb-8 text-blue-100">
                 The professional network for APSIT students and alumni. Build your network, share opportunities, and advance your career.
               </p>
-              <div className="space-x-4">
+              <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 items-center w-full">
                 <Link
                   to="/signup"
-                  className="bg-white text-blue-600 px-8 py-3 rounded-full font-semibold hover:bg-blue-50 transition-colors inline-flex items-center dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
+                  className="bg-white flex-shrink-0 text-blue-600 px-4 py-3 rounded-full font-semibold whitespace-nowrap hover:bg-blue-50 transition-colors inline-flex items-center dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700"
                 >
                   Get Started <ArrowRight className="ml-2" size={20} />
                 </Link>
