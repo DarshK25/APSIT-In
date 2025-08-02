@@ -7,7 +7,7 @@ const isDevelopment = window.location.hostname === 'localhost' || window.locatio
 // Set the API URL based on environment
 const API_BASE_URL = isDevelopment 
   ? 'http://localhost:5000'  // Development
-  : 'https://apsitin.onrender.com';  // Production
+  : 'https://apsit-in.onrender.com';  // Production
 
 console.log('Current environment:', isDevelopment ? 'Development' : 'Production');
 console.log('Using API URL:', API_BASE_URL);
