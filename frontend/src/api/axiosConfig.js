@@ -58,12 +58,10 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       localStorage.removeItem('token'); // Clear invalid token
 
-      // Instead of immediate redirect and toast, let AuthContext handle it.
-      // This interceptor should primarily ensure the token is cleared.
-      // if (window.location.pathname !== '/login') {
-      //   window.location.href = '/login';
-      //   toast.error('Session expired. Please login again.');
-      // }
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+        toast.error('Session expired. Please login again.');
+      }
     }
 
     return Promise.reject(error);

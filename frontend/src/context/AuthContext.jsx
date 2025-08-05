@@ -75,9 +75,8 @@ export const AuthProvider = ({ children }) => {
                 }
                 
                 // Set user data from login response if available
-                if (response.data.data) {
-                    setUser(response.data.data);
-                    // console.log('Frontend: Logged in successfully.');
+                if (response.data.user) {
+                    setUser(response.data.user);
                     toast.success('Logged in successfully');
                     navigate('/home', { replace: true });
                     return true;
@@ -85,12 +84,9 @@ export const AuthProvider = ({ children }) => {
                 
                 // If user data not in login response, fetch it
                 try {
-                    const userResponse = await axiosInstance.get('/auth/me', {
-                        timeout: 5000 // Shorter timeout for user data fetch
-                    });
+                    const userResponse = await axiosInstance.get('/auth/me');
                     if (userResponse.data.success) {
                         setUser(userResponse.data.data);
-                        // console.log('Frontend: Logged in successfully (fetched).');
                         toast.success('Logged in successfully');
                         navigate('/home', { replace: true });
                         return true;
