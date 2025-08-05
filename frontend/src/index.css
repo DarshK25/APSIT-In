@@ -28,42 +28,50 @@
 /* Toast Container Optimizations */
 .toast-container {
   /* Limit the number of toasts displayed at once */
-  max-height: 400px;
+  max-height: 200px;
   overflow: hidden;
+  z-index: 9999;
 }
 
-.toast-container > div:nth-child(n+4) {
-  /* Hide toasts beyond the 3rd one */
-  display: none;
+/* Hide toasts beyond the 2nd one to prevent spam */
+.toast-container > div:nth-child(n+3) {
+  display: none !important;
 }
 
-/* Toast animations */
+/* Toast animations - smoother and faster */
 .Toaster__toast {
-  animation: toast-enter 0.35s ease-out;
+  animation: toast-slide-in 0.3s ease-out;
+  transition: all 0.3s ease;
 }
 
 .Toaster__toast--dismissed {
-  animation: toast-exit 0.35s ease-in;
+  animation: toast-slide-out 0.25s ease-in;
 }
 
-@keyframes toast-enter {
+@keyframes toast-slide-in {
   from {
-    transform: translate3d(0, -100%, 0) scale(0.6);
+    transform: translateX(100%) scale(0.9);
     opacity: 0;
   }
   to {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translateX(0) scale(1);
     opacity: 1;
   }
 }
 
-@keyframes toast-exit {
+@keyframes toast-slide-out {
   from {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translateX(0) scale(1);
     opacity: 1;
   }
   to {
-    transform: translate3d(0, -100%, 0) scale(0.6);
+    transform: translateX(100%) scale(0.9);
     opacity: 0;
   }
+}
+
+/* Hover effects for toasts */
+.Toaster__toast:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }

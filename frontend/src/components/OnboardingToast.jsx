@@ -347,28 +347,32 @@ const OnboardingToastContent = ({ t }) => {
 const OnboardingToast = () => {
     const { user, loading } = useAuth();
 
+    // Track if we've already shown the onboarding toast for this session
+    const [hasShownOnboarding, setHasShownOnboarding] = useState(false);
+
     // Existing logic for onboarding toast
     useEffect(() => {
-        if (!loading && user && !user.onboardingComplete) {
+        if (!loading && user && !user.onboardingComplete && !hasShownOnboarding) {
             let shouldShow = false;
 
-            // Show toast if onboarding is not complete AND either:
-            // 1. User just signed up (no previous onboarding data)
-            // 2. Test user changed account type (this condition is now handled separately below for a dedicated toast)
-            if (!user.department && !user.designation && !user.clubType) {
-                shouldShow = true;
-            } else {
-                const isTestUser = user.email === 'darshkalathiya25@gmail.com';
-                const hasNoPreviousData = !user.department && !user.designation && !user.clubType;
+            // Show toast ONLY if:
+            // 1. User just signed up (no previous onboarding data AND not completed)
+            // 2. Test user changed account type (onboardingComplete is false)
+            const isTestUser = user.email === 'darshkalathiya25@gmail.com';
+            const hasNoPreviousData = !user.department && !user.designation && !user.clubType;
 
-                if (hasNoPreviousData || isTestUser) {
-                    shouldShow = true;
-                }
+            // For test user: only show if they changed account type (onboardingComplete is false)
+            // For regular users: only show if they have no previous data (new signup)
+            if (isTestUser && !user.onboardingComplete) {
+                shouldShow = true;
+            } else if (!isTestUser && hasNoPreviousData) {
+                shouldShow = true;
             }
 
             if (shouldShow) {
+                setHasShownOnboarding(true);
                 toast.custom((t) => (
-                    <OnboardingToastContent t={t} />
+                    <OnboardingToastContent t={t} onComplete={() => setHasShownOnboarding(false)} />
                 ), {
                     duration: Infinity,
                     position: 'top-center',
@@ -379,12 +383,9 @@ const OnboardingToast = () => {
                         boxShadow: 'none',
                     }
                 });
-            } else {
-                // If onboarding is complete, ensure all toasts are dismissed
-                toast.dismiss();
             }
         }
-    }, [user, loading]);
+    }, [user, loading, hasShownOnboarding]);
 
     // New logic for test user privileged account toast
     useEffect(() => {

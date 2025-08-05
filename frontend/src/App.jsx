@@ -27,24 +27,30 @@ const App = () => {
           <Layout>
             <OnboardingToast />
             <Toaster 
-              position="top-center" 
+              position="top-right" 
               reverseOrder={false}
               containerClassName="toast-container"
+              containerStyle={{
+                top: 20,
+                right: 20,
+              }}
               toastOptions={{
-                // Consistent duration for all toasts
-                duration: 4000,
-                // Limit the number of toasts on screen
+                // Consistent duration for all toasts - shortened
+                duration: 3000,
+                // Smaller, compact toast design
                 style: {
                   background: '#1f2937',
                   color: '#f3f4f6',
-                  padding: '16px',
+                  padding: '12px 16px',
                   borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  maxWidth: '500px',
-                  fontSize: '14px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  maxWidth: '350px',
+                  minHeight: '50px',
+                  fontSize: '13px',
+                  fontWeight: '500',
                 },
                 success: {
-                  duration: 4000,
+                  duration: 3000,
                   style: {
                     background: '#065F46',
                     color: '#fff',
@@ -55,7 +61,7 @@ const App = () => {
                   },
                 },
                 error: {
-                  duration: 5000, // Longer for errors
+                  duration: 4000, // Slightly longer for errors
                   style: {
                     background: '#B91C1C',
                     color: '#fff',
