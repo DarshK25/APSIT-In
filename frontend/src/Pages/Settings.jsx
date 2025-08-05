@@ -55,7 +55,10 @@ const Settings = () => {
             }
         } catch (error) {
             console.error('Failed to fetch settings:', error);
-            toast.error('Failed to load settings');
+            // Don't show error for 404 - just use default settings
+            if (error.response?.status !== 404) {
+                toast.error('Failed to load settings');
+            }
         } finally {
             setLoading(false);
         }

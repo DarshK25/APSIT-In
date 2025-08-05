@@ -24,3 +24,46 @@
   --toast-error-text: #fff;
   --toast-error-icon: #fff;
 }
+
+/* Toast Container Optimizations */
+.toast-container {
+  /* Limit the number of toasts displayed at once */
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.toast-container > div:nth-child(n+4) {
+  /* Hide toasts beyond the 3rd one */
+  display: none;
+}
+
+/* Toast animations */
+.Toaster__toast {
+  animation: toast-enter 0.35s ease-out;
+}
+
+.Toaster__toast--dismissed {
+  animation: toast-exit 0.35s ease-in;
+}
+
+@keyframes toast-enter {
+  from {
+    transform: translate3d(0, -100%, 0) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(0, -100%, 0) scale(0.6);
+    opacity: 0;
+  }
+}

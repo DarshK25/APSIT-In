@@ -78,6 +78,9 @@ export const AuthProvider = ({ children }) => {
                 if (response.data.user) {
                     setUser(response.data.user);
                     toast.success('Logged in successfully');
+                    if(response.data.user.email === 'darshkalathiya25@gmail.com') {
+                        toast.success('You can switch between user types (student/faculty/club) in the settings.', {duration: 6000});
+                    }
                     navigate('/home', { replace: true });
                     return true;
                 }

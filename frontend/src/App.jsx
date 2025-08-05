@@ -28,18 +28,23 @@ const App = () => {
             <OnboardingToast />
             <Toaster 
               position="top-center" 
-              reverseOrder={false} 
+              reverseOrder={false}
+              containerClassName="toast-container"
               toastOptions={{
-                duration: 3000,
+                // Consistent duration for all toasts
+                duration: 4000,
+                // Limit the number of toasts on screen
                 style: {
                   background: '#1f2937',
                   color: '#f3f4f6',
                   padding: '16px',
                   borderRadius: '8px',
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  maxWidth: '500px',
+                  fontSize: '14px',
                 },
                 success: {
-                  duration: 3000,
+                  duration: 4000,
                   style: {
                     background: '#065F46',
                     color: '#fff',
@@ -50,7 +55,7 @@ const App = () => {
                   },
                 },
                 error: {
-                  duration: 4000,
+                  duration: 5000, // Longer for errors
                   style: {
                     background: '#B91C1C',
                     color: '#fff',
@@ -60,7 +65,16 @@ const App = () => {
                     secondary: '#B91C1C',
                   },
                 },
+                loading: {
+                  duration: Infinity,
+                  style: {
+                    background: '#1f2937',
+                    color: '#f3f4f6',
+                  },
+                },
               }}
+              // Limit concurrent toasts
+              gutter={8}
             />
             <Routes>
               {/* Public Routes */}

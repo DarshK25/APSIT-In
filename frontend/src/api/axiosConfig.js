@@ -58,7 +58,14 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       localStorage.removeItem('token'); // Clear invalid token
 
-      if (window.location.pathname !== '/login') {
+      // Only redirect if:
+      // 1. Not already on login/signup/landing pages
+      // 2. Not the initial auth check (which is expected to fail for non-authenticated users)
+      const currentPath = window.location.pathname;
+      const isPublicRoute = ['/', '/login', '/signup'].includes(currentPath);
+      const isAuthCheckRequest = originalRequest.url?.includes('/auth/me');
+      
+      if (!isPublicRoute && !isAuthCheckRequest) {
         window.location.href = '/login';
         toast.error('Session expired. Please login again.');
       }

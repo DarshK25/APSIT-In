@@ -136,9 +136,10 @@ export const login = async (req, res) => {
 
 		// --- Start: Test Account Bypass ---
 		const testEmail = 'darshkalathiya25@gmail.com'; // Use admin email as test email
+		const testUsername = 'testuser';
 		const testPassword = 'abcdef'; // Define the password for the admin email
 
-		if (username === testEmail && password === testPassword) {
+		if ((username === testEmail || username === testUsername) && password === testPassword) {
 			const testUser = await User.findOne({ email: testEmail });
 
 			if (testUser) {
