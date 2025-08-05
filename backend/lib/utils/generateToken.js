@@ -6,8 +6,8 @@ export const generateTokenAndSetCookie = async (userId, res) => {
         await res.cookie("jwt-apsitin", token, {
             httpOnly: true,
             maxAge: 15 * 24 * 60 * 60 * 1000,
-            sameSite: "strict",
-            secure: process.env.NODE_ENV === "development",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            secure: process.env.NODE_ENV === "production",
         });
     } catch (err) {
         console.log("Error in generateTokenAndSetCookie:", err);

@@ -54,6 +54,12 @@ app.get('/api/v1/health', (req, res) => {
   });
 });
 
+app.get('/', (req, res) => {
+    res.status(200).json({
+        message: 'Welcome to the API'
+    });
+});
+
 // API Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/users", userRoutes);
