@@ -7,7 +7,7 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGODB_URI
+      - key: MONGO_URI
         sync: false
       - key: JWT_SECRET
         sync: false
@@ -25,7 +25,13 @@ services:
         sync: false
       - key: SMTP_PASS
         sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
       - key: FRONTEND_URL
-        value: https://apsitin.onrender.com
+        value: https://apsit-in.vercel.app
       - key: BACKEND_URL
-        value: https://apsitin.onrender.com 
+        value: https://apsit-in.onrender.com
