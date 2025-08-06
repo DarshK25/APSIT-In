@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { updateUserProfile, getUserProfile } from '../api/userService';
-import { GraduationCap, Briefcase, Users } from 'lucide-react';
+import { GraduationCap, Briefcase, Users, X } from 'lucide-react';
 
-const OnboardingToastContent = ({ t }) => {
+const OnboardingToastContent = ({ t, onComplete, onClose }) => {
     const { user, setUser } = useAuth();
     
     const currentYear = new Date().getFullYear();
@@ -152,8 +152,12 @@ const OnboardingToastContent = ({ t }) => {
             
             if (updatedUserData) {
                 setUser(updatedUserData);
-                toast.dismiss(t.id);
-                toast.success('Profile updated successfully');
+                if (onComplete) {
+                    onComplete();
+                } else {
+                    toast.dismiss(t.id);
+                    toast.success('Profile updated successfully');
+                }
             }
         } catch (error) {
             console.error('Error updating profile:', error);
@@ -186,8 +190,18 @@ const OnboardingToastContent = ({ t }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 min-w-[320px] max-w-lg w-full z-[9999] relative max-h-[90vh] min-h-fit overflow-y-auto">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Complete Your Profile</h3>
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 min-w-[320px] max-w-lg w-full z-[9999] relative onboarding-content-override" 
+             style={{ maxHeight: '90vh', minHeight: 'fit-content', height: 'auto', overflowY: 'auto', display: 'block' }}>
+            {onClose && (
+                <button 
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="Close"
+                >
+                    <X size={20} className="text-gray-500 dark:text-gray-400" />
+                </button>
+            )}
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 pr-8">Complete Your Profile</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Please provide the required details to complete your profile.
             </p>
@@ -351,6 +365,9 @@ const OnboardingToast = () => {
     const [hasShownOnboarding, setHasShownOnboarding] = useState(false);
 
     // Onboarding logic for new signups and test users
+    // Track if we should show the onboarding modal
+    const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
     useEffect(() => {
         if (!loading && user && !hasShownOnboarding) {
             let shouldShow = false;
@@ -369,21 +386,7 @@ const OnboardingToast = () => {
 
             if (shouldShow) {
                 setHasShownOnboarding(true);
-                toast.custom((t) => (
-                    <OnboardingToastContent t={t} onComplete={() => {
-                        setHasShownOnboarding(false);
-                        setIsNewSignup(false); // Reset the signup flag
-                    }} />
-                ), {
-                    duration: Infinity,
-                    position: 'top-center',
-                    className: 'onboarding-toast-container',
-                    style: {
-                        padding: '0',
-                        background: 'transparent',
-                        boxShadow: 'none'
-                    }
-                });
+                setShowOnboardingModal(true);
             }
         }
     }, [user, loading, isNewSignup, hasShownOnboarding, setIsNewSignup]);
@@ -405,7 +408,34 @@ const OnboardingToast = () => {
         }
     }, [user, loading]); // Re-run when user or loading state changes
 
-    return null;
+    // Custom modal overlay for onboarding - completely bypasses toast system
+    return (
+        <>
+            {showOnboardingModal && (
+                <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-4 px-4" style={{
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    backdropFilter: 'blur(4px)'
+                }}>
+                    <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                        <OnboardingToastContent 
+                            t={{ id: 'modal' }} 
+                            onComplete={() => {
+                                setShowOnboardingModal(false);
+                                setHasShownOnboarding(false);
+                                setIsNewSignup(false);
+                                toast.success('Profile updated successfully');
+                            }}
+                            onClose={() => {
+                                setShowOnboardingModal(false);
+                                setHasShownOnboarding(false);
+                                setIsNewSignup(false);
+                            }} 
+                        />
+                    </div>
+                </div>
+            )}
+        </>
+    );
 };
 
 export default OnboardingToast;

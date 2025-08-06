@@ -93,14 +93,89 @@
   box-sizing: border-box !important;
 }
 
-/* Override toast container limitations for onboarding */
-.onboarding-toast-container .toast-container {
+/* Override ALL toast container limitations for onboarding */
+.onboarding-toast-container,
+.onboarding-toast-container *,
+.onboarding-toast-container .toast-container,
+.onboarding-toast-container > div,
+.onboarding-toast-container [role="status"],
+[data-testid="toast"].onboarding-toast-container {
+  max-height: none !important;
+  height: auto !important;
+  min-height: fit-content !important;
+  overflow: visible !important;
+  display: block !important;
+  position: static !important;
+}
+
+/* Specific override for react-hot-toast wrapper */
+[data-testid="toast"]:has(.onboarding-toast-container),
+.Toaster div:has(.onboarding-toast-container),
+.Toaster [role="status"]:has(.onboarding-toast-container) {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+  position: static !important;
+}
+
+/* Even more aggressive overrides */
+.toast-container:has(.onboarding-toast-container) {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.toast-container > div:has(.onboarding-toast-container) {
+  display: block !important;
+  max-height: none !important;
+}
+
+/* Target the Toaster container specifically */
+#__next .Toaster,
+.Toaster {
+  max-height: none !important;
+}
+
+#__next .Toaster:has(.onboarding-toast-container),
+.Toaster:has(.onboarding-toast-container) {
   max-height: none !important;
   height: auto !important;
   overflow: visible !important;
 }
 
-/* Ensure onboarding toast is always visible */
-.onboarding-toast-container > div {
+/* Force visibility for onboarding toast content */
+.onboarding-toast-container .bg-white,
+.onboarding-toast-container .dark\:bg-dark-card,
+.onboarding-content-override {
+  max-height: 90vh !important;
+  min-height: fit-content !important;
+  overflow-y: auto !important;
   display: block !important;
+  height: auto !important;
+}
+
+/* Nuclear option - override everything */
+[class*="onboarding"] {
+  max-height: none !important;
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* Onboarding Toast Wrapper - absolute positioning bypass */
+.onboarding-toast-wrapper {
+  position: fixed !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 10000 !important;
+  width: 100% !important;
+  max-width: 32rem !important;
+  padding: 0 1rem !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+.onboarding-toast-wrapper * {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
 }
