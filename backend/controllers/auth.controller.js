@@ -173,7 +173,15 @@ export const login = async (req, res) => {
 				}
 
 				generateTokenAndSetCookie(testUser._id, res);
-				res.status(200).json({ success: true, message: "Logged in successfully as Admin Account" });
+				res.status(200).json({ 
+					success: true, 
+					message: "Logged in successfully as Admin Account",
+					user: {
+						id: testUser._id,
+						username: testUser.username,
+						accountType: testUser.accountType
+					}
+				});
 				return;
 			} else {
 				console.error("Backend: Admin account user not found in database. Cannot bypass, attempting standard login.");

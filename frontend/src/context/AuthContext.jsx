@@ -30,6 +30,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isNewSignup, setIsNewSignup] = useState(false); // Track if user just signed up
     const navigate = useNavigate();
 
     // Check if user is authenticated on mount
@@ -146,6 +147,7 @@ export const AuthProvider = ({ children }) => {
             if (response.data.success) {
                 const userResponse = await axiosInstance.get('/auth/me');
                 setUser(userResponse.data.data);
+                setIsNewSignup(true); // Mark this as a new signup
                 toast.success('Account created successfully');
                 navigate('/profile');
                 return true;
@@ -185,6 +187,8 @@ export const AuthProvider = ({ children }) => {
         user,
         setUser,
         loading,
+        isNewSignup,
+        setIsNewSignup,
         login,
         logout,
         signup,

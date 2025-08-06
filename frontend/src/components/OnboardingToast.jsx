@@ -345,34 +345,35 @@ const OnboardingToastContent = ({ t }) => {
 };
 
 const OnboardingToast = () => {
-    const { user, loading } = useAuth();
+    const { user, loading, isNewSignup, setIsNewSignup } = useAuth();
 
     // Track if we've already shown the onboarding toast for this session
     const [hasShownOnboarding, setHasShownOnboarding] = useState(false);
 
-    // Existing logic for onboarding toast
+    // Onboarding logic for new signups only
     useEffect(() => {
-        if (!loading && user && !user.onboardingComplete && !hasShownOnboarding) {
+        if (!loading && user && !hasShownOnboarding) {
             let shouldShow = false;
-
-            // Show toast ONLY if:
-            // 1. User just signed up (no previous onboarding data AND not completed)
-            // 2. Test user changed account type (onboardingComplete is false)
             const isTestUser = user.email === 'darshkalathiya25@gmail.com';
-            const hasNoPreviousData = !user.department && !user.designation && !user.clubType;
 
-            // For test user: only show if they changed account type (onboardingComplete is false)
-            // For regular users: only show if they have no previous data (new signup)
-            if (isTestUser && !user.onboardingComplete) {
+            // Case 1: New signup (marked by isNewSignup flag)
+            if (isNewSignup && !user.onboardingComplete) {
                 shouldShow = true;
-            } else if (!isTestUser && hasNoPreviousData) {
+                console.log('Showing onboarding for new signup');
+            }
+            // Case 2: Test user changed account type (onboardingComplete becomes false)
+            else if (isTestUser && !user.onboardingComplete && !isNewSignup) {
                 shouldShow = true;
+                console.log('Showing onboarding for test user account type change');
             }
 
             if (shouldShow) {
                 setHasShownOnboarding(true);
                 toast.custom((t) => (
-                    <OnboardingToastContent t={t} onComplete={() => setHasShownOnboarding(false)} />
+                    <OnboardingToastContent t={t} onComplete={() => {
+                        setHasShownOnboarding(false);
+                        setIsNewSignup(false); // Reset the signup flag
+                    }} />
                 ), {
                     duration: Infinity,
                     position: 'top-center',
@@ -385,7 +386,7 @@ const OnboardingToast = () => {
                 });
             }
         }
-    }, [user, loading, hasShownOnboarding]);
+    }, [user, loading, isNewSignup, hasShownOnboarding, setIsNewSignup]);
 
     // New logic for test user privileged account toast
     useEffect(() => {
