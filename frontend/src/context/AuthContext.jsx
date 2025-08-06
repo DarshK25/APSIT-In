@@ -70,10 +70,8 @@ export const AuthProvider = ({ children }) => {
             );
             
             if (response.data.success) {
-                // Store the token in localStorage
-                if (response.data.token) {
-                    localStorage.setItem('token', response.data.token);
-                }
+                // Don't store token in localStorage - we use httpOnly cookies instead
+                // The backend automatically sets the cookie in the response
                 
                 // Set user data from login response if available
                 if (response.data.user) {
@@ -87,6 +85,7 @@ export const AuthProvider = ({ children }) => {
                 }
                 
                 // If user data not in login response, fetch it
+                // The cookie should now be set, so this request should work
                 try {
                     const userResponse = await axiosInstance.get('/auth/me');
                     if (userResponse.data.success) {

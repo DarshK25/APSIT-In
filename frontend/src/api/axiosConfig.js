@@ -21,13 +21,10 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor
+// Request interceptor (no need to add Authorization header since we use cookies)
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // The withCredentials: true setting will automatically include cookies
     return config;
   },
   (error) => {
@@ -56,7 +53,7 @@ axiosInstance.interceptors.response.use(
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      localStorage.removeItem('token'); // Clear invalid token
+      // No need to clear localStorage since we use httpOnly cookies
 
       // Only redirect if:
       // 1. Not already on login/signup/landing pages
