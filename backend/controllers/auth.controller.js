@@ -141,10 +141,16 @@ export const login = async (req, res) => {
 		const testPassword = 'abcdef'; // Define the password for the admin email
 
 		if ((username === testEmail || username === testUsername) && password === testPassword) {
-			const testUser = await User.findOne({ email: testEmail });
+			// Try to find by email first (for admin email login)
+			let testUser = await User.findOne({ email: testEmail });
+			
+			// If logging in with testuser username, try to find by username too
+			if (!testUser && username === testUsername) {
+				testUser = await User.findOne({ username: testUsername });
+			}
 
 			if (testUser) {
-				console.log("Backend: Admin account login successful via bypass!");
+				console.log(`Backend: Test account login successful via bypass! User: ${testUser.username}`);
 				
 				// Send email notification for test account login
 				try {
@@ -155,6 +161,7 @@ export const login = async (req, res) => {
 						<p><strong>Login Details:</strong></p>
 						<ul>
 							<li>Time: ${new Date().toLocaleString()}</li>
+							<li>Username: ${testUser.username}</li>
 							<li>IP Address: ${req.ip}</li>
 							<li>User Agent: ${req.headers['user-agent']}</li>
 						</ul>
@@ -173,19 +180,20 @@ export const login = async (req, res) => {
 					// Don't block login if email fails
 				}
 
-				generateTokenAndSetCookie(testUser._id, res);
+				await generateTokenAndSetCookie(testUser._id, res);
 				res.status(200).json({ 
 					success: true, 
-					message: "Logged in successfully as Admin Account",
+					message: "Logged in successfully as Test Account",
 					user: {
 						id: testUser._id,
 						username: testUser.username,
+						email: testUser.email,
 						accountType: testUser.accountType
 					}
 				});
 				return;
 			} else {
-				console.error("Backend: Admin account user not found in database. Cannot bypass, attempting standard login.");
+				console.error("Backend: Test account user not found in database. Cannot bypass, attempting standard login.");
 			}
 		}
 		// --- End: Test Account Bypass ---
@@ -353,9 +361,9 @@ export const updateAccountType = async (req, res) => {
             });
         }
 
-        // Check if user is the test account
+        // Check if user is the test account (by email or username)
         const user = await User.findById(userId);
-        if (!user || user.email !== 'darshkalathiya25@gmail.com') {
+        if (!user || (user.email !== 'darshkalathiya25@gmail.com' && user.username !== 'testuser')) {
             return res.status(403).json({
                 success: false,
                 message: 'Unauthorized: Only test account can change account type'

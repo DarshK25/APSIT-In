@@ -186,7 +186,7 @@ const OnboardingToastContent = ({ t }) => {
     };
 
     return (
-        <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 min-w-[320px] max-w-lg w-full z-[100] relative">
+        <div className="bg-white dark:bg-dark-card rounded-lg shadow-xl p-6 min-w-[320px] max-w-lg w-full z-[9999] relative max-h-[90vh] min-h-fit overflow-y-auto">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Complete Your Profile</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Please provide the required details to complete your profile.
@@ -350,11 +350,11 @@ const OnboardingToast = () => {
     // Track if we've already shown the onboarding toast for this session
     const [hasShownOnboarding, setHasShownOnboarding] = useState(false);
 
-    // Onboarding logic for new signups only
+    // Onboarding logic for new signups and test users
     useEffect(() => {
         if (!loading && user && !hasShownOnboarding) {
             let shouldShow = false;
-            const isTestUser = user.email === 'darshkalathiya25@gmail.com';
+            const isTestUser = user.email === 'darshkalathiya25@gmail.com' || user.username === 'testuser';
 
             // Case 1: New signup (marked by isNewSignup flag)
             if (isNewSignup && !user.onboardingComplete) {
@@ -377,28 +377,30 @@ const OnboardingToast = () => {
                 ), {
                     duration: Infinity,
                     position: 'top-center',
-                    className: 'w-full max-w-lg mx-auto',
+                    className: 'onboarding-toast-container',
                     style: {
                         padding: '0',
                         background: 'transparent',
-                        boxShadow: 'none',
+                        boxShadow: 'none'
                     }
                 });
             }
         }
     }, [user, loading, isNewSignup, hasShownOnboarding, setIsNewSignup]);
 
-    // New logic for test user privileged account toast
+    // Message for test users about account switching capability
     useEffect(() => {
-        if (!loading && user && user.email === 'darshkalathiya25@gmail.com') {
+        if (!loading && user && (user.email === 'darshkalathiya25@gmail.com' || user.username === 'testuser')) {
             toast.custom((t) => (
-                <div className="bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-sm mx-auto flex items-center justify-center">
-                    <span>Note: For this test account, changing account types (Student, Faculty, Club) requires special privileges.</span>
+                <div className="bg-blue-600 text-white p-4 rounded-lg shadow-lg max-w-md mx-auto flex items-center justify-center text-center">
+                    <span>💡 Test Account Notice: You can switch between different account types (Student, Faculty, Club) in the Settings page to test the platform from different perspectives.</span>
                 </div>
             ), {
-                duration: 6000, // Show for 6 seconds
+                duration: 8000, // Show for 8 seconds
                 position: 'top-center',
-                // No need for style here as it's directly in the custom component
+                style: {
+                    zIndex: 9998
+                }
             });
         }
     }, [user, loading]); // Re-run when user or loading state changes

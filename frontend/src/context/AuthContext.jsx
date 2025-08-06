@@ -84,10 +84,10 @@ export const AuthProvider = ({ children }) => {
                 
                 // Set user data from login response if available
                 if (response.data.user) {
-                    console.log('\ud83d\udc64 Setting user from login response:', response.data.user);
+                    console.log('👤 Setting user from login response:', response.data.user);
                     setUser(response.data.user);
                     toast.success('Logged in successfully');
-                    if(response.data.user.email === 'darshkalathiya25@gmail.com') {
+                    if(response.data.user.email === 'darshkalathiya25@gmail.com' || response.data.user.username === 'testuser') {
                         toast.success('You can switch between user types (student/faculty/club) in the settings.', {duration: 6000});
                     }
                     
@@ -179,7 +179,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUserAccountType = async (newType) => {
-        if (!user || user.email !== 'darshkalathiya25@gmail.com') {
+        if (!user || (user.email !== 'darshkalathiya25@gmail.com' && user.username !== 'testuser')) {
             throw new Error('Unauthorized');
         }
 

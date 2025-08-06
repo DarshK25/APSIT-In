@@ -75,3 +75,32 @@
   transform: scale(1.02);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
+
+/* Onboarding Toast Specific Styles */
+.onboarding-toast-container {
+  position: fixed !important;
+  top: 10px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  max-height: none !important;
+  height: auto !important;
+  min-height: fit-content !important;
+  width: 100% !important;
+  max-width: 32rem !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Override toast container limitations for onboarding */
+.onboarding-toast-container .toast-container {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* Ensure onboarding toast is always visible */
+.onboarding-toast-container > div {
+  display: block !important;
+}

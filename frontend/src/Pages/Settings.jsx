@@ -197,7 +197,7 @@ const Settings = () => {
     };
 
     const handleAccountTypeChange = async (newType) => {
-        if (!user || user.email !== 'darshkalathiya25@gmail.com') {
+        if (!user || (user.email !== 'darshkalathiya25@gmail.com' && user.username !== 'testuser')) {
             toast.error('Unauthorized');
             return;
         }
@@ -252,7 +252,7 @@ const Settings = () => {
                 <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Settings</h1>
                 
                 {/* Account Type Switcher - Only for test account */}
-                {user?.email === 'darshkalathiya25@gmail.com' && (
+                {(user?.email === 'darshkalathiya25@gmail.com' || user?.username === 'testuser') && (
                     <div className="bg-white dark:bg-dark-card rounded-lg shadow-sm p-6 mb-6">
                         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Account Type</h2>
                         <div className="space-y-4">
