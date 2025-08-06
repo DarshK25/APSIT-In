@@ -54,6 +54,26 @@ app.get('/api/v1/health', (req, res) => {
   });
 });
 
+// Cookie test endpoint for debugging
+app.get('/api/v1/test-cookie', (req, res) => {
+  console.log('🍪 Test endpoint - Received cookies:', req.cookies);
+  console.log('📝 Headers:', req.headers);
+  
+  // Set a test cookie
+  res.cookie('test-cookie', 'test-value', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 60000 // 1 minute
+  });
+  
+  res.json({
+    message: 'Test cookie set',
+    receivedCookies: req.cookies,
+    environment: process.env.NODE_ENV
+  });
+});
+
 app.get('/', (req, res) => {
     res.status(200).json({
         message: 'Welcome to the API'
