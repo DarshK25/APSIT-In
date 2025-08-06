@@ -94,8 +94,9 @@ export const signup = async (req, res) => {
         console.log("Username:", newUser.username);
         console.log("Stored Password Hash:", newUser.password);
 
-        // Generate token and set cookie
+        // Generate token and set cookie like in login
         await generateTokenAndSetCookie(newUser._id, res);
+        console.log('🔑 Generated JWT token and set cookie for new user:', newUser._id);
 
         // Send welcome email
         try {
@@ -223,17 +224,20 @@ export const login = async (req, res) => {
         console.log("✅ Login successful!");
 
 		// Create and send token for user
-		generateTokenAndSetCookie(user._id, res);
+		await generateTokenAndSetCookie(user._id, res);
 
+		console.log('✅ About to send login response');
 		res.status(200).json({ 
             success: true, 
             message: "Logged in successfully",
             user: {
                 id: user._id,
                 username: user.username,
+                email: user.email,
                 accountType: user.accountType
             }
         });
+		console.log('✅ Login response sent successfully');
         
 	} catch (error) {
 		console.error("\n❌ Error in login controller:", error);

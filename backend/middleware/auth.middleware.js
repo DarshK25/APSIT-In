@@ -5,11 +5,17 @@ import User from "../models/user.model.js";
 export const protectRoute = async (req, res, next) => {
     try {
         const token = req.cookies["jwt-apsitin"]; //extracting the jwt token 
-        console.log('🍪 Cookies received:', req.cookies);
-        console.log('🔑 JWT Token:', token ? 'Present' : 'Missing');
+        console.log('=== AUTH MIDDLEWARE DEBUG ===');
+        console.log('🍪 All cookies received:', req.cookies);
+        console.log('🍪 Cookie names:', Object.keys(req.cookies));
+        console.log('🔑 JWT Token (jwt-apsitin):', token ? 'Present' : 'Missing');
+        console.log('🌍 Origin:', req.headers.origin);
+        console.log('🌍 User-Agent:', req.headers['user-agent']);
+        console.log('================================');
         
         if (!token) {
-            console.log('❌ No token found in cookies');
+            console.log('❌ No token found in cookies - Request URL:', req.url);
+            console.log('❌ Headers:', req.headers);
             return res.status(401).json({ message: "Unauthorized - No Token Provided" });//checking if token exists
         }
 

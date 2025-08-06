@@ -11,6 +11,9 @@ const API_BASE_URL = isDevelopment
 
 console.log('Current environment:', isDevelopment ? 'Development' : 'Production');
 console.log('Using API URL:', API_BASE_URL);
+console.log('API_URL:', `${API_BASE_URL}/api/v1`);
+console.log('Current hostname:', window.location.hostname);
+console.log('Current origin:', window.location.origin);
 
 const axiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,

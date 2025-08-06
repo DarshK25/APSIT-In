@@ -33,11 +33,12 @@ createUploadsDir();
 // Enable CORS for all routes
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? 'https://apsit-in.vercel.app'   // Only allow production URL
+    ? ['https://apsit-in.vercel.app', 'https://apsit-in-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:3000']   // Allow frontend URLs
     : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
 

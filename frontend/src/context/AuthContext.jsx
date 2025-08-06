@@ -37,11 +37,15 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const checkAuth = async () => {
             try {
+                console.log('🔍 Starting auth check...');
+                console.log('🍪 Document cookies:', document.cookie);
                 const response = await axiosInstance.get('/auth/me');
+                console.log('✅ Auth check response:', response.data);
                 if (response.data.data) {
                     setUser(response.data.data);
                 }
             } catch (error) {
+                console.log('❌ Auth check failed:', error.response?.status, error.response?.data);
                 // Silently handle 401 errors as they are expected when not logged in
                 if (error.response?.status !== 401) {
                     console.error('Auth check failed:', error);
@@ -57,7 +61,9 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            // console.log('Attempting login with username:', username);
+            console.log('\ud83d\udd11 Starting login process...');
+            console.log('\ud83c\udf6a Cookies before login:', document.cookie);
+            
             const response = await axiosInstance.post(
                 '/auth/login',
                 { username, password },
@@ -69,17 +75,31 @@ export const AuthProvider = ({ children }) => {
                 }
             );
             
+            console.log('\u2705 Login response received:', response.data);
+            console.log('\ud83c\udf6a Cookies after login:', document.cookie);
+            
             if (response.data.success) {
                 // Don't store token in localStorage - we use httpOnly cookies instead
                 // The backend automatically sets the cookie in the response
                 
                 // Set user data from login response if available
                 if (response.data.user) {
+                    console.log('\ud83d\udc64 Setting user from login response:', response.data.user);
                     setUser(response.data.user);
                     toast.success('Logged in successfully');
                     if(response.data.user.email === 'darshkalathiya25@gmail.com') {
                         toast.success('You can switch between user types (student/faculty/club) in the settings.', {duration: 6000});
                     }
+                    
+                    // Test the auth by calling /auth/me immediately after login
+                    try {
+                        console.log('\ud83d\udd0d Testing auth immediately after login...');
+                        const testAuth = await axiosInstance.get('/auth/me');
+                        console.log('\u2705 Auth test successful:', testAuth.data);
+                    } catch (testError) {
+                        console.log('\u274c Auth test failed:', testError.response?.status, testError.response?.data);
+                    }
+                    
                     navigate('/home', { replace: true });
                     return true;
                 }
