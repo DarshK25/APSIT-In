@@ -74,6 +74,26 @@ app.get('/api/v1/test-cookie', (req, res) => {
   });
 });
 
+app.post('/api/v1/test-cookie', (req, res) => {
+  console.log('🍪 POST Test endpoint - Received cookies:', req.cookies);
+  console.log('📝 Headers:', req.headers);
+  
+  // Set a test cookie with production settings
+  res.cookie('test-cookie-post', 'test-value-post', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 60000 // 1 minute
+  });
+  
+  res.json({
+    message: 'POST Test cookie set',
+    receivedCookies: req.cookies,
+    environment: process.env.NODE_ENV,
+    corsOrigin: process.env.NODE_ENV === 'production' ? 'https://apsit-in.vercel.app' : 'development'
+  });
+});
+
 app.get('/', (req, res) => {
     res.status(200).json({
         message: 'Welcome to the API'
