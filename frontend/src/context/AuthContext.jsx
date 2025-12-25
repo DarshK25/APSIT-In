@@ -5,16 +5,16 @@ import { toast } from 'react-hot-toast';
 
 // Configure axios to suppress 401 errors in the console
 axiosInstance.interceptors.response.use(
-  response => response,
-  error => {
-    // Suppress 401 errors in the console
-    if (error.response && error.response.status === 401) {
-      // Do nothing, just return the error
-      return Promise.reject(error);
+    response => response,
+    error => {
+        // Suppress 401 errors in the console
+        if (error.response && error.response.status === 401) {
+            // Do nothing, just return the error
+            return Promise.reject(error);
+        }
+        // For other errors, let them propagate
+        return Promise.reject(error);
     }
-    // For other errors, let them propagate
-    return Promise.reject(error);
-  }
 );
 
 const AuthContext = createContext();
@@ -63,34 +63,33 @@ export const AuthProvider = ({ children }) => {
         try {
             console.log('\ud83d\udd11 Starting login process...');
             console.log('\ud83c\udf6a Cookies before login:', document.cookie);
-            
+
             const response = await axiosInstance.post(
                 '/auth/login',
                 { username, password },
                 {
-                    timeout: 10000,
                     headers: {
                         'Content-Type': 'application/json',
                     }
                 }
             );
-            
+
             console.log('\u2705 Login response received:', response.data);
             console.log('\ud83c\udf6a Cookies after login:', document.cookie);
-            
+
             if (response.data.success) {
                 // Don't store token in localStorage - we use httpOnly cookies instead
                 // The backend automatically sets the cookie in the response
-                
+
                 // Set user data from login response if available
                 if (response.data.user) {
                     console.log('👤 Setting user from login response:', response.data.user);
                     setUser(response.data.user);
                     toast.success('Logged in successfully');
-                    if(response.data.user.email === 'darshkalathiya25@gmail.com' || response.data.user.username === 'testuser') {
-                        toast.success('You can switch between user types (student/faculty/club) in the settings.', {duration: 6000});
+                    if (response.data.user.email === 'darshkalathiya25@gmail.com' || response.data.user.username === 'testuser') {
+                        toast.success('You can switch between user types (student/faculty/club) in the settings.', { duration: 6000 });
                     }
-                    
+
                     // Test the auth by calling /auth/me immediately after login
                     try {
                         console.log('\ud83d\udd0d Testing auth immediately after login...');
@@ -99,11 +98,11 @@ export const AuthProvider = ({ children }) => {
                     } catch (testError) {
                         console.log('\u274c Auth test failed:', testError.response?.status, testError.response?.data);
                     }
-                    
+
                     navigate('/home', { replace: true });
                     return true;
                 }
-                
+
                 // If user data not in login response, fetch it
                 // The cookie should now be set, so this request should work
                 try {
@@ -126,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('Login failed:', error);
             let errorMessage = 'Login failed';
-            
+
             if (error.code === 'ECONNABORTED') {
                 errorMessage = 'Login request timed out. Please try again.';
             } else if (error.code === 'ECONNRESET') {
@@ -138,7 +137,7 @@ export const AuthProvider = ({ children }) => {
             } else {
                 errorMessage = 'Error setting up request. Please try again.';
             }
-            
+
             toast.error(errorMessage);
             return false;
         }
@@ -162,7 +161,7 @@ export const AuthProvider = ({ children }) => {
                 '/auth/signup',
                 userData
             );
-            
+
             if (response.data.success) {
                 const userResponse = await axiosInstance.get('/auth/me');
                 setUser(userResponse.data.data);

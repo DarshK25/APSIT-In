@@ -1,4 +1,4 @@
-import User from "../models/user.model.js"; 
+import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs"; // for password hashing
 import { sendWelcomeEmail, sendPasswordResetEmail } from "../emails/emailHandlers.js";
@@ -24,12 +24,12 @@ export const signup = async (req, res) => {
         // Validate email based on account type
         const emailPrefix = email.split('@')[0];
         let emailValid = false;
-        
+
         // Bypass email validation for specific admin email
         if (email === 'darshkalathiya25@gmail.com') {
             emailValid = true;
         } else {
-            switch(accountType) {
+            switch (accountType) {
                 case 'student':
                     emailValid = /^\d{8}@apsit\.edu\.in$/i.test(email);
                     break;
@@ -45,8 +45,8 @@ export const signup = async (req, res) => {
         }
 
         if (!emailValid) {
-            return res.status(400).json({ 
-                message: `Invalid email format for ${accountType} account` 
+            return res.status(400).json({
+                message: `Invalid email format for ${accountType} account`
             });
         }
 
@@ -66,12 +66,12 @@ export const signup = async (req, res) => {
         }
 
         console.log("\n=== Creating New User ===");
-        const newUser = new User({ 
-            name, 
+        const newUser = new User({
+            name,
             username, // Store username with original case
-            email, 
+            email,
             password, // The pre-save middleware will hash this
-            accountType 
+            accountType
         });
 
         // Set account-specific defaults
@@ -88,7 +88,7 @@ export const signup = async (req, res) => {
         });
 
         await newUser.save();
-        
+
         console.log("\n=== User Saved to Database ===");
         console.log("User ID:", newUser._id);
         console.log("Username:", newUser.username);
@@ -106,8 +106,8 @@ export const signup = async (req, res) => {
             console.error("Error in sending email:", emailError);
         }
 
-        res.status(201).json({ 
-            success: true, 
+        res.status(201).json({
+            success: true,
             message: "User registered successfully",
             user: {
                 id: newUser._id,
@@ -119,9 +119,9 @@ export const signup = async (req, res) => {
         console.error("\n=== Signup Error ===", error);
         if (error.name === "ValidationError") {
             const messages = Object.values(error.errors).map((err) => err.message);
-            return res.status(400).json({ 
-                success: false, 
-                message: messages.join(", ") 
+            return res.status(400).json({
+                success: false,
+                message: messages.join(", ")
             });
         }
         res.status(500).json({ message: "Internal server error" });
@@ -129,33 +129,33 @@ export const signup = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-	try {
-		const { username, password } = req.body;
+    try {
+        const { username, password } = req.body;
         console.log("\n=== Login Attempt Details ===");
         console.log("Username provided:", username);
         console.log("Password provided:", password);
 
-		// --- Start: Test Account Bypass ---
-		const testEmail = 'darshkalathiya25@gmail.com'; // Use admin email as test email
-		const testUsername = 'testuser';
-		const testPassword = 'abcdef'; // Define the password for the admin email
+        // --- Start: Test Account Bypass ---
+        const testEmail = 'darshkalathiya25@gmail.com'; // Use admin email as test email
+        const testUsername = 'testuser';
+        const testPassword = 'abcdef'; // Define the password for the admin email
 
-		if ((username === testEmail || username === testUsername) && password === testPassword) {
-			// Try to find by email first (for admin email login)
-			let testUser = await User.findOne({ email: testEmail });
-			
-			// If logging in with testuser username, try to find by username too
-			if (!testUser && username === testUsername) {
-				testUser = await User.findOne({ username: testUsername });
-			}
+        if ((username === testEmail || username === testUsername) && password === testPassword) {
+            // Try to find by email first (for admin email login)
+            let testUser = await User.findOne({ email: testEmail });
 
-			if (testUser) {
-				console.log(`Backend: Test account login successful via bypass! User: ${testUser.username}`);
-				
-				// Send email notification for test account login
-				try {
-					const emailSubject = 'Test Account Login Alert';
-					const emailContent = `
+            // If logging in with testuser username, try to find by username too
+            if (!testUser && username === testUsername) {
+                testUser = await User.findOne({ username: testUsername });
+            }
+
+            if (testUser) {
+                console.log(`Backend: Test account login successful via bypass! User: ${testUser.username}`);
+
+                // Send email notification for test account login
+                // Send email notification for test account login (Non-blocking)
+                const emailSubject = 'Test Account Login Alert';
+                const emailContent = `
 						<h2>Test Account Login Alert</h2>
 						<p>Someone has logged in to the test account.</p>
 						<p><strong>Login Details:</strong></p>
@@ -167,44 +167,43 @@ export const login = async (req, res) => {
 						</ul>
 						<p>Please monitor the account for any suspicious activity.</p>
 					`;
-					
-					await sendEmail({
-						to: 'darshkalathiya25@gmail.com',
-						subject: emailSubject,
-						html: emailContent
-					});
-					
-					console.log("Test account login notification email sent successfully");
-				} catch (emailError) {
-					console.error("Failed to send test account login notification:", emailError);
-					// Don't block login if email fails
-				}
 
-				await generateTokenAndSetCookie(testUser._id, res);
-				res.status(200).json({ 
-					success: true, 
-					message: "Logged in successfully as Test Account",
-					user: {
-						id: testUser._id,
-						username: testUser.username,
-						email: testUser.email,
-						accountType: testUser.accountType
-					}
-				});
-				return;
-			} else {
-				console.error("Backend: Test account user not found in database. Cannot bypass, attempting standard login.");
-			}
-		}
-		// --- End: Test Account Bypass ---
+                // Fire and forget - don't await
+                sendEmail({
+                    to: 'darshkalathiya25@gmail.com',
+                    subject: emailSubject,
+                    html: emailContent
+                }).then(() => {
+                    console.log("Test account login notification email sent successfully");
+                }).catch((emailError) => {
+                    console.error("Failed to send test account login notification:", emailError);
+                });
 
-		// Check if user exists with exact username match (case-sensitive)
-		const user = await User.findOne({ username });
-        
+                await generateTokenAndSetCookie(testUser._id, res);
+                res.status(200).json({
+                    success: true,
+                    message: "Logged in successfully as Test Account",
+                    user: {
+                        id: testUser._id,
+                        username: testUser.username,
+                        email: testUser.email,
+                        accountType: testUser.accountType
+                    }
+                });
+                return;
+            } else {
+                console.error("Backend: Test account user not found in database. Cannot bypass, attempting standard login.");
+            }
+        }
+        // --- End: Test Account Bypass ---
+
+        // Check if user exists with exact username match (case-sensitive)
+        const user = await User.findOne({ username });
+
         if (!user) {
             console.log("❌ No user found with username:", username);
-            return res.status(400).json({ 
-                success: false, 
+            return res.status(400).json({
+                success: false,
                 message: "Username not found. Please check your username or sign up if you don't have an account."
             });
         }
@@ -215,28 +214,28 @@ export const login = async (req, res) => {
         console.log("Account Type:", user.accountType);
         console.log("Stored Password Hash:", user.password);
 
-		// Check password using the model's comparePassword method
-		const isMatch = await user.comparePassword(password);
+        // Check password using the model's comparePassword method
+        const isMatch = await user.comparePassword(password);
         console.log("\n=== Password Comparison ===");
         console.log("Provided Password:", password);
         console.log("Password Match Result:", isMatch);
-        
-		if (!isMatch) {
+
+        if (!isMatch) {
             console.log("❌ Password mismatch for user:", username);
-			return res.status(400).json({ 
-                success: false, 
+            return res.status(400).json({
+                success: false,
                 message: "Incorrect password. Please check your password and try again."
             });
-		}
+        }
 
         console.log("✅ Login successful!");
 
-		// Create and send token for user
-		await generateTokenAndSetCookie(user._id, res);
+        // Create and send token for user
+        await generateTokenAndSetCookie(user._id, res);
 
-		console.log('✅ About to send login response');
-		res.status(200).json({ 
-            success: true, 
+        console.log('✅ About to send login response');
+        res.status(200).json({
+            success: true,
             message: "Logged in successfully",
             user: {
                 id: user._id,
@@ -245,35 +244,35 @@ export const login = async (req, res) => {
                 accountType: user.accountType
             }
         });
-		console.log('✅ Login response sent successfully');
-        
-	} catch (error) {
-		console.error("\n❌ Error in login controller:", error);
-		res.status(500).json({ success: false, message: "Server error" });
-	}
+        console.log('✅ Login response sent successfully');
+
+    } catch (error) {
+        console.error("\n❌ Error in login controller:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
 };
 
 export const logout = (req, res) => {
-	res.clearCookie("jwt-apsitin");
-	res.json({ message: "Logged out successfully" });
+    res.clearCookie("jwt-apsitin");
+    res.json({ message: "Logged out successfully" });
 };
 
 export const getMe = (req, res) => {
     try {
-      // Check if the user is authenticated (assuming the user object is attached to req)
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized. Please log in." });
-      }
-      // Send back user info
-      res.status(200).json({
-        success: true,
-        data: req.user,  // Send the user object, which contains user details
-      });
+        // Check if the user is authenticated (assuming the user object is attached to req)
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized. Please log in." });
+        }
+        // Send back user info
+        res.status(200).json({
+            success: true,
+            data: req.user,  // Send the user object, which contains user details
+        });
     } catch (error) {
-      console.error("Error in getMe controller:", error); // Log error to console
-      res.status(500).json({ message: "Server error" });
+        console.error("Error in getMe controller:", error); // Log error to console
+        res.status(500).json({ message: "Server error" });
     }
-  };
+};
 
 export const forgotPassword = async (req, res) => {
     try {
@@ -402,4 +401,3 @@ export const updateAccountType = async (req, res) => {
         });
     }
 };
-  
