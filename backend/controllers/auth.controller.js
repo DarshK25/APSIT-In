@@ -153,31 +153,31 @@ export const login = async (req, res) => {
                 console.log(`Backend: Test account login successful via bypass! User: ${testUser.username}`);
 
                 // Send email notification for test account login
-                // Send email notification for test account login (Non-blocking)
-                const emailSubject = 'Test Account Login Alert';
-                const emailContent = `
-						<h2>Test Account Login Alert</h2>
-						<p>Someone has logged in to the test account.</p>
-						<p><strong>Login Details:</strong></p>
-						<ul>
-							<li>Time: ${new Date().toLocaleString()}</li>
-							<li>Username: ${testUser.username}</li>
-							<li>IP Address: ${req.ip}</li>
-							<li>User Agent: ${req.headers['user-agent']}</li>
-						</ul>
-						<p>Please monitor the account for any suspicious activity.</p>
-					`;
+                // Email notification disabled to prevent login timeout/hanging
+                // const emailSubject = 'Test Account Login Alert';
+                // const emailContent = `
+                // 		<h2>Test Account Login Alert</h2>
+                // 		<p>Someone has logged in to the test account.</p>
+                // 		<p><strong>Login Details:</strong></p>
+                // 		<ul>
+                // 			<li>Time: ${new Date().toLocaleString()}</li>
+                // 			<li>Username: ${testUser.username}</li>
+                // 			<li>IP Address: ${req.ip}</li>
+                // 			<li>User Agent: ${req.headers['user-agent']}</li>
+                // 		</ul>
+                // 		<p>Please monitor the account for any suspicious activity.</p>
+                // 	`;
 
-                // Fire and forget - don't await
-                sendEmail({
-                    to: 'darshkalathiya25@gmail.com',
-                    subject: emailSubject,
-                    html: emailContent
-                }).then(() => {
-                    console.log("Test account login notification email sent successfully");
-                }).catch((emailError) => {
-                    console.error("Failed to send test account login notification:", emailError);
-                });
+                // // Fire and forget - don't await
+                // sendEmail({
+                //     to: 'darshkalathiya25@gmail.com',
+                //     subject: emailSubject,
+                //     html: emailContent
+                // }).then(() => {
+                //     console.log("Test account login notification email sent successfully");
+                // }).catch((emailError) => {
+                //     console.error("Failed to send test account login notification:", emailError);
+                // });
 
                 await generateTokenAndSetCookie(testUser._id, res);
                 res.status(200).json({
