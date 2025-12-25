@@ -4,7 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
-import postRoutes from "./routes/post.route.js"; 
+import postRoutes from "./routes/post.route.js";
 import commentRoutes from "./routes/comment.route.js";
 import notificationRoutes from "./routes/notification.route.js";
 import connectionRoutes from "./routes/connection.route.js";
@@ -32,7 +32,7 @@ createUploadsDir();
 
 // Enable CORS for all routes
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
+  origin: process.env.NODE_ENV === 'production'
     ? ['https://apsit-in.vercel.app', 'https://apsit-in-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:3000']   // Allow frontend URLs
     : true, // Allow all origins in development
   credentials: true,
@@ -59,7 +59,7 @@ app.get('/api/v1/health', (req, res) => {
 app.get('/api/v1/test-cookie', (req, res) => {
   console.log('🍪 Test endpoint - Received cookies:', req.cookies);
   console.log('📝 Headers:', req.headers);
-  
+
   // Set a test cookie
   res.cookie('test-cookie', 'test-value', {
     httpOnly: true,
@@ -67,7 +67,7 @@ app.get('/api/v1/test-cookie', (req, res) => {
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 60000 // 1 minute
   });
-  
+
   res.json({
     message: 'Test cookie set',
     receivedCookies: req.cookies,
@@ -78,7 +78,7 @@ app.get('/api/v1/test-cookie', (req, res) => {
 app.post('/api/v1/test-cookie', (req, res) => {
   console.log('🍪 POST Test endpoint - Received cookies:', req.cookies);
   console.log('📝 Headers:', req.headers);
-  
+
   // Set a test cookie with production settings
   res.cookie('test-cookie-post', 'test-value-post', {
     httpOnly: true,
@@ -86,7 +86,7 @@ app.post('/api/v1/test-cookie', (req, res) => {
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 60000 // 1 minute
   });
-  
+
   res.json({
     message: 'POST Test cookie set',
     receivedCookies: req.cookies,
@@ -96,9 +96,9 @@ app.post('/api/v1/test-cookie', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-    res.status(200).json({
-        message: 'Welcome to the API'
-    });
+  res.status(200).json({
+    message: 'Welcome to the API'
+  });
 });
 
 // API Routes
@@ -119,31 +119,32 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Serve frontend build files in production
-// if (process.env.NODE_ENV === 'production') {
-//   const frontendPath = path.join(__dirname, '../frontend/dist');
-//   app.use(express.static(frontendPath));
-  
-//   app.get('*', (req, res) => {
-//     res.sendFile(path.join(frontendPath, 'index.html'));
-//   });
-// }
+// Serve frontend build files in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendPath = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(frontendPath));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error('Error:', err);
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || 'Internal Server Error',
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    });
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
 });
 
 // Handle 404 routes
 app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Route not found'
-    });
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
 });
 
 const httpServer = createServer(app);
@@ -151,38 +152,38 @@ const io = initSocket(httpServer);
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Rejection:', err);
-    // Don't crash the server, just log the error
-    // process.exit(1);
+  console.error('Unhandled Rejection:', err);
+  // Don't crash the server, just log the error
+  // process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    // Don't crash the server, just log the error
-    // process.exit(1);
+  console.error('Uncaught Exception:', err);
+  // Don't crash the server, just log the error
+  // process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('Received SIGTERM. Performing graceful shutdown...');
-    httpServer.close(() => {
-        console.log('Server closed. Exiting process.');
-        process.exit(0);
-    });
+  console.log('Received SIGTERM. Performing graceful shutdown...');
+  httpServer.close(() => {
+    console.log('Server closed. Exiting process.');
+    process.exit(0);
+  });
 });
 
 const startServer = async () => {
-    try {
-        await connectDB(); // Connect to database first
-        console.log('Connected to MongoDB');
-        httpServer.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    } catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
-    }
+  try {
+    await connectDB(); // Connect to database first
+    console.log('Connected to MongoDB');
+    httpServer.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
 };
 
 startServer();
