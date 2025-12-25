@@ -5,8 +5,8 @@ import { toast } from 'react-hot-toast';
 const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Set the API URL based on environment
-const API_BASE_URL = isDevelopment 
-  ? 'http://localhost:5000'  // Development
+const API_BASE_URL = isDevelopment
+  ? 'http://localhost:3000'  // Development
   : 'https://apsit-in.onrender.com';  // Production
 
 console.log('Current environment:', isDevelopment ? 'Development' : 'Production');
@@ -17,7 +17,7 @@ console.log('Current origin:', window.location.origin);
 
 const axiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -64,7 +64,7 @@ axiosInstance.interceptors.response.use(
       const currentPath = window.location.pathname;
       const isPublicRoute = ['/', '/login', '/signup'].includes(currentPath);
       const isAuthCheckRequest = originalRequest.url?.includes('/auth/me');
-      
+
       if (!isPublicRoute && !isAuthCheckRequest) {
         window.location.href = '/login';
         toast.error('Session expired. Please login again.');

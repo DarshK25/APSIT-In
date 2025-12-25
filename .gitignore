@@ -1,7 +1,7 @@
 # Dependencies
 node_modules/
 frontend/node_modules/
-
+Project-ApsitIn.code-workspace
 # Build outputs
 frontend/dist/
 dist/
