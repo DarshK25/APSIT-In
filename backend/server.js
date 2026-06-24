@@ -174,16 +174,10 @@ process.on('SIGTERM', () => {
 });
 
 const startServer = async () => {
-  try {
-    await connectDB(); // Connect to database first
-    console.log('Connected to MongoDB');
-    httpServer.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
+  await connectDB(); // Connect to database first
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 };
 
 startServer();

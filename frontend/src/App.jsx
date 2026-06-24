@@ -18,8 +18,10 @@ import CreateEventPage from './Pages/CreateEventPage';
 import EditEventPage from './Pages/EditEventPage';
 import OnboardingToast from './components/OnboardingToast';
 import Settings from './Pages/Settings.jsx';
+import { startKeepAlive } from './utils/keepAlive.js';
 
 const App = () => {
+  startKeepAlive();
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
